@@ -320,7 +320,7 @@
         const mainOpacity = clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor;
 
         const maxRadius = Math.max(...points.map(point => Math.hypot(point[0], point[1])));
-        const outerRadius = maxRadius - 0.3;
+        const outerRadius = maxRadius - 0.1;
         outerRing.setAttribute('r', outerRadius);
         outerRing.style.opacity = String(0.82 * mainOpacity);
         mainOverlay.style.opacity = String(mainOpacity);
