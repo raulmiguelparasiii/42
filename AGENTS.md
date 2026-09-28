@@ -33,11 +33,12 @@ The full paper does not need to be embedded or uploaded as a PDF. The website ma
 - Do not silently delete or redesign something because it seems irrelevant to the current request.
 
 ## Current State
-- Initial scaffold only.
 - One implementation file: `index.html`.
-- Black full-screen canvas/root is established.
+- Black full-screen opening view with a centered white wireframe octahedron.
+- Octahedron is generated from six mathematical vertices and twelve edges, with no 3D asset or dependency.
+- Subtle idle rotation; pointer/touch drag rotates it directly; reduced-motion users get a static idle state.
 - Hostname-sensitive identity is established in one place.
-- No final octahedron renderer, motion system, navigation system, or theory presentation has been chosen yet.
+- No navigation or theory presentation has been chosen yet.
 
 ## Decisions / Invariants
 - One codebase serves both domains.
@@ -47,9 +48,10 @@ The full paper does not need to be embedded or uploaded as a PDF. The website ma
 - Desktop and mobile are first-class targets.
 - The opening experience must remain fast even when the site eventually contains substantial theory text.
 - Keep the codebase compact enough that its active implementation can be reread rather than guessed at.
+- The octahedron should remain geometrically generated and lightweight unless a later visual requirement clearly justifies more machinery.
 
 ## Implementation Map
-- `index.html` — complete current site shell, styling, identity logic, and future interactive implementation until splitting a file clearly reduces complexity.
+- `index.html` — complete current site: shell, styling, domain identity, octahedron geometry/projection, idle motion, and pointer/touch input.
 
 ## Threshold for splitting files
 Do not split code merely for organization. Split only when a section becomes large enough that keeping it together makes full inspection harder. When splitting, update this map with each file’s ownership and dependency boundaries.
