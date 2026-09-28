@@ -34,7 +34,7 @@ The full paper does not need to be embedded or uploaded as a PDF. The website ma
 
 ## Current State
 - One implementation file: `index.html`.
-- Black full-screen opening view with a centered white wireframe octahedron.
+- Black full-screen opening view with a centered white wireframe octahedron, displayed at a larger responsive scale (about 150% of the earlier baseline).
 - Geometry: six vertices, twelve outer edges, three internal axes; orthographic projection; no 3D asset or library.
 - Default orientation is the exact symmetric face-on star view: yaw π/4, pitch asin(1/√3).
 - Direct drag imparts angular momentum. Released motion decays freely, then the nearest of four anchors magnetically captures it with a lightly underdamped spring/overshoot: main, top, side, bottom. The side anchor keeps the main yaw (π/4) and flattens pitch to 0 to avoid the quadrant-looking orientation.
