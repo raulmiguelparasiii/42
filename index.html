@@ -61,6 +61,7 @@
       fill: none;
     }
     #octahedron .vertex-label,
+    #octahedron .concept-suffix,
     #octahedron .axis-letter,
     #octahedron .ring-text,
     #octahedron .ring-dot {
@@ -73,6 +74,9 @@
     #octahedron .vertex-label {
       font: 7px Georgia, "Times New Roman", serif;
       letter-spacing: 0.8px;
+    }
+    #octahedron .concept-suffix {
+      font: 3.15px Georgia, "Times New Roman", serif;
     }
     #octahedron .axis-letter {
       font: italic 7px Georgia, "Times New Roman", serif;
@@ -118,6 +122,7 @@
         [ 0, 0, 1], [ 0, 0,-1]
       ];
       const vertexLetters = ['E', 'P', 'M', 'C', 'W', 'K'];
+      const vertexSuffixes = ['mpathy', 'racticality', 'aturity', 'ollapse', 'isdom', 'nowledge'];
       const axes = [[0, 1], [2, 3], [4, 5]];
       const opposite = new Set(axes.map(pair => pair[0] + '-' + pair[1]));
       const edges = [];
@@ -158,6 +163,17 @@
         text.textContent = letter;
         mainOverlay.appendChild(text);
         return text;
+      });
+
+      const conceptSuffixes = vertexSuffixes.map(suffix => {
+        return [...suffix].map((letter, index) => {
+          const text = make('text', 'concept-suffix');
+          const fade = suffix.length <= 1 ? 0.82 : 0.88 - (index / (suffix.length - 1)) * 0.58;
+          text.textContent = letter;
+          text.style.opacity = String(fade);
+          mainOverlay.appendChild(text);
+          return text;
+        });
       });
 
       const inscription = [
@@ -336,9 +352,23 @@
           const x = points[i][0];
           const y = points[i][1];
           const length = Math.hypot(x, y) || 1;
+          const ux = x / length;
+          const uy = y / length;
           const labelRadius = outerRadius + 8.2;
-          label.setAttribute('x', x / length * labelRadius);
-          label.setAttribute('y', y / length * labelRadius);
+          const angle = Math.atan2(uy, ux) * 180 / Math.PI;
+          const glyphAngle = angle > 90 || angle < -90 ? angle + 180 : angle;
+
+          label.setAttribute('x', ux * labelRadius);
+          label.setAttribute('y', uy * labelRadius);
+
+          conceptSuffixes[i].forEach((letter, index) => {
+            const radius = labelRadius + 5.3 + index * 3.15;
+            const lx = ux * radius;
+            const ly = uy * radius;
+            letter.setAttribute('x', lx);
+            letter.setAttribute('y', ly);
+            letter.setAttribute('transform', 'rotate(' + glyphAngle + ' ' + lx + ' ' + ly + ')');
+          });
         });
 
         axisMarkers.forEach(marker => {
