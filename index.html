@@ -201,6 +201,8 @@
       });
 
       const AXIS_MARKER_RADIUS = 6.3;
+      const TEXT_RING_INSET = 8.5;
+      const REVERSED_TEXT_COMPENSATION = 2.4;
       const axisMarkers = inscription.map(item => {
         const group = make('g');
         const circle = make('circle', 'axis-marker');
@@ -323,12 +325,14 @@
           Math.hypot(...markerPoints.x) +
           Math.hypot(...markerPoints.z)
         ) / 3;
-        inscriptionPath.setAttribute('d', fullCirclePath(markerRadius));
-        reverseInscriptionPath.setAttribute('d', fullCirclePath(markerRadius, true));
+        const textRadius = markerRadius - TEXT_RING_INSET;
+        inscriptionPath.setAttribute('d', fullCirclePath(textRadius));
+        reverseInscriptionPath.setAttribute(
+          'd',
+          fullCirclePath(textRadius - REVERSED_TEXT_COMPENSATION, true)
+        );
 
-        const markerClearance = (
-          Math.asin(Math.min(0.99, (AXIS_MARKER_RADIUS + 2.0) / markerRadius)) / (Math.PI * 2)
-        ) * 100;
+        const markerClearance = 3.4;
 
         ringText.forEach(fragment => {
           const direction = fragment.side === 'before' ? -1 : 1;
@@ -356,8 +360,8 @@
         });
 
         ringDots.forEach(dot => {
-          const x = Math.cos(dot.angle) * markerRadius;
-          const y = Math.sin(dot.angle) * markerRadius;
+          const x = Math.cos(dot.angle) * textRadius;
+          const y = Math.sin(dot.angle) * textRadius;
           dot.text.setAttribute('x', x);
           dot.text.setAttribute('y', y + 0.1);
         });
