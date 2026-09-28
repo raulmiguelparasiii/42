@@ -10,11 +10,36 @@
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; min-height: 100%; background: #000; }
     body { min-height: 100dvh; overflow: hidden; }
-    #app { width: 100%; height: 100dvh; background: #000; }
+    #app {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100dvh;
+      background: #000;
+    }
+    #octahedron {
+      width: min(42vw, 42vh);
+      aspect-ratio: 1;
+      overflow: visible;
+      touch-action: none;
+      cursor: grab;
+    }
+    #octahedron:active { cursor: grabbing; }
+    #octahedron line {
+      stroke: #fff;
+      stroke-width: 1.15;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+    }
+    @media (max-width: 700px) {
+      #octahedron { width: min(68vw, 40vh); }
+    }
   </style>
 </head>
 <body>
-  <main id="app" aria-label="Epistemic Octahedron"></main>
+  <main id="app" aria-label="Epistemic Octahedron">
+    <svg id="octahedron" viewBox="-120 -120 240 240" aria-hidden="true"></svg>
+  </main>
 
   <script>
     // Read AGENTS.md in full before editing this file.
@@ -26,8 +51,93 @@
       document.title = identity;
       document.querySelector('#app').setAttribute('aria-label', identity);
 
-      // Interactive octahedron and theory presentation will be built here
-      // only after their behavior and visual language are intentionally defined.
+      const svg = document.querySelector('#octahedron');
+      const vertices = [
+        [ 1, 0, 0], [-1, 0, 0],
+        [ 0, 1, 0], [ 0,-1, 0],
+        [ 0, 0, 1], [ 0, 0,-1]
+      ];
+      const opposite = new Set(['0-1', '2-3', '4-5']);
+      const edges = [];
+      for (let a = 0; a < vertices.length; a++) {
+        for (let b = a + 1; b < vertices.length; b++) {
+          if (!opposite.has(`${a}-${b}`)) edges.push([a, b]);
+        }
+      }
+
+      const lines = edges.map(() => {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        svg.appendChild(line);
+        return line;
+      });
+
+      let yaw = 0.64;
+      let pitch = -0.24;
+      let dragging = false;
+      let lastX = 0;
+      let lastY = 0;
+      let lastTime = performance.now();
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const rotate = ([x, y, z]) => {
+        const cy = Math.cos(yaw), sy = Math.sin(yaw);
+        const cp = Math.cos(pitch), sp = Math.sin(pitch);
+        const x1 = x * cy + z * sy;
+        const z1 = -x * sy + z * cy;
+        return [x1, y * cp - z1 * sp, y * sp + z1 * cp];
+      };
+
+      const project = ([x, y, z]) => {
+        const camera = 4.2;
+        const scale = 86 * camera / (camera - z);
+        return [x * scale, -y * scale, z];
+      };
+
+      const draw = () => {
+        const points = vertices.map(v => project(rotate(v)));
+        edges.forEach(([a, b], i) => {
+          const [x1, y1, z1] = points[a];
+          const [x2, y2, z2] = points[b];
+          lines[i].setAttribute('x1', x1);
+          lines[i].setAttribute('y1', y1);
+          lines[i].setAttribute('x2', x2);
+          lines[i].setAttribute('y2', y2);
+          lines[i].style.opacity = String(0.48 + 0.42 * ((z1 + z2 + 2) / 4));
+        });
+      };
+
+      const frame = now => {
+        const dt = Math.min(now - lastTime, 40);
+        lastTime = now;
+        if (!dragging && !reduceMotion) yaw += dt * 0.00007;
+        draw();
+        requestAnimationFrame(frame);
+      };
+
+      svg.addEventListener('pointerdown', event => {
+        dragging = true;
+        lastX = event.clientX;
+        lastY = event.clientY;
+        svg.setPointerCapture(event.pointerId);
+      });
+
+      svg.addEventListener('pointermove', event => {
+        if (!dragging) return;
+        yaw += (event.clientX - lastX) * 0.008;
+        pitch += (event.clientY - lastY) * 0.008;
+        pitch = Math.max(-1.35, Math.min(1.35, pitch));
+        lastX = event.clientX;
+        lastY = event.clientY;
+      });
+
+      const stopDrag = event => {
+        dragging = false;
+        if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+      };
+      svg.addEventListener('pointerup', stopDrag);
+      svg.addEventListener('pointercancel', stopDrag);
+
+      requestAnimationFrame(frame);
     })();
   </script>
 </body>
