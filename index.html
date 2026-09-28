@@ -320,14 +320,14 @@
         const mainOpacity = clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor;
 
         const maxRadius = Math.max(...points.map(point => Math.hypot(point[0], point[1])));
-        const outerRadius = maxRadius - 0.1;
+        const outerRadius = maxRadius;
         outerRing.setAttribute('r', outerRadius);
         outerRing.style.opacity = String(0.82 * mainOpacity);
         mainOverlay.style.opacity = String(mainOpacity);
 
         if (mainOpacity <= 0.001) return;
 
-        const innerRadius = maxRadius * Math.cos(Math.PI / 6) - 1.5;
+        const innerRadius = maxRadius * Math.cos(Math.PI / 6);
         innerRing.setAttribute('r', innerRadius);
 
         const markerPoints = {
@@ -354,7 +354,7 @@
           const length = Math.hypot(x, y) || 1;
           const ux = x / length;
           const uy = y / length;
-          const labelRadius = outerRadius + 5.3;
+          const labelRadius = outerRadius + 5.2;
           const angle = Math.atan2(uy, ux) * 180 / Math.PI;
           const glyphAngle = angle > 90 || angle < -90 ? angle + 180 : angle;
 
