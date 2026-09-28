@@ -23,10 +23,14 @@
       overflow: visible;
       touch-action: none;
       cursor: grab;
+      user-select: none;
     }
     #octahedron:active { cursor: grabbing; }
-    #octahedron line {
+    #octahedron line,
+    #octahedron circle,
+    #octahedron path {
       stroke: #fff;
+      fill: none;
       stroke-linecap: round;
       vector-effect: non-scaling-stroke;
     }
@@ -34,6 +38,39 @@
     #octahedron .axis {
       stroke-width: 0.9;
       opacity: 0.34;
+    }
+    #octahedron .overlay-ring {
+      stroke-width: 0.72;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #octahedron .main-overlay {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #octahedron .inner-ring,
+    #octahedron .axis-marker {
+      stroke-width: 0.62;
+    }
+    #octahedron .vertex-label,
+    #octahedron .axis-letter,
+    #octahedron .ring-text {
+      fill: #fff;
+      stroke: none;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+    }
+    #octahedron .vertex-label {
+      font: 7px Georgia, "Times New Roman", serif;
+      letter-spacing: 0.8px;
+    }
+    #octahedron .axis-letter {
+      font: italic 5.3px Georgia, "Times New Roman", serif;
+    }
+    #octahedron .ring-text {
+      font: 4.35px Georgia, "Times New Roman", serif;
+      letter-spacing: 0.42px;
     }
     @media (max-width: 700px) {
       #octahedron { width: min(68vw, 40vh); }
@@ -48,6 +85,7 @@
   <script>
     // Read AGENTS.md in full before editing this file.
     (() => {
+      const NS = 'http://www.w3.org/2000/svg';
       const host = location.hostname.toLowerCase();
       const philosopherStone = host === 'thephilosophersstone.com' || host === 'www.thephilosophersstone.com';
       const identity = philosopherStone ? "The Philosopher's Stone" : 'Epistemic Octahedron';
@@ -56,42 +94,144 @@
       document.querySelector('#app').setAttribute('aria-label', identity);
 
       const svg = document.querySelector('#octahedron');
+      const make = (name, className) => {
+        const node = document.createElementNS(NS, name);
+        if (className) node.setAttribute('class', className);
+        return node;
+      };
+
       const vertices = [
         [ 1, 0, 0], [-1, 0, 0],
         [ 0, 1, 0], [ 0,-1, 0],
         [ 0, 0, 1], [ 0, 0,-1]
       ];
+      const vertexLetters = ['E', 'P', 'M', 'C', 'W', 'K'];
       const axes = [[0, 1], [2, 3], [4, 5]];
-      const opposite = new Set(axes.map(([a, b]) => `${a}-${b}`));
+      const opposite = new Set(axes.map(pair => pair[0] + '-' + pair[1]));
       const edges = [];
+
       for (let a = 0; a < vertices.length; a++) {
         for (let b = a + 1; b < vertices.length; b++) {
-          if (!opposite.has(`${a}-${b}`)) edges.push([a, b]);
+          if (!opposite.has(a + '-' + b)) edges.push([a, b]);
         }
       }
 
       const axisLines = axes.map(() => {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('class', 'axis');
+        const line = make('line', 'axis');
         svg.appendChild(line);
         return line;
       });
 
       const lines = edges.map(() => {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('class', 'edge');
+        const line = make('line', 'edge');
         svg.appendChild(line);
         return line;
       });
 
-      let yaw = Math.PI / 4;
-      let pitch = Math.asin(1 / Math.sqrt(3));
+      const outerRing = make('circle', 'overlay-ring');
+      outerRing.setAttribute('cx', '0');
+      outerRing.setAttribute('cy', '0');
+      svg.appendChild(outerRing);
+
+      const mainOverlay = make('g', 'main-overlay');
+      svg.appendChild(mainOverlay);
+
+      const innerRing = make('circle', 'inner-ring');
+      innerRing.setAttribute('cx', '0');
+      innerRing.setAttribute('cy', '0');
+      mainOverlay.appendChild(innerRing);
+
+      const inscriptionPath = make('path');
+      inscriptionPath.setAttribute('id', 'inscription-path');
+      inscriptionPath.setAttribute('stroke', 'none');
+      mainOverlay.appendChild(inscriptionPath);
+
+      const vertexLabels = vertexLetters.map(letter => {
+        const text = make('text', 'vertex-label');
+        text.textContent = letter;
+        mainOverlay.appendChild(text);
+        return text;
+      });
+
+      const inscription = [
+        { letter: 'y', offset: '16.667%', text: '• accountable        to reality •' },
+        { letter: 'z', offset: '50%', text: 'meaning        relation •' },
+        { letter: 'x', offset: '83.333%', text: 'purposive        relation •' }
+      ];
+
+      const ringText = inscription.map(item => {
+        const text = make('text', 'ring-text');
+        const textPath = make('textPath');
+        textPath.setAttribute('href', '#inscription-path');
+        textPath.setAttribute('startOffset', item.offset);
+        textPath.setAttribute('text-anchor', 'middle');
+        textPath.textContent = item.text;
+        text.appendChild(textPath);
+        mainOverlay.appendChild(text);
+        return text;
+      });
+
+      const axisMarkers = [
+        { letter: 'y', angle: -Math.PI / 2 },
+        { letter: 'x', angle: 5 * Math.PI / 6 },
+        { letter: 'z', angle: Math.PI / 6 }
+      ].map(item => {
+        const group = make('g');
+        const circle = make('circle', 'axis-marker');
+        const text = make('text', 'axis-letter');
+        circle.setAttribute('r', '4.25');
+        text.textContent = item.letter;
+        group.appendChild(circle);
+        group.appendChild(text);
+        mainOverlay.appendChild(group);
+        return { group, circle, text, angle: item.angle };
+      });
+
+      const MAIN_PITCH = Math.asin(1 / Math.sqrt(3));
+      const snaps = [
+        { id: 'main', yaw: Math.PI / 4, pitch: MAIN_PITCH },
+        { id: 'top', yaw: Math.PI / 4, pitch: Math.PI / 2 },
+        { id: 'side', yaw: Math.PI / 2, pitch: 0 },
+        { id: 'bottom', yaw: Math.PI / 4, pitch: -Math.PI / 2 }
+      ];
+
+      let yaw = snaps[0].yaw;
+      let pitch = snaps[0].pitch;
+      let velocityYaw = 0;
+      let velocityPitch = 0;
       let dragging = false;
-      let hasInteracted = false;
+      let snapTarget = snaps[0];
       let lastX = 0;
       let lastY = 0;
-      let lastTime = performance.now();
+      let lastPointerTime = performance.now();
+      let lastFrameTime = performance.now();
+      let releasedAt = 0;
+
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const ROTATE_SPEED = 0.0075;
+      const MOMENTUM_DAMPING = 0.003;
+      const SNAP_SPEED = 0.00058;
+      const SPRING = 0.00012;
+      const SPRING_DAMPING = 0.012;
+      const PITCH_LIMIT = Math.PI / 2;
+
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const wrap = angle => Math.atan2(Math.sin(angle), Math.cos(angle));
+      const deltaYaw = target => wrap(target - yaw);
+      const distanceTo = target => Math.hypot(deltaYaw(target.yaw), target.pitch - pitch);
+
+      const nearestSnap = () => {
+        let best = snaps[0];
+        let bestDistance = distanceTo(best);
+        for (let i = 1; i < snaps.length; i++) {
+          const distance = distanceTo(snaps[i]);
+          if (distance < bestDistance) {
+            best = snaps[i];
+            bestDistance = distance;
+          }
+        }
+        return best;
+      };
 
       const rotate = ([x, y, z]) => {
         const cy = Math.cos(yaw), sy = Math.sin(yaw);
@@ -106,8 +246,58 @@
         return [x * scale, -y * scale, z];
       };
 
+      const fullCirclePath = radius => {
+        const angle = -5 * Math.PI / 6;
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+        return 'M ' + x + ' ' + y +
+          ' A ' + radius + ' ' + radius + ' 0 1 1 ' + (-x) + ' ' + (-y) +
+          ' A ' + radius + ' ' + radius + ' 0 1 1 ' + x + ' ' + y;
+      };
+
+      const drawOverlay = points => {
+        const speed = Math.hypot(velocityYaw, velocityPitch);
+        const nearest = nearestSnap();
+        const nearestDistance = distanceTo(nearest);
+        const mainDistance = distanceTo(snaps[0]);
+        const motionFactor = dragging ? 0 : clamp(1 - speed / 0.00135, 0, 1);
+        const ringOpacity = clamp(1 - nearestDistance / 0.18, 0, 1) * motionFactor;
+        const mainOpacity = clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor;
+
+        const maxRadius = Math.max(...points.map(point => Math.hypot(point[0], point[1])));
+        const outerRadius = maxRadius + 4;
+        outerRing.setAttribute('r', outerRadius);
+        outerRing.style.opacity = String(0.82 * ringOpacity);
+        mainOverlay.style.opacity = String(mainOpacity);
+
+        if (mainOpacity <= 0.001) return;
+
+        const innerRadius = maxRadius * Math.cos(Math.PI / 6) - 1.5;
+        const textRadius = innerRadius - 10.2;
+        innerRing.setAttribute('r', innerRadius);
+        inscriptionPath.setAttribute('d', fullCirclePath(textRadius));
+
+        vertexLabels.forEach((label, i) => {
+          const x = points[i][0];
+          const y = points[i][1];
+          const length = Math.hypot(x, y) || 1;
+          const labelRadius = outerRadius + 8.2;
+          label.setAttribute('x', x / length * labelRadius);
+          label.setAttribute('y', y / length * labelRadius);
+        });
+
+        axisMarkers.forEach(marker => {
+          const x = Math.cos(marker.angle) * textRadius;
+          const y = Math.sin(marker.angle) * textRadius;
+          marker.circle.setAttribute('cx', x);
+          marker.circle.setAttribute('cy', y);
+          marker.text.setAttribute('x', x);
+          marker.text.setAttribute('y', y + 0.15);
+        });
+      };
+
       const draw = () => {
-        const points = vertices.map(v => project(rotate(v)));
+        const points = vertices.map(vertex => project(rotate(vertex)));
 
         axes.forEach(([a, b], i) => {
           const [x1, y1] = points[a];
@@ -127,40 +317,131 @@
           lines[i].setAttribute('y2', y2);
           lines[i].style.opacity = String(0.48 + 0.42 * ((z1 + z2 + 2) / 4));
         });
+
+        drawOverlay(points);
+      };
+
+      const settlePhysics = (now, dt) => {
+        if (dragging) return;
+
+        if (reduceMotion) {
+          if (!snapTarget) snapTarget = nearestSnap();
+          yaw += deltaYaw(snapTarget.yaw);
+          pitch = snapTarget.pitch;
+          velocityYaw = 0;
+          velocityPitch = 0;
+          return;
+        }
+
+        if (snapTarget) {
+          const yawError = deltaYaw(snapTarget.yaw);
+          const pitchError = snapTarget.pitch - pitch;
+
+          velocityYaw += yawError * SPRING * dt;
+          velocityPitch += pitchError * SPRING * dt;
+
+          const springDamping = Math.exp(-SPRING_DAMPING * dt);
+          velocityYaw *= springDamping;
+          velocityPitch *= springDamping;
+
+          yaw += velocityYaw * dt;
+          pitch += velocityPitch * dt;
+
+          if (
+            Math.abs(yawError) < 0.00035 &&
+            Math.abs(pitchError) < 0.00035 &&
+            Math.hypot(velocityYaw, velocityPitch) < 0.000025
+          ) {
+            yaw += deltaYaw(snapTarget.yaw);
+            pitch = snapTarget.pitch;
+            velocityYaw = 0;
+            velocityPitch = 0;
+          }
+          return;
+        }
+
+        yaw += velocityYaw * dt;
+        pitch += velocityPitch * dt;
+
+        if (pitch > PITCH_LIMIT) {
+          pitch = PITCH_LIMIT;
+          velocityPitch *= -0.16;
+        } else if (pitch < -PITCH_LIMIT) {
+          pitch = -PITCH_LIMIT;
+          velocityPitch *= -0.16;
+        }
+
+        const momentumDamping = Math.exp(-MOMENTUM_DAMPING * dt);
+        velocityYaw *= momentumDamping;
+        velocityPitch *= momentumDamping;
+
+        if (
+          now - releasedAt > 110 &&
+          Math.hypot(velocityYaw, velocityPitch) < SNAP_SPEED
+        ) {
+          snapTarget = nearestSnap();
+        }
       };
 
       const frame = now => {
-        const dt = Math.min(now - lastTime, 40);
-        lastTime = now;
-        if (hasInteracted && !dragging && !reduceMotion) yaw += dt * 0.00007;
+        const dt = Math.min(now - lastFrameTime, 32);
+        lastFrameTime = now;
+        settlePhysics(now, dt);
         draw();
         requestAnimationFrame(frame);
       };
 
       svg.addEventListener('pointerdown', event => {
-        hasInteracted = true;
         dragging = true;
+        snapTarget = null;
+        velocityYaw = 0;
+        velocityPitch = 0;
         lastX = event.clientX;
         lastY = event.clientY;
+        lastPointerTime = performance.now();
         svg.setPointerCapture(event.pointerId);
       });
 
       svg.addEventListener('pointermove', event => {
         if (!dragging) return;
-        yaw += (event.clientX - lastX) * 0.008;
-        pitch += (event.clientY - lastY) * 0.008;
-        pitch = Math.max(-1.35, Math.min(1.35, pitch));
+
+        const now = performance.now();
+        const dt = Math.max(now - lastPointerTime, 1);
+        const yawDelta = (event.clientX - lastX) * ROTATE_SPEED;
+        const pitchDelta = (event.clientY - lastY) * ROTATE_SPEED;
+
+        yaw += yawDelta;
+        const nextPitch = clamp(pitch + pitchDelta, -PITCH_LIMIT, PITCH_LIMIT);
+        const appliedPitchDelta = nextPitch - pitch;
+        pitch = nextPitch;
+
+        const sampleYawVelocity = yawDelta / dt;
+        const samplePitchVelocity = appliedPitchDelta / dt;
+        velocityYaw = velocityYaw * 0.38 + sampleYawVelocity * 0.62;
+        velocityPitch = velocityPitch * 0.38 + samplePitchVelocity * 0.62;
+
         lastX = event.clientX;
         lastY = event.clientY;
+        lastPointerTime = now;
       });
 
       const stopDrag = event => {
+        if (!dragging) return;
         dragging = false;
+        releasedAt = performance.now();
         if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+
+        if (reduceMotion) {
+          velocityYaw = 0;
+          velocityPitch = 0;
+          snapTarget = nearestSnap();
+        }
       };
+
       svg.addEventListener('pointerup', stopDrag);
       svg.addEventListener('pointercancel', stopDrag);
 
+      draw();
       requestAnimationFrame(frame);
     })();
   </script>
