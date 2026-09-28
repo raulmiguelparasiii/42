@@ -36,7 +36,7 @@ The full paper does not need to be embedded or uploaded as a PDF. The website ma
 - One implementation file: `index.html`.
 - Black full-screen opening view with a centered white wireframe octahedron.
 - Octahedron is generated from six mathematical vertices, twelve outer edges, and three internal axis lines, with no 3D asset or dependency.
-- Subtle idle rotation; pointer/touch drag rotates it directly; reduced-motion users get a static idle state.
+- Orthographic projection removes depth-based size scaling while preserving 3D rotation. Subtle idle rotation; pointer/touch drag rotates it directly; reduced-motion users get a static idle state.
 - Hostname-sensitive identity is established in one place.
 - No navigation or theory presentation has been chosen yet.
 
