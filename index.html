@@ -51,6 +51,7 @@
     #octahedron .inner-ring,
     #octahedron .axis-marker {
       stroke-width: 0.62;
+      fill: #000;
     }
     #octahedron .vertex-label,
     #octahedron .axis-letter,
@@ -154,37 +155,37 @@
       });
 
       const inscription = [
-        { letter: 'y', offset: '16.667%', text: '• accountable        to reality •' },
-        { letter: 'z', offset: '50%', text: 'meaning        relation •' },
-        { letter: 'x', offset: '83.333%', text: 'purposive        relation •' }
+        { marker: 'y', offset: 16.667, before: '• accountable', after: 'to reality •' },
+        { marker: 'x', offset: 50, before: 'purposive', after: 'relation •' },
+        { marker: 'z', offset: 83.333, before: 'meaning', after: 'relation' }
       ];
 
-      const ringText = inscription.map(item => {
-        const text = make('text', 'ring-text');
-        const textPath = make('textPath');
-        textPath.setAttribute('href', '#inscription-path');
-        textPath.setAttribute('startOffset', item.offset);
-        textPath.setAttribute('text-anchor', 'middle');
-        textPath.textContent = item.text;
-        text.appendChild(textPath);
-        mainOverlay.appendChild(text);
-        return text;
+      const ringText = inscription.flatMap(item => {
+        return [
+          { item, side: 'before', value: item.before, anchor: 'end' },
+          { item, side: 'after', value: item.after, anchor: 'start' }
+        ].map(fragment => {
+          const text = make('text', 'ring-text');
+          const textPath = make('textPath');
+          textPath.setAttribute('href', '#inscription-path');
+          textPath.setAttribute('text-anchor', fragment.anchor);
+          textPath.textContent = fragment.value;
+          text.appendChild(textPath);
+          mainOverlay.appendChild(text);
+          return { ...fragment, textPath };
+        });
       });
 
-      const axisMarkers = [
-        { letter: 'y', angle: -Math.PI / 2 },
-        { letter: 'x', angle: 5 * Math.PI / 6 },
-        { letter: 'z', angle: Math.PI / 6 }
-      ].map(item => {
+      const axisMarkers = inscription.map(item => {
         const group = make('g');
         const circle = make('circle', 'axis-marker');
         const text = make('text', 'axis-letter');
-        circle.setAttribute('r', '4.25');
-        text.textContent = item.letter;
+        circle.setAttribute('r', '4.8');
+        text.textContent = item.marker;
         group.appendChild(circle);
         group.appendChild(text);
         mainOverlay.appendChild(group);
-        return { group, circle, text, angle: item.angle };
+        return { ...item, group, circle, text };
       });
 
       const MAIN_PITCH = Math.asin(1 / Math.sqrt(3));
@@ -247,12 +248,26 @@
       };
 
       const fullCirclePath = radius => {
-        const angle = -5 * Math.PI / 6;
+        const angle = -Math.PI / 6;
         const x = radius * Math.cos(angle);
         const y = radius * Math.sin(angle);
         return 'M ' + x + ' ' + y +
-          ' A ' + radius + ' ' + radius + ' 0 1 1 ' + (-x) + ' ' + (-y) +
-          ' A ' + radius + ' ' + radius + ' 0 1 1 ' + x + ' ' + y;
+          ' A ' + radius + ' ' + radius + ' 0 1 0 ' + (-x) + ' ' + (-y) +
+          ' A ' + radius + ' ' + radius + ' 0 1 0 ' + x + ' ' + y;
+      };
+
+      const lineIntersection = (a, b, c, d) => {
+        const rX = b[0] - a[0];
+        const rY = b[1] - a[1];
+        const sX = d[0] - c[0];
+        const sY = d[1] - c[1];
+        const denominator = rX * sY - rY * sX;
+        if (Math.abs(denominator) < 1e-6) return [0, 0];
+
+        const cax = c[0] - a[0];
+        const cay = c[1] - a[1];
+        const t = (cax * sY - cay * sX) / denominator;
+        return [a[0] + t * rX, a[1] + t * rY];
       };
 
       const drawOverlay = points => {
@@ -273,9 +288,31 @@
         if (mainOpacity <= 0.001) return;
 
         const innerRadius = maxRadius * Math.cos(Math.PI / 6) - 1.5;
-        const textRadius = innerRadius - 10.2;
         innerRing.setAttribute('r', innerRadius);
-        inscriptionPath.setAttribute('d', fullCirclePath(textRadius));
+
+        const markerPoints = {
+          y: lineIntersection(points[2], points[3], points[5], points[0]),
+          x: lineIntersection(points[0], points[1], points[5], points[3]),
+          z: lineIntersection(points[4], points[5], points[0], points[3])
+        };
+        const markerRadius = (
+          Math.hypot(...markerPoints.y) +
+          Math.hypot(...markerPoints.x) +
+          Math.hypot(...markerPoints.z)
+        ) / 3;
+        inscriptionPath.setAttribute('d', fullCirclePath(markerRadius));
+
+        const markerClearance = (
+          Math.asin(Math.min(0.99, 5.5 / markerRadius)) / (Math.PI * 2)
+        ) * 100;
+
+        ringText.forEach(fragment => {
+          const direction = fragment.side === 'before' ? -1 : 1;
+          fragment.textPath.setAttribute(
+            'startOffset',
+            (fragment.item.offset + direction * markerClearance).toFixed(3) + '%'
+          );
+        });
 
         vertexLabels.forEach((label, i) => {
           const x = points[i][0];
@@ -287,8 +324,7 @@
         });
 
         axisMarkers.forEach(marker => {
-          const x = Math.cos(marker.angle) * textRadius;
-          const y = Math.sin(marker.angle) * textRadius;
+          const [x, y] = markerPoints[marker.marker];
           marker.circle.setAttribute('cx', x);
           marker.circle.setAttribute('cy', y);
           marker.text.setAttribute('x', x);
