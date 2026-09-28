@@ -153,14 +153,6 @@
       innerRing.setAttribute('cy', '0');
       mainOverlay.appendChild(innerRing);
 
-      const inscriptionPath = make('path', 'inscription-path');
-      inscriptionPath.setAttribute('id', 'inscription-path');
-      mainOverlay.appendChild(inscriptionPath);
-
-      const reverseInscriptionPath = make('path', 'inscription-path');
-      reverseInscriptionPath.setAttribute('id', 'inscription-path-reverse');
-      mainOverlay.appendChild(reverseInscriptionPath);
-
       const vertexLabels = vertexLetters.map(letter => {
         const text = make('text', 'vertex-label');
         text.textContent = letter;
@@ -169,31 +161,37 @@
       });
 
       const inscription = [
-        { marker: 'y', offset: 83.333, reverse: true, before: 'accountable', after: 'to reality' },
-        { marker: 'x', offset: 50, reverse: false, before: 'purposive', after: 'relation' },
-        { marker: 'z', offset: 83.333, reverse: false, before: 'meaning', after: 'relation' }
+        { marker: 'y', before: 'accountable', after: 'to reality', start: -5 * Math.PI / 6, end: -Math.PI / 6 },
+        { marker: 'x', before: 'purposive', after: 'relation', start: 7 * Math.PI / 6, end: Math.PI / 2 },
+        { marker: 'z', before: 'meaning', after: 'relation', start: Math.PI / 2, end: -Math.PI / 6 }
       ];
 
-      const ringText = inscription.flatMap(item => {
-        return [
-          { item, side: 'before', value: item.before, anchor: 'end' },
-          { item, side: 'after', value: item.after, anchor: 'start' }
-        ].map(fragment => {
-          const text = make('text', 'ring-text');
-          const textPath = make('textPath');
-          textPath.setAttribute(
-            'href',
-            fragment.item.reverse ? '#inscription-path-reverse' : '#inscription-path'
-          );
-          textPath.setAttribute('text-anchor', fragment.anchor);
-          textPath.textContent = fragment.value;
-          text.appendChild(textPath);
-          mainOverlay.appendChild(text);
-          return { ...fragment, textPath };
-        });
+      const phraseGroups = inscription.map((item, index) => {
+        const path = make('path', 'inscription-path');
+        const id = 'inscription-sector-' + index;
+        path.setAttribute('id', id);
+        mainOverlay.appendChild(path);
+
+        const beforeText = make('text', 'ring-text');
+        const beforePath = make('textPath');
+        beforePath.setAttribute('href', '#' + id);
+        beforePath.setAttribute('text-anchor', 'end');
+        beforePath.textContent = item.before;
+        beforeText.appendChild(beforePath);
+        mainOverlay.appendChild(beforeText);
+
+        const afterText = make('text', 'ring-text');
+        const afterPath = make('textPath');
+        afterPath.setAttribute('href', '#' + id);
+        afterPath.setAttribute('text-anchor', 'start');
+        afterPath.textContent = item.after;
+        afterText.appendChild(afterPath);
+        mainOverlay.appendChild(afterText);
+
+        return { ...item, path, beforePath, afterPath };
       });
 
-      const ringDots = [-Math.PI / 6, 5 * Math.PI / 6, Math.PI / 2].map(angle => {
+      const ringDots = [-Math.PI / 6, Math.PI / 2, 7 * Math.PI / 6].map(angle => {
         const text = make('text', 'ring-dot');
         text.textContent = '•';
         mainOverlay.appendChild(text);
@@ -201,8 +199,8 @@
       });
 
       const AXIS_MARKER_RADIUS = 6.3;
-      const TEXT_RING_INSET = 8.5;
-      const REVERSED_TEXT_COMPENSATION = 2.4;
+      const TEXT_RING_INSET = 4.6;
+      const TEXT_MARKER_GAP = 11.5;
       const axisMarkers = inscription.map(item => {
         const group = make('g');
         const circle = make('circle', 'axis-marker');
@@ -274,14 +272,15 @@
         return [x * scale, -y * scale, z];
       };
 
-      const fullCirclePath = (radius, reverse = false) => {
-        const angle = -Math.PI / 6;
-        const x = radius * Math.cos(angle);
-        const y = radius * Math.sin(angle);
-        const sweep = reverse ? 1 : 0;
-        return 'M ' + x + ' ' + y +
-          ' A ' + radius + ' ' + radius + ' 0 1 ' + sweep + ' ' + (-x) + ' ' + (-y) +
-          ' A ' + radius + ' ' + radius + ' 0 1 ' + sweep + ' ' + x + ' ' + y;
+      const arcPath = (radius, startAngle, endAngle) => {
+        const x1 = Math.cos(startAngle) * radius;
+        const y1 = Math.sin(startAngle) * radius;
+        const x2 = Math.cos(endAngle) * radius;
+        const y2 = Math.sin(endAngle) * radius;
+        const delta = endAngle - startAngle;
+        const sweep = delta >= 0 ? 1 : 0;
+        return 'M ' + x1 + ' ' + y1 +
+          ' A ' + radius + ' ' + radius + ' 0 0 ' + sweep + ' ' + x2 + ' ' + y2;
       };
 
       const lineIntersection = (a, b, c, d) => {
@@ -326,20 +325,11 @@
           Math.hypot(...markerPoints.z)
         ) / 3;
         const textRadius = markerRadius - TEXT_RING_INSET;
-        inscriptionPath.setAttribute('d', fullCirclePath(textRadius));
-        reverseInscriptionPath.setAttribute(
-          'd',
-          fullCirclePath(textRadius - REVERSED_TEXT_COMPENSATION, true)
-        );
 
-        const markerClearance = 3.4;
-
-        ringText.forEach(fragment => {
-          const direction = fragment.side === 'before' ? -1 : 1;
-          fragment.textPath.setAttribute(
-            'startOffset',
-            (fragment.item.offset + direction * markerClearance).toFixed(3) + '%'
-          );
+        phraseGroups.forEach(group => {
+          group.path.setAttribute('d', arcPath(textRadius, group.start, group.end));
+          group.beforePath.setAttribute('startOffset', (50 - TEXT_MARKER_GAP) + '%');
+          group.afterPath.setAttribute('startOffset', (50 + TEXT_MARKER_GAP) + '%');
         });
 
         vertexLabels.forEach((label, i) => {
