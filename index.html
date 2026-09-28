@@ -48,10 +48,17 @@
       opacity: 0;
       pointer-events: none;
     }
-    #octahedron .inner-ring,
-    #octahedron .axis-marker {
+    #octahedron .inner-ring {
       stroke-width: 0.62;
+      fill: none;
+    }
+    #octahedron .axis-marker {
+      stroke-width: 0.68;
       fill: #000;
+    }
+    #octahedron .inscription-path {
+      stroke: none;
+      fill: none;
     }
     #octahedron .vertex-label,
     #octahedron .axis-letter,
@@ -67,7 +74,7 @@
       letter-spacing: 0.8px;
     }
     #octahedron .axis-letter {
-      font: italic 5.3px Georgia, "Times New Roman", serif;
+      font: italic 7px Georgia, "Times New Roman", serif;
     }
     #octahedron .ring-text {
       font: 4.35px Georgia, "Times New Roman", serif;
@@ -142,9 +149,8 @@
       innerRing.setAttribute('cy', '0');
       mainOverlay.appendChild(innerRing);
 
-      const inscriptionPath = make('path');
+      const inscriptionPath = make('path', 'inscription-path');
       inscriptionPath.setAttribute('id', 'inscription-path');
-      inscriptionPath.setAttribute('stroke', 'none');
       mainOverlay.appendChild(inscriptionPath);
 
       const vertexLabels = vertexLetters.map(letter => {
@@ -176,11 +182,12 @@
         });
       });
 
+      const AXIS_MARKER_RADIUS = 6.3;
       const axisMarkers = inscription.map(item => {
         const group = make('g');
         const circle = make('circle', 'axis-marker');
         const text = make('text', 'axis-letter');
-        circle.setAttribute('r', '4.8');
+        circle.setAttribute('r', AXIS_MARKER_RADIUS);
         text.textContent = item.marker;
         group.appendChild(circle);
         group.appendChild(text);
@@ -192,7 +199,7 @@
       const snaps = [
         { id: 'main', yaw: Math.PI / 4, pitch: MAIN_PITCH },
         { id: 'top', yaw: Math.PI / 4, pitch: Math.PI / 2 },
-        { id: 'side', yaw: Math.PI / 2, pitch: 0 },
+        { id: 'side', yaw: Math.PI / 4, pitch: 0 },
         { id: 'bottom', yaw: Math.PI / 4, pitch: -Math.PI / 2 }
       ];
 
@@ -272,17 +279,14 @@
 
       const drawOverlay = points => {
         const speed = Math.hypot(velocityYaw, velocityPitch);
-        const nearest = nearestSnap();
-        const nearestDistance = distanceTo(nearest);
         const mainDistance = distanceTo(snaps[0]);
         const motionFactor = dragging ? 0 : clamp(1 - speed / 0.00135, 0, 1);
-        const ringOpacity = clamp(1 - nearestDistance / 0.18, 0, 1) * motionFactor;
         const mainOpacity = clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor;
 
         const maxRadius = Math.max(...points.map(point => Math.hypot(point[0], point[1])));
         const outerRadius = maxRadius + 4;
         outerRing.setAttribute('r', outerRadius);
-        outerRing.style.opacity = String(0.82 * ringOpacity);
+        outerRing.style.opacity = String(0.82 * mainOpacity);
         mainOverlay.style.opacity = String(mainOpacity);
 
         if (mainOpacity <= 0.001) return;
@@ -303,7 +307,7 @@
         inscriptionPath.setAttribute('d', fullCirclePath(markerRadius));
 
         const markerClearance = (
-          Math.asin(Math.min(0.99, 5.5 / markerRadius)) / (Math.PI * 2)
+          Math.asin(Math.min(0.99, (AXIS_MARKER_RADIUS + 0.55) / markerRadius)) / (Math.PI * 2)
         ) * 100;
 
         ringText.forEach(fragment => {
