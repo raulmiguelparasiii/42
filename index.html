@@ -84,9 +84,10 @@
         return line;
       });
 
-      let yaw = 0.64;
-      let pitch = 0.24;
+      let yaw = Math.PI / 4;
+      let pitch = Math.asin(1 / Math.sqrt(3));
       let dragging = false;
+      let hasInteracted = false;
       let lastX = 0;
       let lastY = 0;
       let lastTime = performance.now();
@@ -131,12 +132,13 @@
       const frame = now => {
         const dt = Math.min(now - lastTime, 40);
         lastTime = now;
-        if (!dragging && !reduceMotion) yaw += dt * 0.00007;
+        if (hasInteracted && !dragging && !reduceMotion) yaw += dt * 0.00007;
         draw();
         requestAnimationFrame(frame);
       };
 
       svg.addEventListener('pointerdown', event => {
+        hasInteracted = true;
         dragging = true;
         lastX = event.clientX;
         lastY = event.clientY;
