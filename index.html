@@ -27,9 +27,13 @@
     #octahedron:active { cursor: grabbing; }
     #octahedron line {
       stroke: #fff;
-      stroke-width: 1.15;
       stroke-linecap: round;
       vector-effect: non-scaling-stroke;
+    }
+    #octahedron .edge { stroke-width: 1.15; }
+    #octahedron .axis {
+      stroke-width: 0.9;
+      opacity: 0.34;
     }
     @media (max-width: 700px) {
       #octahedron { width: min(68vw, 40vh); }
@@ -57,7 +61,8 @@
         [ 0, 1, 0], [ 0,-1, 0],
         [ 0, 0, 1], [ 0, 0,-1]
       ];
-      const opposite = new Set(['0-1', '2-3', '4-5']);
+      const axes = [[0, 1], [2, 3], [4, 5]];
+      const opposite = new Set(axes.map(([a, b]) => `${a}-${b}`));
       const edges = [];
       for (let a = 0; a < vertices.length; a++) {
         for (let b = a + 1; b < vertices.length; b++) {
@@ -65,8 +70,16 @@
         }
       }
 
+      const axisLines = axes.map(() => {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('class', 'axis');
+        svg.appendChild(line);
+        return line;
+      });
+
       const lines = edges.map(() => {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('class', 'edge');
         svg.appendChild(line);
         return line;
       });
@@ -95,6 +108,16 @@
 
       const draw = () => {
         const points = vertices.map(v => project(rotate(v)));
+
+        axes.forEach(([a, b], i) => {
+          const [x1, y1] = points[a];
+          const [x2, y2] = points[b];
+          axisLines[i].setAttribute('x1', x1);
+          axisLines[i].setAttribute('y1', y1);
+          axisLines[i].setAttribute('x2', x2);
+          axisLines[i].setAttribute('y2', y2);
+        });
+
         edges.forEach(([a, b], i) => {
           const [x1, y1, z1] = points[a];
           const [x2, y2, z2] = points[b];
