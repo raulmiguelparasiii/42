@@ -421,6 +421,7 @@
           const uy = y / length;
           const angle = Math.atan2(uy, ux) * 180 / Math.PI;
           const glyphAngle = angle > 90 || angle < -90 ? angle + 180 : angle;
+          const suffixAngle = (i === 1 || i === 5) ? glyphAngle + 180 : glyphAngle;
 
           label.setAttribute('x', ux * labelRadius);
           label.setAttribute('y', uy * labelRadius);
@@ -431,7 +432,7 @@
             const ly = uy * radius;
             letter.setAttribute('x', lx);
             letter.setAttribute('y', ly);
-            letter.setAttribute('transform', 'rotate(' + glyphAngle + ' ' + lx + ' ' + ly + ')');
+            letter.setAttribute('transform', 'rotate(' + suffixAngle + ' ' + lx + ' ' + ly + ')');
           });
         });
 
