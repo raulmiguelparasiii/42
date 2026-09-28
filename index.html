@@ -101,8 +101,7 @@
       };
 
       const project = ([x, y, z]) => {
-        const camera = 4.2;
-        const scale = 86 * camera / (camera - z);
+        const scale = 86;
         return [x * scale, -y * scale, z];
       };
 
