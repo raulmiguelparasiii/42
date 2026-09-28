@@ -40,7 +40,7 @@ The full paper does not need to be embedded or uploaded as a PDF. The website ma
 - Direct drag imparts angular momentum. Released motion decays freely, then the nearest of four anchors magnetically captures it with a lightly underdamped spring/overshoot: main, top, side, bottom. The side anchor keeps the main yaw (π/4) and flattens pitch to 0 to avoid the quadrant-looking orientation.
 - There is no continuous idle rotation.
 - Set-angle overlays fade in only as motion becomes slow and an anchor is approached. The outer circle and all current overlay content appear only at the main anchor.
-- Main overlay: adaptive outer ring just beyond the projected vertices; E/P/M/C/W/K labels outside it; an inner inscribed ring; larger black-filled x/y/z marker circles anchored to exact axis/edge intersections (y: MC×KE, x: EP×KC, z: WK×EC). Their shared radius guides curved inscription text only; no visible ring line is drawn there.
+- Main overlay: adaptive outer ring just beyond the projected vertices; E/P/M/C/W/K labels outside it; an inner inscribed ring; larger black-filled x/y/z marker circles anchored to exact axis/edge intersections (y: MC×KE, x: EP×KC, z: WK×EC). Their shared radius guides curved inscription text only; no visible ring line is drawn there. Three separator dots are independently placed 120° apart; the upper accountability phrase uses a reversed invisible path so it reads upright, with extra clearance around each x/y/z marker.
 - Hostname-sensitive identity is established in one place. No conventional navigation or theory presentation has been chosen yet.
 
 ## Decisions / Invariants
