@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#000000">
+  <title>Epistemic Octahedron</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; min-height: 100%; background: #000; }
+    body { min-height: 100dvh; overflow: hidden; }
+    #app { width: 100%; height: 100dvh; background: #000; }
+  </style>
+</head>
+<body>
+  <main id="app" aria-label="Epistemic Octahedron"></main>
+
+  <script>
+    // Read AGENTS.md in full before editing this file.
+    (() => {
+      const host = location.hostname.toLowerCase();
+      const philosopherStone = host === 'thephilosophersstone.com' || host === 'www.thephilosophersstone.com';
+      const identity = philosopherStone ? "The Philosopher's Stone" : 'Epistemic Octahedron';
+
+      document.title = identity;
+      document.querySelector('#app').setAttribute('aria-label', identity);
+
+      // Interactive octahedron and theory presentation will be built here
+      // only after their behavior and visual language are intentionally defined.
+    })();
+  </script>
+</body>
+</html>
