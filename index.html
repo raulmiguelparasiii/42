@@ -320,7 +320,7 @@
         const mainOpacity = clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor;
 
         const maxRadius = Math.max(...points.map(point => Math.hypot(point[0], point[1])));
-        const outerRadius = maxRadius + 4;
+        const outerRadius = maxRadius - 1.5;
         outerRing.setAttribute('r', outerRadius);
         outerRing.style.opacity = String(0.82 * mainOpacity);
         mainOverlay.style.opacity = String(mainOpacity);
@@ -354,7 +354,7 @@
           const length = Math.hypot(x, y) || 1;
           const ux = x / length;
           const uy = y / length;
-          const labelRadius = outerRadius + 8.2;
+          const labelRadius = outerRadius + 6.5;
           const angle = Math.atan2(uy, ux) * 180 / Math.PI;
           const glyphAngle = angle > 90 || angle < -90 ? angle + 180 : angle;
 
@@ -362,7 +362,7 @@
           label.setAttribute('y', uy * labelRadius);
 
           conceptSuffixes[i].forEach((letter, index) => {
-            const radius = labelRadius + 5.3 + index * 3.15;
+            const radius = labelRadius + 8.0 + index * 3.15;
             const lx = ux * radius;
             const ly = uy * radius;
             letter.setAttribute('x', lx);
