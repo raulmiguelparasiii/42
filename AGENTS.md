@@ -9,7 +9,7 @@ Build one enduring, extremely lean website for the same work under two public id
 
 Both domains run the same code and content. The current hostname determines the displayed identity. A visitor stays on whichever domain they entered.
 
-The site should feel like an object encountered directly, not a conventional informational website. The opening view is a black field with the octahedron centered on desktop and mobile. No permanent visible header or conventional navbar. Interaction, motion, and disclosure should stay subtle.
+The site should feel like an object encountered directly, not a conventional informational website. The opening view is a black field with the octahedron centered on desktop and mobile. No permanent visible header or conventional navbar. Interaction, motion, and disclosure should stay subtle. The visual language may develop toward a precise magic-circle/interface treatment rather than a conventional 3D-object presentation.
 
 The full paper does not need to be embedded or uploaded as a PDF. The website may eventually express its material in a compact, web-native form on one main page without making the initial experience heavy.
 
@@ -35,23 +35,28 @@ The full paper does not need to be embedded or uploaded as a PDF. The website ma
 ## Current State
 - One implementation file: `index.html`.
 - Black full-screen opening view with a centered white wireframe octahedron.
-- Octahedron is generated from six mathematical vertices, twelve outer edges, and three internal axis lines, with no 3D asset or dependency.
-- Orthographic projection removes depth-based size scaling while preserving 3D rotation. The opening orientation is the exact symmetric face-on star view (yaw π/4, pitch asin(1/√3)); it remains still until first interaction. After interaction, subtle idle rotation resumes when not dragging; reduced-motion users remain static.
-- Hostname-sensitive identity is established in one place.
-- No navigation or theory presentation has been chosen yet.
+- Geometry: six vertices, twelve outer edges, three internal axes; orthographic projection; no 3D asset or library.
+- Default orientation is the exact symmetric face-on star view: yaw π/4, pitch asin(1/√3).
+- Direct drag imparts angular momentum. Released motion decays freely, then the nearest of four anchors magnetically captures it with a lightly underdamped spring/overshoot: main, top, side, bottom.
+- There is no continuous idle rotation.
+- Set-angle overlays fade in only as motion becomes slow and an anchor is approached. The common outer ring can appear at any anchor; only the main anchor has detailed interface content so far.
+- Main overlay: adaptive outer ring just beyond the projected vertices; E/P/M/C/W/K labels outside it; an inner inscribed ring; three 120°-spaced x/y/z markers; curved inscription text for “accountable to reality”, “purposive relation”, and “meaning relation”.
+- Hostname-sensitive identity is established in one place. No conventional navigation or theory presentation has been chosen yet.
 
 ## Decisions / Invariants
-- One codebase serves both domains.
-- Domain identity changes presentation naming, not the underlying theory.
-- No forced redirect between the two domains.
+- One codebase serves both domains; no forced redirect.
+- Domain identity changes naming, not underlying theory.
 - No permanent visible header by default.
 - Desktop and mobile are first-class targets.
-- The opening experience must remain fast even when the site eventually contains substantial theory text.
-- Keep the codebase compact enough that its active implementation can be reread rather than guessed at.
-- The octahedron should remain geometrically generated and lightweight unless a later visual requirement clearly justifies more machinery.
+- Opening experience must stay fast as theory content grows.
+- Keep active implementation compact enough to reread rather than guess at.
+- Octahedron stays geometrically generated and lightweight unless a later visual requirement clearly earns more machinery.
+- Projection remains orthographic unless intentionally revisited.
+- Snap overlays are screen-space interface geometry derived from the current projected shape, not a second 3D object.
+- Do not invent detailed top/side/bottom overlay content until it is intentionally designed.
 
 ## Implementation Map
-- `index.html` — complete current site: shell, styling, domain identity, octahedron geometry/projection, idle motion, and pointer/touch input.
+- `index.html` — complete current site: shell, domain identity, octahedron geometry/projection, inertial drag + magnetic snapping, and set-angle overlay rendering.
 
 ## Threshold for splitting files
-Do not split code merely for organization. Split only when a section becomes large enough that keeping it together makes full inspection harder. When splitting, update this map with each file’s ownership and dependency boundaries.
+Do not split code merely for organization. Split only when keeping a section together makes full inspection harder. When splitting, update this map with each file’s ownership and dependency boundaries.
