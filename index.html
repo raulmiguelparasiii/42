@@ -11,15 +11,21 @@
     html, body { margin: 0; width: 100%; min-height: 100%; background: #000; }
     body { min-height: 100dvh; overflow: hidden; }
     #app {
+      position: relative;
       display: grid;
       place-items: center;
       width: 100%;
       height: 100dvh;
       background: #000;
     }
-    #octahedron {
+    #stone-shell {
+      position: relative;
       width: min(67.2vw, 67.2vh);
       aspect-ratio: 1;
+    }
+    #octahedron {
+      width: 100%;
+      height: 100%;
       overflow: visible;
       touch-action: none;
       cursor: grab;
@@ -97,15 +103,199 @@
     #octahedron .ring-dot {
       font: 5.2px Georgia, "Times New Roman", serif;
     }
+    #octahedron .top-overlay,
+    #octahedron .explainer-overlay {
+      pointer-events: none;
+    }
+    #octahedron .top-concept,
+    #octahedron .explainer-concept,
+    #octahedron .explainer-callout {
+      fill: #fff;
+      stroke: none;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+    }
+    #octahedron .top-concept {
+      font: 4.4px Georgia, "Times New Roman", serif;
+      letter-spacing: 0.28px;
+    }
+    #octahedron .explainer-concept {
+      font: 5px Georgia, "Times New Roman", serif;
+      letter-spacing: 0.24px;
+    }
+    #octahedron .explainer-line,
+    #octahedron .explainer-leader {
+      stroke: #fff;
+      fill: none;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+    #octahedron .explainer-line { stroke-width: 1.1; }
+    #octahedron .explainer-leader {
+      stroke-width: 0.72;
+      opacity: 0.72;
+    }
+    #octahedron .explainer-point {
+      stroke: #fff;
+      stroke-width: 0.82;
+      fill: #000;
+      vector-effect: non-scaling-stroke;
+    }
+    #octahedron .explainer-callout {
+      font: italic 4px Georgia, "Times New Roman", serif;
+      letter-spacing: 0.16px;
+    }
+    #explainer-launch,
+    #explainer-session button {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      font: inherit;
+      cursor: pointer;
+      padding: 0;
+    }
+    #explainer-launch {
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 15px);
+      transform: translateX(-50%);
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      white-space: nowrap;
+      opacity: 0.78;
+      font: 12px Georgia, "Times New Roman", serif;
+      letter-spacing: 0.18px;
+    }
+    #explainer-launch:hover { opacity: 1; }
+    #explainer-launch .play-glyph {
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.52);
+      border-radius: 50%;
+      font: 9px Arial, sans-serif;
+      padding-left: 1px;
+    }
+    #explainer-session {
+      position: absolute;
+      left: 50%;
+      top: calc(100% + 10px);
+      transform: translateX(-50%);
+      width: min(760px, 92vw);
+      color: #fff;
+      text-align: center;
+      font-family: Georgia, "Times New Roman", serif;
+      z-index: 4;
+    }
+    #explainer-session[hidden] { display: none; }
+    .explainer-title {
+      font-size: 12px;
+      letter-spacing: .28px;
+      opacity: .82;
+      margin-bottom: 8px;
+    }
+    .explainer-transport {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+    .explainer-transport button {
+      min-width: 36px;
+      opacity: .72;
+      font-size: 11px;
+      line-height: 24px;
+    }
+    .explainer-transport button:hover { opacity: 1; }
+    #explainer-toggle {
+      width: 30px;
+      height: 30px;
+      border: 1px solid rgba(255,255,255,.55) !important;
+      border-radius: 50% !important;
+      opacity: .95 !important;
+      font-family: Arial, sans-serif !important;
+      font-size: 10px !important;
+    }
+    #explainer-stop {
+      font-size: 9px !important;
+      opacity: .48 !important;
+    }
+    .explainer-progress-row {
+      display: grid;
+      grid-template-columns: 34px 1fr 34px;
+      align-items: center;
+      gap: 7px;
+      margin-top: 5px;
+      font: 9px Arial, sans-serif;
+      opacity: .52;
+    }
+    #explainer-progress {
+      width: 100%;
+      height: 12px;
+      margin: 0;
+      accent-color: #fff;
+      cursor: pointer;
+    }
+    #explainer-caption {
+      margin: 8px auto 0;
+      max-width: 680px;
+      min-height: 2.8em;
+      font-size: 12px;
+      line-height: 1.42;
+      letter-spacing: .08px;
+      opacity: .86;
+      text-wrap: balance;
+    }
     @media (max-width: 700px) {
-      #octahedron { width: min(108.8vw, 64vh); }
+      #stone-shell { width: min(108.8vw, 64vh); }
       #octahedron .outer-ring-text { font-size: 5.46px; }
+      #octahedron .top-concept { font-size: 5.2px; }
+      #explainer-launch {
+        top: calc(100% + 12px);
+        font-size: 11px;
+      }
+      #explainer-session { top: calc(100% + 7px); width: 94vw; }
+      .explainer-title { font-size: 10.5px; margin-bottom: 5px; }
+      .explainer-transport { gap: 13px; }
+      #explainer-caption {
+        margin-top: 5px;
+        max-width: 90vw;
+        font-size: 10.5px;
+        line-height: 1.34;
+        max-height: 4.1em;
+        overflow: hidden;
+      }
     }
   </style>
 </head>
 <body>
   <main id="app" aria-label="Epistemic Octahedron">
-    <svg id="octahedron" viewBox="-120 -120 240 240" aria-hidden="true"></svg>
+    <div id="stone-shell">
+      <svg id="octahedron" viewBox="-120 -120 240 240" aria-hidden="true"></svg>
+      <button id="explainer-launch" type="button" aria-label="Play The structure in first principles">
+        <span class="play-glyph">▶</span>
+        <span>The structure in first principles</span>
+      </button>
+      <section id="explainer-session" hidden aria-label="The structure in first principles">
+        <div class="explainer-title">The structure in first principles</div>
+        <div class="explainer-transport">
+          <button id="explainer-back" type="button" aria-label="Back 10 seconds">↶ 10</button>
+          <button id="explainer-toggle" type="button" aria-label="Pause">Ⅱ</button>
+          <button id="explainer-forward" type="button" aria-label="Forward 10 seconds">10 ↷</button>
+          <button id="explainer-stop" type="button" aria-label="Stop">■</button>
+        </div>
+        <div class="explainer-progress-row">
+          <span id="explainer-elapsed">0:00</span>
+          <input id="explainer-progress" type="range" min="0" max="1" step="0.1" value="0" aria-label="Explainer progress">
+          <span id="explainer-total">0:00</span>
+        </div>
+        <div id="explainer-caption" aria-live="polite"></div>
+      </section>
+    </div>
   </main>
 
   <script>
@@ -120,6 +310,17 @@
       document.querySelector('#app').setAttribute('aria-label', identity);
 
       const svg = document.querySelector('#octahedron');
+      const app = document.querySelector('#app');
+      const explainerLaunch = document.querySelector('#explainer-launch');
+      const explainerSession = document.querySelector('#explainer-session');
+      const explainerToggle = document.querySelector('#explainer-toggle');
+      const explainerBack = document.querySelector('#explainer-back');
+      const explainerForward = document.querySelector('#explainer-forward');
+      const explainerStop = document.querySelector('#explainer-stop');
+      const explainerProgress = document.querySelector('#explainer-progress');
+      const explainerElapsed = document.querySelector('#explainer-elapsed');
+      const explainerTotal = document.querySelector('#explainer-total');
+      const explainerCaption = document.querySelector('#explainer-caption');
       const make = (name, className) => {
         const node = document.createElementNS(NS, name);
         if (className) node.setAttribute('class', className);
@@ -162,6 +363,49 @@
 
       const mainOverlay = make('g', 'main-overlay');
       svg.appendChild(mainOverlay);
+
+      const topOverlay = make('g', 'top-overlay');
+      topOverlay.style.opacity = '0';
+      svg.appendChild(topOverlay);
+      const topConcepts = [
+        { vertex: 5, text: 'Knowledge' },
+        { vertex: 0, text: 'Empathy' },
+        { vertex: 1, text: 'Practicality' },
+        { vertex: 4, text: 'Wisdom' }
+      ].map(item => {
+        const text = make('text', 'top-concept');
+        text.textContent = item.text;
+        topOverlay.appendChild(text);
+        return { ...item, node: text };
+      });
+
+      const explainerOverlay = make('g', 'explainer-overlay');
+      explainerOverlay.style.opacity = '0';
+      svg.appendChild(explainerOverlay);
+      const explainerLines = {
+        ep: make('line', 'explainer-line'),
+        mcUp: make('line', 'explainer-line'),
+        mcDown: make('line', 'explainer-line'),
+        kw: make('line', 'explainer-line')
+      };
+      Object.values(explainerLines).forEach(line => explainerOverlay.appendChild(line));
+      const explainerPoint = make('circle', 'explainer-point');
+      explainerPoint.setAttribute('r', '2.7');
+      explainerOverlay.appendChild(explainerPoint);
+      const explainerConcepts = ['E','P','M','C','W','K'].map(letter => {
+        const text = make('text', 'explainer-concept');
+        explainerOverlay.appendChild(text);
+        return { letter, node: text };
+      });
+      const explainerCalloutNodes = Array.from({ length: 4 }, () => {
+        const group = make('g');
+        const line = make('line', 'explainer-leader');
+        const text = make('text', 'explainer-callout');
+        group.appendChild(line);
+        group.appendChild(text);
+        explainerOverlay.appendChild(group);
+        return { group, line, text };
+      });
 
       const innerRing = make('circle', 'inner-ring');
       innerRing.setAttribute('cx', '0');
@@ -289,6 +533,304 @@
         { id: 'bottom', yaw: Math.PI / 4, pitch: -Math.PI / 2 }
       ];
 
+      const EXPLAINER_SCRIPT = `What Makes a Person Mature?
+
+Two people say, “I see no problem.”
+
+One has carefully considered the consequences, understood the people involved, and worked through the difficulties.
+
+The other refuses to look.
+
+Same sentence. Completely different relationship with reality.
+
+Now imagine a third person who has never encountered the problem.
+
+They see no problem either.
+
+So we have three people: someone who has understood, someone who has shut reality out, and someone who has not yet begun.
+
+How do we distinguish them?
+
+That question leads us to this structure.
+
+And we'll build it, starting with a line.
+
+Imagine someone you love needs money.
+
+You want to help. You know what they are going through. You cannot bear to leave them struggling.
+
+Put empathy on this side.
+
+But you have rent due. You have responsibilities. Giving them everything they need could leave both of you in trouble.
+
+Put practicality on the other side.
+
+You can feel the pull.
+
+“What about them?”
+
+“What about what I can actually do?”
+
+Both questions concern something real.
+
+If concern takes over completely, you may promise help you cannot sustain.
+
+If practicality takes over completely, you may protect your finances while treating someone’s suffering as irrelevant.
+
+So what would maturity look like?
+
+You might give a smaller amount. You might help another way. You might need to say no.
+
+The answer depends on the situation.
+
+What matters is whether both realities helped determine your answer.
+
+Their suffering counted. Your constraints counted. Neither was allowed to make the other disappear.
+
+That is integration.
+
+Place it in the middle.
+
+But now we have a problem.
+
+Before you knew anything about this situation, you also had no leaning toward either side.
+
+You were in the middle then, too.
+
+How can the same middle represent both understanding and absence?
+
+It cannot distinguish them by itself.
+
+We need another direction.
+
+Leave absence at the origin.
+
+Place the integrated stance above it.
+
+Now we can distinguish someone who has not formed a relationship with the situation from someone who has worked through its relevant pressures.
+
+And what develops a person from that absence?
+
+Experience.
+
+You experience suffering, and empathy develops.
+
+You experience consequences, and practicality develops.
+
+You experience how each must correct the other, and integration can develop.
+
+Notice that experience can take you in different directions.
+
+A person can spend years learning to care and still struggle to recognize limits.
+
+Another can spend years learning what works and still struggle to recognize whom it hurts.
+
+Both have developed. Both have learned.
+
+Yet something remains unresolved.
+
+Let’s look at what that something is.
+
+When a stance built around empathy encounters a practical consequence it cannot account for, reality pushes back.
+
+When a stance built around practicality encounters suffering it has excluded, reality pushes back.
+
+I call that friction.
+
+Something about the stance fails to accommodate something relevant about the world.
+
+And this is where the vertical direction becomes important.
+
+Will you allow that pressure to change your stance?
+
+Can a practical limit change how you help?
+
+Can another person’s suffering change what you consider an acceptable solution?
+
+When the answer is yes, reality has corrective authority.
+
+That is answerability.
+
+As the relevant pressures become integrated, the one-sidedness is resolved.
+
+This does not mean the decision becomes painless.
+
+You may understand perfectly why you must say no and still hate having to say it.
+
+Maturity does not require a comfortable world.
+
+It requires a judgment that remains answerable to the world it faces.
+
+But there is another way to make the friction disappear.
+
+You can say, “As long as my intentions are good, the consequences don’t matter.”
+
+Or, “As long as it works for me, their suffering doesn’t matter.”
+
+Now the conflict becomes easier.
+
+You have removed something’s permission to challenge you.
+
+That is insulation.
+
+Follow it far enough, and a person can become remarkably settled.
+
+Every objection has an explanation. Every failure confirms the belief. Every inconvenient fact becomes evidence that the fact itself should be distrusted.
+
+The stance is protected.
+
+We now have three distinct conditions.
+
+At the origin: no formed orientation.
+
+Above it: the relevant pressures have been integrated.
+
+Below it: their corrective authority has been shut out.
+
+This explains our three people saying, “I see no problem.”
+
+Their outward certainty tells us very little.
+
+We need to understand what produced it.
+
+Now return to the person asking for money.
+
+We have discussed concern and constraint. Together, they organize purpose: what matters and what can actually be done.
+
+But how do you know what is happening?
+
+Perhaps you have a message, a bank statement, a story.
+
+That is information.
+
+And how do you understand it?
+
+Is this an emergency? A recurring pattern? Is the person asking for help, or are you assuming they are?
+
+That requires context and interpretation.
+
+We need a second horizontal relation.
+
+Knowledge supplies informational grounding.
+
+Wisdom supplies contextual understanding.
+
+Facts can be accurate while their interpretation is wrong.
+
+An interpretation can be sophisticated while its factual basis is weak.
+
+These two functions must also correct each other.
+
+Together, they organize meaning.
+
+Now the whole structure is visible.
+
+Purpose: concern and constraint.
+
+Meaning: information and interpretation.
+
+Accountability: whether reality can govern and correct their organization.
+
+The whole stance is represented as one unit.
+
+Its position describes how that stance is organized. It does not count how much compassion or knowledge a person possesses.
+
+At the mature limit, none of those functions disappears.
+
+They remain available, integrated, and answerable.
+
+A crisis may demand decisive practicality.
+
+Caregiving may demand sustained empathy.
+
+A technical question may demand detailed knowledge.
+
+An unfamiliar situation may demand careful interpretation.
+
+Maturity allows the situation to determine what leads, while the other relevant considerations retain their authority.
+
+That is the central claim of the Stone.
+
+And it changes the question we ask about ourselves.
+
+Instead of asking only, “Am I knowledgeable?” we can ask, “What am I failing to understand?”
+
+Instead of asking only, “Do I care?” we can ask, “Can what I’m proposing actually help?”
+
+Instead of asking only, “Does this work?” we can ask, “What cost have I kept outside the decision?”
+
+And beneath all three:
+
+“What am I allowing to correct me?”
+
+I want this structure to be understandable to someone on a factory floor, someone in a classroom, and someone making decisions that affect millions of people.
+
+Because every one of us knows what it feels like to defend a strength while overlooking a failure.
+
+And every one of us has encountered reality telling us something we would rather not hear.
+
+The possibility of maturity begins when that reality is allowed to matter.
+
+The question is whether we let it change how we understand, what we value, and what we do.`;
+
+      const EXPLAINER_WPS = 2.35;
+      const explainerSegments = EXPLAINER_SCRIPT
+        .split(/\n\s*\n/)
+        .map(text => text.trim())
+        .filter(Boolean)
+        .map(text => {
+          const words = text.split(/\s+/).length;
+          return { text, duration: Math.max(1.75, words / EXPLAINER_WPS + 0.35), start: 0, end: 0 };
+        });
+      let explainerTotalDuration = 0;
+      explainerSegments.forEach(segment => {
+        segment.start = explainerTotalDuration;
+        explainerTotalDuration += segment.duration;
+        segment.end = explainerTotalDuration;
+      });
+      const explainerTimeFor = needle => {
+        const segment = explainerSegments.find(item => item.text.includes(needle));
+        return segment ? segment.start : 0;
+      };
+      const explainerCameras = {
+        purposeTop: { id: 'explainer-purpose-top', yaw: 0, pitch: Math.PI / 2 },
+        purposeSide: { id: 'explainer-purpose-side', yaw: 0, pitch: 0 },
+        meaningTop: { id: 'explainer-meaning-top', yaw: 0, pitch: Math.PI / 2 },
+        main: { id: 'explainer-main', yaw: Math.PI / 4, pitch: MAIN_PITCH }
+      };
+      const explainerCues = [
+        { at: 0, scene: 'blank' },
+        { at: explainerTimeFor("And we'll build it, starting with a line."), scene: 'ep', camera: 'purposeTop' },
+        { at: explainerTimeFor('Put empathy on this side.'), scene: 'empathy' },
+        { at: explainerTimeFor('Put practicality on the other side.'), scene: 'purpose' },
+        { at: explainerTimeFor('That is integration.'), scene: 'integration' },
+        { at: explainerTimeFor('We need another direction.'), scene: 'vertical', camera: 'purposeSide' },
+        { at: explainerTimeFor('Leave absence at the origin.'), scene: 'origin' },
+        { at: explainerTimeFor('Place the integrated stance above it.'), scene: 'answerability-seed' },
+        { at: explainerTimeFor('I call that friction.'), scene: 'friction' },
+        { at: explainerTimeFor('That is answerability.'), scene: 'answerability' },
+        { at: explainerTimeFor('That is insulation.'), scene: 'insulation' },
+        { at: explainerTimeFor('We now have three distinct conditions.'), scene: 'three-states' },
+        { at: explainerTimeFor('That is information.'), scene: 'meaning-prep', camera: 'meaningTop' },
+        { at: explainerTimeFor('We need a second horizontal relation.'), scene: 'meaning' },
+        { at: explainerTimeFor('Knowledge supplies informational grounding.'), scene: 'meaning-labeled' },
+        { at: explainerTimeFor('Now the whole structure is visible.'), scene: 'full', camera: 'main' },
+        { at: explainerTimeFor('Purpose: concern and constraint.'), scene: 'full-purpose' },
+        { at: explainerTimeFor('Meaning: information and interpretation.'), scene: 'full-meaning' },
+        { at: explainerTimeFor('Accountability: whether reality can govern and correct their organization.'), scene: 'full-accountability' },
+        { at: explainerTimeFor('The whole stance is represented as one unit.'), scene: 'whole' },
+        { at: explainerTimeFor('That is the central claim of the Stone.'), scene: 'closing' }
+      ].sort((a, b) => a.at - b.at);
+
+      const explainer = {
+        active: false,
+        playing: false,
+        playhead: 0,
+        cueIndex: -1,
+        scene: 'blank',
+        pendingCamera: null
+      };
+
       let yaw = snaps[0].yaw;
       let pitch = snaps[0].pitch;
       let velocityYaw = 0;
@@ -365,11 +907,287 @@
         return [a[0] + t * rX, a[1] + t * rY];
       };
 
+      const formatTime = seconds => {
+        const whole = Math.max(0, Math.floor(seconds));
+        const minutes = Math.floor(whole / 60);
+        return minutes + ':' + String(whole % 60).padStart(2, '0');
+      };
+
+      const currentExplainerSegment = () => {
+        for (let i = explainerSegments.length - 1; i >= 0; i--) {
+          if (explainer.playhead >= explainerSegments[i].start) return explainerSegments[i];
+        }
+        return explainerSegments[0];
+      };
+
+      const currentExplainerCueIndex = () => {
+        let index = 0;
+        for (let i = 0; i < explainerCues.length; i++) {
+          if (explainer.playhead >= explainerCues[i].at) index = i;
+          else break;
+        }
+        return index;
+      };
+
+      const requestExplainerCamera = name => {
+        const camera = explainerCameras[name];
+        if (!camera) return;
+        if (dragging) {
+          explainer.pendingCamera = camera;
+          return;
+        }
+        explainer.pendingCamera = null;
+        snapTarget = { ...camera };
+        velocityYaw *= 0.18;
+        velocityPitch *= 0.18;
+      };
+
+      const refreshExplainerCue = () => {
+        if (!explainer.active) return;
+        const nextIndex = currentExplainerCueIndex();
+        if (nextIndex !== explainer.cueIndex) {
+          explainer.cueIndex = nextIndex;
+          const cue = explainerCues[nextIndex];
+          explainer.scene = cue.scene;
+          if (cue.camera) requestExplainerCamera(cue.camera);
+        }
+      };
+
+      const updateExplainerUI = () => {
+        if (!explainer.active) return;
+        explainerElapsed.textContent = formatTime(explainer.playhead);
+        explainerTotal.textContent = formatTime(explainerTotalDuration);
+        explainerProgress.max = String(explainerTotalDuration);
+        explainerProgress.value = String(explainer.playhead);
+        const segment = currentExplainerSegment();
+        explainerCaption.textContent = segment ? segment.text : '';
+        explainerToggle.textContent = explainer.playing ? 'Ⅱ' : '▶';
+        explainerToggle.setAttribute('aria-label', explainer.playing ? 'Pause' : 'Play');
+      };
+
+      const seekExplainer = seconds => {
+        explainer.playhead = clamp(seconds, 0, explainerTotalDuration);
+        explainer.cueIndex = -1;
+        refreshExplainerCue();
+        updateExplainerUI();
+      };
+
+      const startExplainer = () => {
+        explainer.active = true;
+        explainer.playing = true;
+        explainer.playhead = 0;
+        explainer.cueIndex = -1;
+        explainer.scene = 'blank';
+        explainer.pendingCamera = null;
+        snapTarget = null;
+        velocityYaw = 0;
+        velocityPitch = 0;
+        explainerLaunch.hidden = true;
+        explainerSession.hidden = false;
+        app.classList.add('explainer-active');
+        refreshExplainerCue();
+        updateExplainerUI();
+      };
+
+      const stopExplainer = () => {
+        explainer.active = false;
+        explainer.playing = false;
+        explainer.playhead = 0;
+        explainer.cueIndex = -1;
+        explainer.scene = 'blank';
+        explainer.pendingCamera = null;
+        explainerOverlay.style.opacity = '0';
+        explainerSession.hidden = true;
+        explainerLaunch.hidden = false;
+        app.classList.remove('explainer-active');
+        snapTarget = nearestSnap();
+      };
+
+      const explainerSceneConfig = scene => {
+        const config = {
+          blank: {},
+          ep: { ep: true },
+          empathy: { ep: true, concepts: { E: 'Empathy' } },
+          purpose: { ep: true, concepts: { E: 'Empathy', P: 'Practicality' } },
+          integration: {
+            ep: true,
+            point: true,
+            concepts: { E: 'Empathy', P: 'Practicality' },
+            callouts: [{ text: 'integration', pos: [78, -52], anchor: [0, 0, 0] }]
+          },
+          vertical: { ep: true, mcUp: true, point: true, concepts: { E: 'Empathy', P: 'Practicality' } },
+          origin: {
+            ep: true, mcUp: true, point: true,
+            concepts: { E: 'Empathy', P: 'Practicality' },
+            callouts: [{ text: 'absence / origin', pos: [-78, 51], anchor: [0, 0, 0] }]
+          },
+          'answerability-seed': {
+            ep: true, mcUp: true, point: true,
+            concepts: { E: 'Empathy', P: 'Practicality', M: 'integrated stance' }
+          },
+          friction: {
+            ep: true, mcUp: true, point: true,
+            concepts: { E: 'Empathy', P: 'Practicality', M: 'integrated stance' },
+            callouts: [{ text: 'friction', pos: [77, 24], anchor: [0.58, 0, 0] }]
+          },
+          answerability: {
+            ep: true, mcUp: true, point: true,
+            concepts: { E: 'Empathy', P: 'Practicality', M: 'Answerability' },
+            callouts: [{ text: 'reality can correct the stance', pos: [78, -48], anchor: [0, 0.62, 0] }]
+          },
+          insulation: {
+            ep: true, mcUp: true, mcDown: true, point: true,
+            concepts: { E: 'Empathy', P: 'Practicality', M: 'Answerability', C: 'Insulation' }
+          },
+          'three-states': {
+            ep: true, mcUp: true, mcDown: true, point: true,
+            concepts: { M: 'integrated', C: 'insulated' },
+            callouts: [
+              { text: 'no formed orientation', pos: [-82, 48], anchor: [0, 0, 0] },
+              { text: 'relevant pressures integrated', pos: [80, -48], anchor: [0, 0.72, 0] },
+              { text: 'corrective authority shut out', pos: [80, 53], anchor: [0, -0.72, 0] }
+            ]
+          },
+          'meaning-prep': {
+            ep: true,
+            concepts: { E: 'Empathy', P: 'Practicality' },
+            callouts: [{ text: 'information', pos: [-78, -50], anchor: [0, 0, -0.74] }]
+          },
+          meaning: {
+            ep: true, kw: true,
+            concepts: { E: 'Empathy', P: 'Practicality' }
+          },
+          'meaning-labeled': {
+            ep: true, kw: true,
+            concepts: { E: 'Empathy', P: 'Practicality', K: 'Knowledge', W: 'Wisdom' }
+          },
+          full: { full: true },
+          'full-purpose': {
+            full: true,
+            callouts: [{ text: 'purpose', pos: [-82, -55], anchor: [0.55, 0, 0] }]
+          },
+          'full-meaning': {
+            full: true,
+            callouts: [{ text: 'meaning', pos: [82, 53], anchor: [0, 0, 0.55] }]
+          },
+          'full-accountability': {
+            full: true,
+            callouts: [{ text: 'accountability', pos: [81, -52], anchor: [0, 0.62, 0] }]
+          },
+          whole: { full: true },
+          closing: { full: true }
+        };
+        return config[scene] || {};
+      };
+
+      const setExplainerLine = (line, a, b, points) => {
+        line.setAttribute('x1', points[a][0]);
+        line.setAttribute('y1', points[a][1]);
+        line.setAttribute('x2', points[b][0]);
+        line.setAttribute('y2', points[b][1]);
+      };
+
+      const setExplainerPartialLine = (line, from, to) => {
+        const a = project(rotate(from));
+        const b = project(rotate(to));
+        line.setAttribute('x1', a[0]);
+        line.setAttribute('y1', a[1]);
+        line.setAttribute('x2', b[0]);
+        line.setAttribute('y2', b[1]);
+      };
+
+      const drawExplainer = points => {
+        const config = explainerSceneConfig(explainer.scene);
+        explainerOverlay.style.opacity = explainer.active ? '1' : '0';
+
+        Object.values(explainerLines).forEach(line => line.style.opacity = '0');
+        explainerPoint.style.opacity = '0';
+        explainerConcepts.forEach(item => item.node.style.opacity = '0');
+        explainerCalloutNodes.forEach(item => item.group.style.opacity = '0');
+
+        if (!explainer.active || explainer.scene === 'blank') return;
+
+        if (config.ep) {
+          setExplainerLine(explainerLines.ep, 1, 0, points);
+          explainerLines.ep.style.opacity = '1';
+        }
+        if (config.mcUp) {
+          setExplainerPartialLine(explainerLines.mcUp, [0, 0, 0], [0, 1, 0]);
+          explainerLines.mcUp.style.opacity = '1';
+        }
+        if (config.mcDown) {
+          setExplainerPartialLine(explainerLines.mcDown, [0, 0, 0], [0, -1, 0]);
+          explainerLines.mcDown.style.opacity = '1';
+        }
+        if (config.kw) {
+          setExplainerLine(explainerLines.kw, 5, 4, points);
+          explainerLines.kw.style.opacity = '1';
+        }
+        if (config.point) {
+          const origin = project(rotate([0, 0, 0]));
+          explainerPoint.setAttribute('cx', origin[0]);
+          explainerPoint.setAttribute('cy', origin[1]);
+          explainerPoint.style.opacity = '1';
+        }
+
+        const names = config.concepts || {};
+        const vertexIndex = { E: 0, P: 1, M: 2, C: 3, W: 4, K: 5 };
+        explainerConcepts.forEach(item => {
+          const label = names[item.letter];
+          if (!label) return;
+          const point = points[vertexIndex[item.letter]];
+          const length = Math.hypot(point[0], point[1]) || 1;
+          const offset = item.letter === 'M' || item.letter === 'C' ? 10 : 9;
+          item.node.textContent = label;
+          item.node.setAttribute('x', point[0] + point[0] / length * offset);
+          item.node.setAttribute('y', point[1] + point[1] / length * offset);
+          item.node.style.opacity = '1';
+        });
+
+        (config.callouts || []).slice(0, explainerCalloutNodes.length).forEach((callout, index) => {
+          const node = explainerCalloutNodes[index];
+          const anchor = project(rotate(callout.anchor));
+          const [x, y] = callout.pos;
+          node.text.textContent = callout.text;
+          node.text.setAttribute('x', x);
+          node.text.setAttribute('y', y);
+          node.line.setAttribute('x1', x);
+          node.line.setAttribute('y1', y + 4);
+          node.line.setAttribute('x2', anchor[0]);
+          node.line.setAttribute('y2', anchor[1]);
+          node.group.style.opacity = '1';
+        });
+      };
+
+      const drawTopOverlay = points => {
+        if (explainer.active) {
+          topOverlay.style.opacity = '0';
+          return;
+        }
+        const speed = Math.hypot(velocityYaw, velocityPitch);
+        const distance = distanceTo(snaps[1]);
+        const motionFactor = dragging ? 0 : clamp(1 - speed / 0.00135, 0, 1);
+        const opacity = clamp(1 - distance / 0.13, 0, 1) * motionFactor;
+        topOverlay.style.opacity = String(opacity);
+        if (opacity <= 0.001) return;
+        topConcepts.forEach(item => {
+          const point = points[item.vertex];
+          const length = Math.hypot(point[0], point[1]) || 1;
+          const ux = point[0] / length;
+          const uy = point[1] / length;
+          item.node.setAttribute('x', point[0] + ux * 10);
+          item.node.setAttribute('y', point[1] + uy * 10);
+        });
+      };
+
       const drawOverlay = points => {
         const speed = Math.hypot(velocityYaw, velocityPitch);
         const mainDistance = distanceTo(snaps[0]);
         const motionFactor = dragging ? 0 : clamp(1 - speed / 0.00135, 0, 1);
-        const mainOpacity = clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor;
+        const explainerAllowsMain = !explainer.active || !!explainerSceneConfig(explainer.scene).full;
+        const mainOpacity = explainerAllowsMain
+          ? clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor
+          : 0;
 
         const maxRadius = Math.max(...points.map(point => Math.hypot(point[0], point[1])));
         const outerRadius = maxRadius;
@@ -456,6 +1274,8 @@
       const draw = () => {
         const points = vertices.map(vertex => project(rotate(vertex)));
 
+        const showBaseGeometry = !explainer.active || !!explainerSceneConfig(explainer.scene).full;
+
         axes.forEach(([a, b], i) => {
           const [x1, y1] = points[a];
           const [x2, y2] = points[b];
@@ -463,6 +1283,7 @@
           axisLines[i].setAttribute('y1', y1);
           axisLines[i].setAttribute('x2', x2);
           axisLines[i].setAttribute('y2', y2);
+          axisLines[i].style.opacity = showBaseGeometry ? '0.34' : '0';
         });
 
         edges.forEach(([a, b], i) => {
@@ -472,10 +1293,14 @@
           lines[i].setAttribute('y1', y1);
           lines[i].setAttribute('x2', x2);
           lines[i].setAttribute('y2', y2);
-          lines[i].style.opacity = String(0.48 + 0.42 * ((z1 + z2 + 2) / 4));
+          lines[i].style.opacity = showBaseGeometry
+            ? String(0.48 + 0.42 * ((z1 + z2 + 2) / 4))
+            : '0';
         });
 
         drawOverlay(points);
+        drawTopOverlay(points);
+        drawExplainer(points);
       };
 
       const settlePhysics = (now, dt) => {
@@ -533,6 +1358,7 @@
         velocityPitch *= momentumDamping;
 
         if (
+          !explainer.active &&
           now - releasedAt > 110 &&
           Math.hypot(velocityYaw, velocityPitch) < SNAP_SPEED
         ) {
@@ -543,6 +1369,14 @@
       const frame = now => {
         const dt = Math.min(now - lastFrameTime, 32);
         lastFrameTime = now;
+
+        if (explainer.active && explainer.playing) {
+          explainer.playhead = Math.min(explainerTotalDuration, explainer.playhead + dt / 1000);
+          if (explainer.playhead >= explainerTotalDuration) explainer.playing = false;
+          refreshExplainerCue();
+          updateExplainerUI();
+        }
+
         settlePhysics(now, dt);
         draw();
         requestAnimationFrame(frame);
@@ -588,7 +1422,12 @@
         releasedAt = performance.now();
         if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
 
-        if (reduceMotion) {
+        if (explainer.active && explainer.pendingCamera) {
+          velocityYaw = 0;
+          velocityPitch = 0;
+          snapTarget = { ...explainer.pendingCamera };
+          explainer.pendingCamera = null;
+        } else if (reduceMotion) {
           velocityYaw = 0;
           velocityPitch = 0;
           snapTarget = nearestSnap();
@@ -597,6 +1436,20 @@
 
       svg.addEventListener('pointerup', stopDrag);
       svg.addEventListener('pointercancel', stopDrag);
+
+      explainerLaunch.addEventListener('click', startExplainer);
+      explainerToggle.addEventListener('click', () => {
+        if (!explainer.active) return;
+        explainer.playing = !explainer.playing;
+        updateExplainerUI();
+      });
+      explainerBack.addEventListener('click', () => seekExplainer(explainer.playhead - 10));
+      explainerForward.addEventListener('click', () => seekExplainer(explainer.playhead + 10));
+      explainerStop.addEventListener('click', stopExplainer);
+      explainerProgress.addEventListener('input', event => {
+        seekExplainer(Number(event.target.value));
+      });
+      explainerTotal.textContent = formatTime(explainerTotalDuration);
 
       draw();
       requestAnimationFrame(frame);
