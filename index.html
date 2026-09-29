@@ -942,14 +942,23 @@ The question is whether we let it change how we understand, what we value, and w
         velocityPitch *= 0.18;
       };
 
-      const refreshExplainerCue = () => {
+      const refreshExplainerCue = (forceCamera = false) => {
         if (!explainer.active) return;
         const nextIndex = currentExplainerCueIndex();
-        if (nextIndex !== explainer.cueIndex) {
+        if (nextIndex !== explainer.cueIndex || forceCamera) {
           explainer.cueIndex = nextIndex;
           const cue = explainerCues[nextIndex];
           explainer.scene = cue.scene;
-          if (cue.camera) requestExplainerCamera(cue.camera);
+          if (cue.camera) {
+            requestExplainerCamera(cue.camera);
+          } else if (forceCamera) {
+            for (let i = nextIndex; i >= 0; i--) {
+              if (explainerCues[i].camera) {
+                requestExplainerCamera(explainerCues[i].camera);
+                break;
+              }
+            }
+          }
         }
       };
 
@@ -968,7 +977,7 @@ The question is whether we let it change how we understand, what we value, and w
       const seekExplainer = seconds => {
         explainer.playhead = clamp(seconds, 0, explainerTotalDuration);
         explainer.cueIndex = -1;
-        refreshExplainerCue();
+        refreshExplainerCue(true);
         updateExplainerUI();
       };
 
@@ -1307,7 +1316,12 @@ The question is whether we let it change how we understand, what we value, and w
         if (dragging) return;
 
         if (reduceMotion) {
-          if (!snapTarget) snapTarget = nearestSnap();
+          if (!snapTarget) {
+            velocityYaw = 0;
+            velocityPitch = 0;
+            if (explainer.active) return;
+            snapTarget = nearestSnap();
+          }
           yaw += deltaYaw(snapTarget.yaw);
           pitch = snapTarget.pitch;
           velocityYaw = 0;
@@ -1430,7 +1444,7 @@ The question is whether we let it change how we understand, what we value, and w
         } else if (reduceMotion) {
           velocityYaw = 0;
           velocityPitch = 0;
-          snapTarget = nearestSnap();
+          if (!explainer.active) snapTarget = nearestSnap();
         }
       };
 
