@@ -107,44 +107,27 @@
     #octahedron .explainer-overlay {
       pointer-events: none;
     }
-    #octahedron .top-concept,
-    #octahedron .explainer-concept,
-    #octahedron .explainer-callout {
+    #octahedron .top-concept {
       fill: #fff;
       stroke: none;
       text-anchor: middle;
       dominant-baseline: middle;
       pointer-events: none;
-    }
-    #octahedron .top-concept {
       font: 4.4px Georgia, "Times New Roman", serif;
       letter-spacing: 0.28px;
     }
-    #octahedron .explainer-concept {
-      font: 5px Georgia, "Times New Roman", serif;
-      letter-spacing: 0.24px;
-    }
-    #octahedron .explainer-line,
-    #octahedron .explainer-leader {
-      stroke: #fff;
-      fill: none;
-      vector-effect: non-scaling-stroke;
-      pointer-events: none;
-    }
-    #octahedron .explainer-line { stroke-width: 1.1; }
-    #octahedron .explainer-leader {
-      stroke-width: 0.72;
-      opacity: 0.72;
-    }
-    #octahedron .explainer-point {
+    #octahedron .explainer-marker {
       stroke: #fff;
       stroke-width: 0.82;
       fill: #000;
       vector-effect: non-scaling-stroke;
+      pointer-events: none;
     }
-    #octahedron .explainer-callout {
-      font: italic 4px Georgia, "Times New Roman", serif;
-      letter-spacing: 0.16px;
+    #stone-shell {
+      transition: width 280ms ease, transform 280ms ease;
+    }
+    #app.explainer-active #stone-shell {
+      width: min(60vw, 56vh);
     }
     #explainer-launch,
     #explainer-session button {
@@ -160,142 +143,213 @@
       position: absolute;
       left: 50%;
       top: calc(100% + 15px);
-      transform: translateX(-50%);
+      transform: translateX(-50%) translateY(4px);
       display: inline-flex;
       align-items: center;
       gap: 9px;
       white-space: nowrap;
-      opacity: 0.78;
+      opacity: 0;
+      pointer-events: none;
       font: 12px Georgia, "Times New Roman", serif;
       letter-spacing: 0.18px;
+      transition: opacity 180ms ease, transform 180ms ease;
     }
-    #explainer-launch:hover { opacity: 1; }
+    #explainer-launch.is-visible {
+      opacity: 0.82;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    #explainer-launch.is-visible:hover { opacity: 1; }
     #explainer-launch .play-glyph {
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       display: grid;
       place-items: center;
-      border: 1px solid rgba(255,255,255,.52);
+      border: 1px solid rgba(255,255,255,.38);
       border-radius: 50%;
       font: 9px Arial, sans-serif;
       padding-left: 1px;
     }
+    #explainer-header {
+      position: absolute;
+      top: clamp(28px, 6vh, 64px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(720px, calc(100vw - 40px));
+      text-align: center;
+      color: #fff;
+      z-index: 5;
+      pointer-events: none;
+    }
+    #explainer-header[hidden] { display: none; }
+    #explainer-heading {
+      font: 500 clamp(23px, 2.4vw, 34px)/1.08 Georgia, "Times New Roman", serif;
+      letter-spacing: -0.015em;
+    }
+    #explainer-subtext {
+      max-width: 620px;
+      margin: 8px auto 0;
+      font: 400 12px/1.45 Arial, sans-serif;
+      letter-spacing: .015em;
+      color: rgba(255,255,255,.56);
+      text-wrap: balance;
+    }
     #explainer-session {
       position: absolute;
       left: 50%;
-      top: calc(100% + 10px);
+      bottom: clamp(18px, 3.5vh, 34px);
       transform: translateX(-50%);
-      width: min(760px, 92vw);
+      width: min(760px, calc(100vw - 32px));
+      padding: 12px 14px 11px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      background: rgba(14,14,14,.78);
+      box-shadow: 0 14px 44px rgba(0,0,0,.34);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       color: #fff;
-      text-align: center;
-      font-family: Georgia, "Times New Roman", serif;
-      z-index: 4;
+      z-index: 6;
+      font-family: Arial, sans-serif;
     }
     #explainer-session[hidden] { display: none; }
-    .explainer-title {
-      font-size: 12px;
-      letter-spacing: .28px;
-      opacity: .82;
-      margin-bottom: 8px;
+    #explainer-caption {
+      min-height: 1.35em;
+      margin: 0 38px 10px;
+      text-align: center;
+      font: 400 11.5px/1.42 Arial, sans-serif;
+      color: rgba(255,255,255,.72);
+      text-wrap: balance;
     }
-    .explainer-transport {
-      display: flex;
+    .explainer-player-row {
+      display: grid;
+      grid-template-columns: auto auto auto minmax(110px, 1fr) auto;
       align-items: center;
-      justify-content: center;
-      gap: 18px;
+      gap: 9px;
     }
-    .explainer-transport button {
-      min-width: 36px;
-      opacity: .72;
-      font-size: 11px;
-      line-height: 24px;
-    }
-    .explainer-transport button:hover { opacity: 1; }
-    #explainer-toggle {
+    .explainer-skip,
+    #explainer-close {
       width: 30px;
       height: 30px;
-      border: 1px solid rgba(255,255,255,.55) !important;
       border-radius: 50% !important;
-      opacity: .95 !important;
-      font-family: Arial, sans-serif !important;
-      font-size: 10px !important;
-    }
-    #explainer-stop {
-      font-size: 9px !important;
-      opacity: .48 !important;
-    }
-    .explainer-progress-row {
       display: grid;
-      grid-template-columns: 34px 1fr 34px;
+      place-items: center;
+      color: rgba(255,255,255,.66) !important;
+      font: 500 10px/1 Arial, sans-serif !important;
+      transition: background 140ms ease, color 140ms ease;
+    }
+    .explainer-skip:hover,
+    #explainer-close:hover {
+      background: rgba(255,255,255,.08) !important;
+      color: #fff !important;
+    }
+    #explainer-toggle {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 50% !important;
+      background: #fff !important;
+      color: #000 !important;
+      font: 700 10px/1 Arial, sans-serif !important;
+    }
+    .explainer-progress-wrap {
+      display: grid;
+      grid-template-columns: 31px 1fr 31px;
       align-items: center;
       gap: 7px;
-      margin-top: 5px;
-      font: 9px Arial, sans-serif;
-      opacity: .52;
+      min-width: 0;
+      color: rgba(255,255,255,.42);
+      font: 500 9px/1 Arial, sans-serif;
     }
     #explainer-progress {
       width: 100%;
-      height: 12px;
+      height: 14px;
       margin: 0;
       accent-color: #fff;
       cursor: pointer;
     }
-    #explainer-caption {
-      margin: 8px auto 0;
-      max-width: 680px;
-      min-height: 2.8em;
-      font-size: 12px;
-      line-height: 1.42;
-      letter-spacing: .08px;
-      opacity: .86;
-      text-wrap: balance;
+    #explainer-close {
+      font-size: 19px !important;
+      font-weight: 300 !important;
     }
     @media (max-width: 700px) {
       #stone-shell { width: min(108.8vw, 64vh); }
       #octahedron .outer-ring-text { font-size: 5.46px; }
       #octahedron .top-concept { font-size: 5.2px; }
+      #app.explainer-active #stone-shell {
+        width: min(92vw, 48vh);
+        transform: translateY(1vh);
+      }
       #explainer-launch {
         top: calc(100% + 12px);
         font-size: 11px;
       }
-      #explainer-session { top: calc(100% + 7px); width: 94vw; }
-      .explainer-title { font-size: 10.5px; margin-bottom: 5px; }
-      .explainer-transport { gap: 13px; }
-      #explainer-caption {
-        margin-top: 5px;
-        max-width: 90vw;
-        font-size: 10.5px;
-        line-height: 1.34;
-        max-height: 4.1em;
-        overflow: hidden;
+      #explainer-header {
+        top: max(22px, env(safe-area-inset-top));
+        width: calc(100vw - 30px);
       }
+      #explainer-heading {
+        font-size: clamp(22px, 7vw, 30px);
+      }
+      #explainer-subtext {
+        margin-top: 6px;
+        max-width: 88vw;
+        font-size: 10.5px;
+        line-height: 1.38;
+      }
+      #explainer-session {
+        bottom: max(12px, env(safe-area-inset-bottom));
+        width: calc(100vw - 20px);
+        padding: 10px 10px 9px;
+        border-radius: 16px;
+      }
+      #explainer-caption {
+        margin: 0 18px 8px;
+        max-height: 2.85em;
+        overflow: hidden;
+        font-size: 10px;
+        line-height: 1.4;
+      }
+      .explainer-player-row {
+        grid-template-columns: 28px 34px 28px minmax(90px, 1fr) 28px;
+        gap: 6px;
+      }
+      .explainer-skip,
+      #explainer-close {
+        width: 28px;
+        height: 28px;
+      }
+    }
     }
   </style>
 </head>
 <body>
   <main id="app" aria-label="Epistemic Octahedron">
+    <header id="explainer-header" hidden>
+      <div id="explainer-heading"></div>
+      <div id="explainer-subtext"></div>
+    </header>
     <div id="stone-shell">
       <svg id="octahedron" viewBox="-120 -120 240 240" aria-hidden="true"></svg>
       <button id="explainer-launch" type="button" aria-label="Play The structure in first principles">
         <span class="play-glyph">▶</span>
         <span>The structure in first principles</span>
       </button>
-      <section id="explainer-session" hidden aria-label="The structure in first principles">
-        <div class="explainer-title">The structure in first principles</div>
-        <div class="explainer-transport">
-          <button id="explainer-back" type="button" aria-label="Back 10 seconds">↶ 10</button>
-          <button id="explainer-toggle" type="button" aria-label="Pause">Ⅱ</button>
-          <button id="explainer-forward" type="button" aria-label="Forward 10 seconds">10 ↷</button>
-          <button id="explainer-stop" type="button" aria-label="Stop">■</button>
-        </div>
-        <div class="explainer-progress-row">
+    </div>
+    <section id="explainer-session" hidden aria-label="The structure in first principles">
+      <div id="explainer-caption" aria-live="polite"></div>
+      <div class="explainer-player-row">
+        <button id="explainer-back" class="explainer-skip" type="button" aria-label="Back 10 seconds">−10</button>
+        <button id="explainer-toggle" type="button" aria-label="Pause">Ⅱ</button>
+        <button id="explainer-forward" class="explainer-skip" type="button" aria-label="Forward 10 seconds">+10</button>
+        <div class="explainer-progress-wrap">
           <span id="explainer-elapsed">0:00</span>
           <input id="explainer-progress" type="range" min="0" max="1" step="0.1" value="0" aria-label="Explainer progress">
           <span id="explainer-total">0:00</span>
         </div>
-        <div id="explainer-caption" aria-live="polite"></div>
-      </section>
-    </div>
+        <button id="explainer-close" type="button" aria-label="Exit explainer">×</button>
+      </div>
+    </section>
   </main>
 
   <script>
@@ -312,11 +366,14 @@
       const svg = document.querySelector('#octahedron');
       const app = document.querySelector('#app');
       const explainerLaunch = document.querySelector('#explainer-launch');
+      const explainerHeader = document.querySelector('#explainer-header');
+      const explainerHeading = document.querySelector('#explainer-heading');
+      const explainerSubtext = document.querySelector('#explainer-subtext');
       const explainerSession = document.querySelector('#explainer-session');
       const explainerToggle = document.querySelector('#explainer-toggle');
       const explainerBack = document.querySelector('#explainer-back');
       const explainerForward = document.querySelector('#explainer-forward');
-      const explainerStop = document.querySelector('#explainer-stop');
+      const explainerClose = document.querySelector('#explainer-close');
       const explainerProgress = document.querySelector('#explainer-progress');
       const explainerElapsed = document.querySelector('#explainer-elapsed');
       const explainerTotal = document.querySelector('#explainer-total');
@@ -382,29 +439,11 @@
       const explainerOverlay = make('g', 'explainer-overlay');
       explainerOverlay.style.opacity = '0';
       svg.appendChild(explainerOverlay);
-      const explainerLines = {
-        ep: make('line', 'explainer-line'),
-        mcUp: make('line', 'explainer-line'),
-        mcDown: make('line', 'explainer-line'),
-        kw: make('line', 'explainer-line')
-      };
-      Object.values(explainerLines).forEach(line => explainerOverlay.appendChild(line));
-      const explainerPoint = make('circle', 'explainer-point');
-      explainerPoint.setAttribute('r', '2.7');
-      explainerOverlay.appendChild(explainerPoint);
-      const explainerConcepts = ['E','P','M','C','W','K'].map(letter => {
-        const text = make('text', 'explainer-concept');
-        explainerOverlay.appendChild(text);
-        return { letter, node: text };
-      });
-      const explainerCalloutNodes = Array.from({ length: 4 }, () => {
-        const group = make('g');
-        const line = make('line', 'explainer-leader');
-        const text = make('text', 'explainer-callout');
-        group.appendChild(line);
-        group.appendChild(text);
-        explainerOverlay.appendChild(group);
-        return { group, line, text };
+      const explainerMarkers = Array.from({ length: 4 }, () => {
+        const circle = make('circle', 'explainer-marker');
+        circle.setAttribute('r', '3.1');
+        explainerOverlay.appendChild(circle);
+        return circle;
       });
 
       const innerRing = make('circle', 'inner-ring');
@@ -969,6 +1008,9 @@ The question is whether we let it change how we understand, what we value, and w
         explainerProgress.max = String(explainerTotalDuration);
         explainerProgress.value = String(explainer.playhead);
         const segment = currentExplainerSegment();
+        const scene = explainerSceneConfig(explainer.scene);
+        explainerHeading.textContent = scene.header || '';
+        explainerSubtext.textContent = scene.subtext || '';
         explainerCaption.textContent = segment ? segment.text : '';
         explainerToggle.textContent = explainer.playing ? 'Ⅱ' : '▶';
         explainerToggle.setAttribute('aria-label', explainer.playing ? 'Pause' : 'Play');
@@ -992,6 +1034,8 @@ The question is whether we let it change how we understand, what we value, and w
         velocityYaw = 0;
         velocityPitch = 0;
         explainerLaunch.hidden = true;
+        explainerLaunch.classList.remove('is-visible');
+        explainerHeader.hidden = false;
         explainerSession.hidden = false;
         app.classList.add('explainer-active');
         refreshExplainerCue();
@@ -1006,165 +1050,151 @@ The question is whether we let it change how we understand, what we value, and w
         explainer.scene = 'blank';
         explainer.pendingCamera = null;
         explainerOverlay.style.opacity = '0';
+        explainerHeader.hidden = true;
         explainerSession.hidden = true;
         explainerLaunch.hidden = false;
+        explainerLaunch.classList.remove('is-visible');
         app.classList.remove('explainer-active');
         snapTarget = nearestSnap();
       };
 
       const explainerSceneConfig = scene => {
         const config = {
-          blank: {},
-          ep: { ep: true },
-          empathy: { ep: true, concepts: { E: 'Empathy' } },
-          purpose: { ep: true, concepts: { E: 'Empathy', P: 'Practicality' } },
-          integration: {
-            ep: true,
-            point: true,
-            concepts: { E: 'Empathy', P: 'Practicality' },
-            callouts: [{ text: 'integration', pos: [78, -52], anchor: [0, 0, 0] }]
+          blank: {
+            axes: [], edges: false,
+            header: 'What Makes a Person Mature?',
+            subtext: 'Understanding, avoidance, and absence can sound identical.'
           },
-          vertical: { ep: true, mcUp: true, point: true, concepts: { E: 'Empathy', P: 'Practicality' } },
+          ep: {
+            axes: [0], edges: false,
+            header: 'Start with one relation',
+            subtext: 'One decision can be pulled by more than one real pressure.'
+          },
+          empathy: {
+            axes: [0], edges: false,
+            header: 'Empathy',
+            subtext: 'Concern for another person’s welfare.',
+            markers: [[1, 0, 0]]
+          },
+          purpose: {
+            axes: [0], edges: false,
+            header: 'Empathy ↔ Practicality',
+            subtext: 'Welfare concern and real-world constraints must be allowed to correct each other.',
+            markers: [[1, 0, 0], [-1, 0, 0]]
+          },
+          integration: {
+            axes: [0], edges: false,
+            header: 'Integration',
+            subtext: 'Both relevant pressures retain authority in the judgment.',
+            markers: [[0, 0, 0]]
+          },
+          vertical: {
+            axes: [0, 1], verticalMode: 'up', edges: false,
+            header: 'A second direction',
+            subtext: 'The horizontal middle alone cannot distinguish integration from absence.'
+          },
           origin: {
-            ep: true, mcUp: true, point: true,
-            concepts: { E: 'Empathy', P: 'Practicality' },
-            callouts: [{ text: 'absence / origin', pos: [-78, 51], anchor: [0, 0, 0] }]
+            axes: [0, 1], verticalMode: 'up', edges: false,
+            header: 'Origin',
+            subtext: 'No formed orientation to the situation.',
+            markers: [[0, 0, 0]]
           },
           'answerability-seed': {
-            ep: true, mcUp: true, point: true,
-            concepts: { E: 'Empathy', P: 'Practicality', M: 'integrated stance' }
+            axes: [0, 1], verticalMode: 'up', edges: false,
+            header: 'Answerability',
+            subtext: 'Reality is allowed to correct the stance.',
+            markers: [[0, 1, 0]]
           },
           friction: {
-            ep: true, mcUp: true, point: true,
-            concepts: { E: 'Empathy', P: 'Practicality', M: 'integrated stance' },
-            callouts: [{ text: 'friction', pos: [77, 24], anchor: [0.58, 0, 0] }]
+            axes: [0, 1], verticalMode: 'up', edges: false,
+            header: 'Friction',
+            subtext: 'A relevant pressure the stance does not yet accommodate.',
+            markers: [[0.58, 0, 0]]
           },
           answerability: {
-            ep: true, mcUp: true, point: true,
-            concepts: { E: 'Empathy', P: 'Practicality', M: 'Answerability' },
-            callouts: [{ text: 'reality can correct the stance', pos: [78, -48], anchor: [0, 0.62, 0] }]
+            axes: [0, 1], verticalMode: 'up', edges: false,
+            header: 'Answerability',
+            subtext: 'Corrective pressure can change how the judgment is organized.',
+            markers: [[0, 0.62, 0]]
           },
           insulation: {
-            ep: true, mcUp: true, mcDown: true, point: true,
-            concepts: { E: 'Empathy', P: 'Practicality', M: 'Answerability', C: 'Insulation' }
+            axes: [0, 1], verticalMode: 'full', edges: false,
+            header: 'Insulation',
+            subtext: 'A relevant pressure is denied corrective authority.',
+            markers: [[0, -1, 0]]
           },
           'three-states': {
-            ep: true, mcUp: true, mcDown: true, point: true,
-            concepts: { M: 'integrated', C: 'insulated' },
-            callouts: [
-              { text: 'no formed orientation', pos: [-82, 48], anchor: [0, 0, 0] },
-              { text: 'relevant pressures integrated', pos: [80, -48], anchor: [0, 0.72, 0] },
-              { text: 'corrective authority shut out', pos: [80, 53], anchor: [0, -0.72, 0] }
-            ]
+            axes: [0, 1], verticalMode: 'full', edges: false,
+            header: 'Three conditions',
+            subtext: 'Absence at the origin · integration above · insulation below',
+            markers: [[0, 0, 0], [0, 0.72, 0], [0, -0.72, 0]]
           },
           'meaning-prep': {
-            ep: true,
-            concepts: { E: 'Empathy', P: 'Practicality' },
-            callouts: [{ text: 'information', pos: [-78, -50], anchor: [0, 0, -0.74] }]
+            axes: [0], edges: false,
+            header: 'Information',
+            subtext: 'What is actually happening?',
+            markers: [[0, 0, -0.74]]
           },
           meaning: {
-            ep: true, kw: true,
-            concepts: { E: 'Empathy', P: 'Practicality' }
+            axes: [0, 2], edges: false,
+            header: 'A second horizontal relation',
+            subtext: 'Meaning also requires two functions that can correct each other.'
           },
           'meaning-labeled': {
-            ep: true, kw: true,
-            concepts: { E: 'Empathy', P: 'Practicality', K: 'Knowledge', W: 'Wisdom' }
+            axes: [0, 2], edges: false,
+            header: 'Knowledge ↔ Wisdom',
+            subtext: 'Informational grounding and contextual interpretation.',
+            markers: [[0, 0, -1], [0, 0, 1]]
           },
-          full: { full: true },
+          full: {
+            axes: [0, 1, 2], verticalMode: 'full', edges: true,
+            header: 'The Stone',
+            subtext: 'Purpose · meaning · accountability'
+          },
           'full-purpose': {
-            full: true,
-            callouts: [{ text: 'purpose', pos: [-82, -55], anchor: [0.55, 0, 0] }]
+            axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [0],
+            header: 'Purpose',
+            subtext: 'Concern and constraint.',
+            markers: [[1, 0, 0], [-1, 0, 0]]
           },
           'full-meaning': {
-            full: true,
-            callouts: [{ text: 'meaning', pos: [82, 53], anchor: [0, 0, 0.55] }]
+            axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [2],
+            header: 'Meaning',
+            subtext: 'Information and interpretation.',
+            markers: [[0, 0, -1], [0, 0, 1]]
           },
           'full-accountability': {
-            full: true,
-            callouts: [{ text: 'accountability', pos: [81, -52], anchor: [0, 0.62, 0] }]
+            axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [1],
+            header: 'Accountability',
+            subtext: 'Whether reality can govern and correct the organization.',
+            markers: [[0, 0.62, 0]]
           },
-          whole: { full: true },
-          closing: { full: true }
+          whole: {
+            axes: [0, 1, 2], verticalMode: 'full', edges: true,
+            header: 'The whole stance',
+            subtext: 'Its position describes organization—not how much compassion, knowledge, or experience a person possesses.'
+          },
+          closing: {
+            axes: [0, 1, 2], verticalMode: 'full', edges: true,
+            header: 'The central question',
+            subtext: 'What am I allowing to correct me?'
+          }
         };
-        return config[scene] || {};
-      };
-
-      const setExplainerLine = (line, a, b, points) => {
-        line.setAttribute('x1', points[a][0]);
-        line.setAttribute('y1', points[a][1]);
-        line.setAttribute('x2', points[b][0]);
-        line.setAttribute('y2', points[b][1]);
-      };
-
-      const setExplainerPartialLine = (line, from, to) => {
-        const a = project(rotate(from));
-        const b = project(rotate(to));
-        line.setAttribute('x1', a[0]);
-        line.setAttribute('y1', a[1]);
-        line.setAttribute('x2', b[0]);
-        line.setAttribute('y2', b[1]);
+        return config[scene] || config.blank;
       };
 
       const drawExplainer = points => {
         const config = explainerSceneConfig(explainer.scene);
         explainerOverlay.style.opacity = explainer.active ? '1' : '0';
+        explainerMarkers.forEach(marker => marker.style.opacity = '0');
+        if (!explainer.active) return;
 
-        Object.values(explainerLines).forEach(line => line.style.opacity = '0');
-        explainerPoint.style.opacity = '0';
-        explainerConcepts.forEach(item => item.node.style.opacity = '0');
-        explainerCalloutNodes.forEach(item => item.group.style.opacity = '0');
-
-        if (!explainer.active || explainer.scene === 'blank') return;
-
-        if (config.ep) {
-          setExplainerLine(explainerLines.ep, 1, 0, points);
-          explainerLines.ep.style.opacity = '1';
-        }
-        if (config.mcUp) {
-          setExplainerPartialLine(explainerLines.mcUp, [0, 0, 0], [0, 1, 0]);
-          explainerLines.mcUp.style.opacity = '1';
-        }
-        if (config.mcDown) {
-          setExplainerPartialLine(explainerLines.mcDown, [0, 0, 0], [0, -1, 0]);
-          explainerLines.mcDown.style.opacity = '1';
-        }
-        if (config.kw) {
-          setExplainerLine(explainerLines.kw, 5, 4, points);
-          explainerLines.kw.style.opacity = '1';
-        }
-        if (config.point) {
-          const origin = project(rotate([0, 0, 0]));
-          explainerPoint.setAttribute('cx', origin[0]);
-          explainerPoint.setAttribute('cy', origin[1]);
-          explainerPoint.style.opacity = '1';
-        }
-
-        const names = config.concepts || {};
-        const vertexIndex = { E: 0, P: 1, M: 2, C: 3, W: 4, K: 5 };
-        explainerConcepts.forEach(item => {
-          const label = names[item.letter];
-          if (!label) return;
-          const point = points[vertexIndex[item.letter]];
-          const length = Math.hypot(point[0], point[1]) || 1;
-          const offset = item.letter === 'M' || item.letter === 'C' ? 10 : 9;
-          item.node.textContent = label;
-          item.node.setAttribute('x', point[0] + point[0] / length * offset);
-          item.node.setAttribute('y', point[1] + point[1] / length * offset);
-          item.node.style.opacity = '1';
-        });
-
-        (config.callouts || []).slice(0, explainerCalloutNodes.length).forEach((callout, index) => {
-          const node = explainerCalloutNodes[index];
-          const anchor = project(rotate(callout.anchor));
-          const [x, y] = callout.pos;
-          node.text.textContent = callout.text;
-          node.text.setAttribute('x', x);
-          node.text.setAttribute('y', y);
-          node.line.setAttribute('x1', x);
-          node.line.setAttribute('y1', y + 4);
-          node.line.setAttribute('x2', anchor[0]);
-          node.line.setAttribute('y2', anchor[1]);
-          node.group.style.opacity = '1';
+        (config.markers || []).slice(0, explainerMarkers.length).forEach((anchor, index) => {
+          const point = project(rotate(anchor));
+          const marker = explainerMarkers[index];
+          marker.setAttribute('cx', point[0]);
+          marker.setAttribute('cy', point[1]);
+          marker.style.opacity = '1';
         });
       };
 
@@ -1178,6 +1208,8 @@ The question is whether we let it change how we understand, what we value, and w
         const motionFactor = dragging ? 0 : clamp(1 - speed / 0.00135, 0, 1);
         const opacity = clamp(1 - distance / 0.13, 0, 1) * motionFactor;
         topOverlay.style.opacity = String(opacity);
+        const launchVisible = opacity > 0.86 && !explainer.active;
+        explainerLaunch.classList.toggle('is-visible', launchVisible);
         if (opacity <= 0.001) return;
         topConcepts.forEach(item => {
           const point = points[item.vertex];
@@ -1193,10 +1225,9 @@ The question is whether we let it change how we understand, what we value, and w
         const speed = Math.hypot(velocityYaw, velocityPitch);
         const mainDistance = distanceTo(snaps[0]);
         const motionFactor = dragging ? 0 : clamp(1 - speed / 0.00135, 0, 1);
-        const explainerAllowsMain = !explainer.active || !!explainerSceneConfig(explainer.scene).full;
-        const mainOpacity = explainerAllowsMain
-          ? clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor
-          : 0;
+        const mainOpacity = explainer.active
+          ? 0
+          : clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor;
 
         const maxRadius = Math.max(...points.map(point => Math.hypot(point[0], point[1])));
         const outerRadius = maxRadius;
@@ -1283,16 +1314,32 @@ The question is whether we let it change how we understand, what we value, and w
       const draw = () => {
         const points = vertices.map(vertex => project(rotate(vertex)));
 
-        const showBaseGeometry = !explainer.active || !!explainerSceneConfig(explainer.scene).full;
+        const scene = explainer.active ? explainerSceneConfig(explainer.scene) : null;
+        const origin = project(rotate([0, 0, 0]));
 
         axes.forEach(([a, b], i) => {
-          const [x1, y1] = points[a];
-          const [x2, y2] = points[b];
-          axisLines[i].setAttribute('x1', x1);
-          axisLines[i].setAttribute('y1', y1);
-          axisLines[i].setAttribute('x2', x2);
-          axisLines[i].setAttribute('y2', y2);
-          axisLines[i].style.opacity = showBaseGeometry ? '0.34' : '0';
+          let p1 = points[a];
+          let p2 = points[b];
+
+          if (explainer.active && i === 1 && scene.verticalMode === 'up') {
+            p1 = origin;
+            p2 = points[2];
+          }
+
+          axisLines[i].setAttribute('x1', p1[0]);
+          axisLines[i].setAttribute('y1', p1[1]);
+          axisLines[i].setAttribute('x2', p2[0]);
+          axisLines[i].setAttribute('y2', p2[1]);
+
+          if (!explainer.active) {
+            axisLines[i].style.opacity = '0.34';
+            axisLines[i].style.strokeWidth = '';
+          } else {
+            const visible = scene.axes.includes(i);
+            const emphasized = (scene.emphasize || []).includes(i);
+            axisLines[i].style.opacity = visible ? (emphasized ? '1' : '0.78') : '0';
+            axisLines[i].style.strokeWidth = visible ? (emphasized ? '1.35' : '1.05') : '';
+          }
         });
 
         edges.forEach(([a, b], i) => {
@@ -1302,7 +1349,7 @@ The question is whether we let it change how we understand, what we value, and w
           lines[i].setAttribute('y1', y1);
           lines[i].setAttribute('x2', x2);
           lines[i].setAttribute('y2', y2);
-          lines[i].style.opacity = showBaseGeometry
+          lines[i].style.opacity = !explainer.active || scene.edges
             ? String(0.48 + 0.42 * ((z1 + z2 + 2) / 4))
             : '0';
         });
@@ -1459,10 +1506,11 @@ The question is whether we let it change how we understand, what we value, and w
       });
       explainerBack.addEventListener('click', () => seekExplainer(explainer.playhead - 10));
       explainerForward.addEventListener('click', () => seekExplainer(explainer.playhead + 10));
-      explainerStop.addEventListener('click', stopExplainer);
+      explainerClose.addEventListener('click', stopExplainer);
       explainerProgress.addEventListener('input', event => {
         seekExplainer(Number(event.target.value));
       });
+      explainerLaunch.classList.remove('is-visible');
       explainerTotal.textContent = formatTime(explainerTotalDuration);
 
       draw();
