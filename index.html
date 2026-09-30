@@ -272,6 +272,120 @@
       font-size: 19px !important;
       font-weight: 300 !important;
     }
+    #explainer-toggle::before {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      margin-left: 2px;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 8px solid #000;
+    }
+    #explainer-toggle.is-playing::before {
+      width: 9px;
+      height: 10px;
+      margin-left: 0;
+      border: 0;
+      background: linear-gradient(90deg, #000 0 3px, transparent 3px 6px, #000 6px 9px);
+    }
+    #intro-people {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -42%);
+      display: flex;
+      align-items: end;
+      justify-content: center;
+      gap: clamp(28px, 6vw, 88px);
+      width: min(760px, calc(100vw - 40px));
+      z-index: 3;
+      pointer-events: none;
+    }
+    #intro-people[hidden] { display: none; }
+    .intro-person {
+      width: 150px;
+      text-align: center;
+      opacity: .28;
+      transform: scale(.96);
+      transition: opacity 220ms ease, transform 220ms ease;
+    }
+    .intro-person.is-active {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .intro-person.is-muted { opacity: .14; }
+    .intro-speech {
+      position: relative;
+      display: inline-block;
+      padding: 7px 10px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 12px;
+      background: rgba(255,255,255,.025);
+      color: rgba(255,255,255,.82);
+      font: 400 11px/1.2 Arial, sans-serif;
+      white-space: nowrap;
+    }
+    .intro-speech::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: -5px;
+      width: 8px;
+      height: 8px;
+      transform: translateX(-50%) rotate(45deg);
+      border-right: 1px solid rgba(255,255,255,.2);
+      border-bottom: 1px solid rgba(255,255,255,.2);
+      background: #000;
+    }
+    .intro-figure {
+      position: relative;
+      width: 52px;
+      height: 78px;
+      margin: 15px auto 0;
+    }
+    .intro-head {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      transform: translateX(-50%);
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: 50%;
+    }
+    .intro-body {
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      width: 28px;
+      height: 43px;
+      transform: translateX(-50%);
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: 15px 15px 9px 9px;
+    }
+    .intro-person-considered .intro-figure { transform: rotate(-1deg); }
+    .intro-person-closed .intro-figure { transform: rotate(4deg) translateY(4px); }
+    .intro-person-closed .intro-body {
+      border-radius: 10px;
+      transform: translateX(-50%) scaleX(.9);
+    }
+    .intro-person-unformed .intro-figure { transform: translateY(8px); }
+    #octahedron .explainer-person {
+      pointer-events: none;
+      transition: opacity 160ms ease;
+    }
+    #octahedron .explainer-person-head,
+    #octahedron .explainer-person-body {
+      stroke: #fff;
+      fill: #000;
+      vector-effect: non-scaling-stroke;
+    }
+    #octahedron .explainer-person-head { stroke-width: .9; }
+    #octahedron .explainer-person-body {
+      stroke-width: .9;
+      fill: none;
+    }
     @media (max-width: 700px) {
       #stone-shell { width: min(108.8vw, 64vh); }
       #octahedron .outer-ring-text { font-size: 5.46px; }
@@ -297,6 +411,23 @@
         font-size: 10.5px;
         line-height: 1.38;
       }
+      #intro-people {
+        top: 49%;
+        gap: 14px;
+        width: calc(100vw - 18px);
+      }
+      .intro-person { width: 98px; }
+      .intro-speech {
+        padding: 6px 7px;
+        font-size: 9px;
+      }
+      .intro-figure {
+        width: 42px;
+        height: 66px;
+        margin-top: 13px;
+      }
+      .intro-head { width: 17px; height: 17px; }
+      .intro-body { top: 21px; width: 24px; height: 38px; }
       #explainer-session {
         bottom: max(12px, env(safe-area-inset-bottom));
         width: calc(100vw - 20px);
@@ -320,7 +451,6 @@
         height: 28px;
       }
     }
-    }
   </style>
 </head>
 <body>
@@ -329,6 +459,20 @@
       <div id="explainer-heading"></div>
       <div id="explainer-subtext"></div>
     </header>
+    <div id="intro-people" hidden aria-hidden="true">
+      <div class="intro-person intro-person-considered">
+        <div class="intro-speech">I see no problem.</div>
+        <div class="intro-figure"><span class="intro-head"></span><span class="intro-body"></span></div>
+      </div>
+      <div class="intro-person intro-person-closed">
+        <div class="intro-speech">I see no problem.</div>
+        <div class="intro-figure"><span class="intro-head"></span><span class="intro-body"></span></div>
+      </div>
+      <div class="intro-person intro-person-unformed">
+        <div class="intro-speech">I see no problem.</div>
+        <div class="intro-figure"><span class="intro-head"></span><span class="intro-body"></span></div>
+      </div>
+    </div>
     <div id="stone-shell">
       <svg id="octahedron" viewBox="-120 -120 240 240" aria-hidden="true"></svg>
       <button id="explainer-launch" type="button" aria-label="Play The structure in first principles">
@@ -340,7 +484,7 @@
       <div id="explainer-caption" aria-live="polite"></div>
       <div class="explainer-player-row">
         <button id="explainer-back" class="explainer-skip" type="button" aria-label="Back 10 seconds">−10</button>
-        <button id="explainer-toggle" type="button" aria-label="Pause">Ⅱ</button>
+        <button id="explainer-toggle" class="is-playing" type="button" aria-label="Pause"></button>
         <button id="explainer-forward" class="explainer-skip" type="button" aria-label="Forward 10 seconds">+10</button>
         <div class="explainer-progress-wrap">
           <span id="explainer-elapsed">0:00</span>
@@ -369,6 +513,8 @@
       const explainerHeader = document.querySelector('#explainer-header');
       const explainerHeading = document.querySelector('#explainer-heading');
       const explainerSubtext = document.querySelector('#explainer-subtext');
+      const introPeople = document.querySelector('#intro-people');
+      const introPersonNodes = [...document.querySelectorAll('.intro-person')];
       const explainerSession = document.querySelector('#explainer-session');
       const explainerToggle = document.querySelector('#explainer-toggle');
       const explainerBack = document.querySelector('#explainer-back');
@@ -445,6 +591,14 @@
         explainerOverlay.appendChild(circle);
         return circle;
       });
+      const explainerPerson = make('g', 'explainer-person');
+      const explainerPersonHead = make('circle', 'explainer-person-head');
+      const explainerPersonBody = make('path', 'explainer-person-body');
+      explainerPersonHead.setAttribute('r', '3.4');
+      explainerPersonBody.setAttribute('d', 'M -6 10 Q 0 4 6 10 M 0 4 L 0 14');
+      explainerPerson.appendChild(explainerPersonHead);
+      explainerPerson.appendChild(explainerPersonBody);
+      explainerOverlay.appendChild(explainerPerson);
 
       const innerRing = make('circle', 'inner-ring');
       innerRing.setAttribute('cx', '0');
@@ -1001,6 +1155,26 @@ The question is whether we let it change how we understand, what we value, and w
         }
       };
 
+      const updateIntroPeople = segmentText => {
+        const visible = explainer.active && explainer.scene === 'blank';
+        introPeople.hidden = !visible;
+        if (!visible) return;
+
+        let focus = [];
+        if (segmentText.includes('Two people say')) focus = [0, 1];
+        else if (segmentText.includes('One has carefully considered')) focus = [0];
+        else if (segmentText.includes('The other refuses to look')) focus = [1];
+        else if (segmentText.includes('Same sentence.')) focus = [0, 1];
+        else if (segmentText.includes('third person')) focus = [2];
+        else if (segmentText.includes('They see no problem either')) focus = [2];
+        else if (segmentText.includes('So we have three people')) focus = [0, 1, 2];
+
+        introPersonNodes.forEach((node, index) => {
+          node.classList.toggle('is-active', focus.includes(index));
+          node.classList.toggle('is-muted', focus.length > 0 && !focus.includes(index));
+        });
+      };
+
       const updateExplainerUI = () => {
         if (!explainer.active) return;
         explainerElapsed.textContent = formatTime(explainer.playhead);
@@ -1012,7 +1186,8 @@ The question is whether we let it change how we understand, what we value, and w
         explainerHeading.textContent = scene.header || '';
         explainerSubtext.textContent = scene.subtext || '';
         explainerCaption.textContent = segment ? segment.text : '';
-        explainerToggle.textContent = explainer.playing ? 'Ⅱ' : '▶';
+        updateIntroPeople(segment ? segment.text : '');
+        explainerToggle.classList.toggle('is-playing', explainer.playing);
         explainerToggle.setAttribute('aria-label', explainer.playing ? 'Pause' : 'Play');
       };
 
@@ -1051,6 +1226,7 @@ The question is whether we let it change how we understand, what we value, and w
         explainer.pendingCamera = null;
         explainerOverlay.style.opacity = '0';
         explainerHeader.hidden = true;
+        introPeople.hidden = true;
         explainerSession.hidden = true;
         explainerLaunch.hidden = false;
         explainerLaunch.classList.remove('is-visible');
@@ -1066,26 +1242,26 @@ The question is whether we let it change how we understand, what we value, and w
             subtext: 'Understanding, avoidance, and absence can sound identical.'
           },
           ep: {
-            axes: [0], edges: false,
+            axes: [0], edges: false, person: true,
             header: 'Start with one relation',
             subtext: 'One decision can be pulled by more than one real pressure.'
           },
           empathy: {
-            axes: [0], edges: false,
+            axes: [0], edges: false, person: true,
             header: 'Empathy',
             subtext: 'Concern for another person’s welfare.',
             markers: [[1, 0, 0]]
           },
           purpose: {
-            axes: [0], edges: false,
-            header: 'Empathy ↔ Practicality',
-            subtext: 'Welfare concern and real-world constraints must be allowed to correct each other.',
+            axes: [0], edges: false, person: true,
+            header: 'Practicality ↔ Empathy',
+            subtext: 'Real-world constraints and welfare concern must be allowed to correct each other.',
             markers: [[1, 0, 0], [-1, 0, 0]]
           },
           integration: {
-            axes: [0], edges: false,
+            axes: [0], edges: false, person: true,
             header: 'Integration',
-            subtext: 'Both relevant pressures retain authority in the judgment.',
+            subtext: 'Practical constraints and welfare concern both retain authority in the judgment.',
             markers: [[0, 0, 0]]
           },
           vertical: {
@@ -1183,10 +1359,30 @@ The question is whether we let it change how we understand, what we value, and w
         return config[scene] || config.blank;
       };
 
+      const explainerPersonPosition = () => {
+        const text = currentExplainerSegment()?.text || '';
+        if (text.includes('Put empathy on this side.')) return 0.76;
+        if (text.includes('But you have rent due.')) return 0.22;
+        if (text.includes('Put practicality on the other side.')) return -0.76;
+        if (text.includes('You can feel the pull.')) return Math.sin(explainer.playhead * 2.1) * 0.48;
+        if (text.includes('What about them?')) return 0.62;
+        if (text.includes('What about what I can actually do?')) return -0.62;
+        if (text.includes('If concern takes over completely')) return 0.88;
+        if (text.includes('If practicality takes over completely')) return -0.88;
+        if (text.includes('So what would maturity look like?')) return 0;
+        if (text.includes('You might give a smaller amount.')) return -0.08;
+        if (text.includes('The answer depends on the situation.')) return 0.08;
+        if (text.includes('both realities helped determine your answer')) return 0;
+        if (text.includes('Their suffering counted.')) return 0;
+        if (text.includes('That is integration.')) return 0;
+        return 0;
+      };
+
       const drawExplainer = points => {
         const config = explainerSceneConfig(explainer.scene);
         explainerOverlay.style.opacity = explainer.active ? '1' : '0';
         explainerMarkers.forEach(marker => marker.style.opacity = '0');
+        explainerPerson.style.opacity = '0';
         if (!explainer.active) return;
 
         (config.markers || []).slice(0, explainerMarkers.length).forEach((anchor, index) => {
@@ -1196,6 +1392,12 @@ The question is whether we let it change how we understand, what we value, and w
           marker.setAttribute('cy', point[1]);
           marker.style.opacity = '1';
         });
+
+        if (config.person) {
+          const point = project(rotate([explainerPersonPosition(), 0, 0]));
+          explainerPerson.setAttribute('transform', 'translate(' + point[0] + ' ' + (point[1] - 16) + ')');
+          explainerPerson.style.opacity = '1';
+        }
       };
 
       const drawTopOverlay = points => {
