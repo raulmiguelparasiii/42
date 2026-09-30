@@ -1930,8 +1930,12 @@ The question is whether we let it change how we understand, what we value, and w
               axisLines[i].style.opacity = emphasized ? '1' : '0.13';
               axisLines[i].style.strokeWidth = emphasized ? '1.35' : '0.82';
             } else if (visible) {
-              axisLines[i].style.opacity = scene.surface ? '0.14' : (emphasized ? '1' : '0.78');
-              axisLines[i].style.strokeWidth = scene.surface ? '0.82' : (emphasized ? '1.35' : '1.05');
+              axisLines[i].style.opacity = scene.translucentSurface
+                ? '0.16'
+                : (scene.surface ? '0.14' : (emphasized ? '1' : '0.78'));
+              axisLines[i].style.strokeWidth = scene.translucentSurface
+                ? '0.82'
+                : (scene.surface ? '0.82' : (emphasized ? '1.35' : '1.05'));
             } else if (dimmed) {
               axisLines[i].style.opacity = '0.13';
               axisLines[i].style.strokeWidth = '0.82';
@@ -1944,6 +1948,10 @@ The question is whether we let it change how we understand, what we value, and w
 
         const pairKey = (a, b) => Math.min(a, b) + '-' + Math.max(a, b);
         const sceneEdgePairs = new Set((scene?.edgePairs || []).map(pair => pairKey(pair[0], pair[1])));
+        const edgeDepths = edges.map(([a, b]) => (points[a][2] + points[b][2]) / 2);
+        const minEdgeDepth = Math.min(...edgeDepths);
+        const maxEdgeDepth = Math.max(...edgeDepths);
+        const edgeDepthSpan = Math.max(maxEdgeDepth - minEdgeDepth, 0.0001);
 
         edges.forEach(([a, b], i) => {
           const [x1, y1, z1] = points[a];
@@ -1967,6 +1975,9 @@ The question is whether we let it change how we understand, what we value, and w
               lines[i].style.opacity = activeCentralEdge ? String(base) : '0.11';
             } else if (scene.dimEdges) {
               lines[i].style.opacity = selected ? '0.11' : '0';
+            } else if (scene.translucentSurface && selected) {
+              const depthLevel = (edgeDepths[i] - minEdgeDepth) / edgeDepthSpan;
+              lines[i].style.opacity = String(0.14 + depthLevel * 0.72);
             } else {
               lines[i].style.opacity = selected
                 ? (scene.surface ? String(base * 0.66) : String(base))
