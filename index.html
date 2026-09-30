@@ -394,6 +394,11 @@
       stroke-width: .9;
       fill: none;
     }
+    #octahedron .structure-backdrop {
+      stroke: none;
+      fill: #171717;
+      pointer-events: none;
+    }
     #octahedron .explainer-face {
       stroke: none;
       fill: #fff;
@@ -602,6 +607,9 @@
           [4, 5].forEach(z => faceTriplets.push([x, y, z]));
         });
       });
+      const structureBackdrop = make('polygon', 'structure-backdrop');
+      structureBackdrop.style.opacity = '0';
+      svg.appendChild(structureBackdrop);
       const faceGroup = make('g', 'explainer-faces');
       svg.appendChild(faceGroup);
       const facePolygons = faceTriplets.map(face => {
@@ -1600,6 +1608,33 @@ The question is whether we let it change how we understand, what we value, and w
         return words[key] || '';
       };
 
+      const convexHull = points => {
+        const sorted = points
+          .map(point => [point[0], point[1]])
+          .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+        if (sorted.length <= 2) return sorted;
+        const cross = (o, a, b) =>
+          (a[0] - o[0]) * (b[1] - o[1]) -
+          (a[1] - o[1]) * (b[0] - o[0]);
+        const lower = [];
+        sorted.forEach(point => {
+          while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
+            lower.pop();
+          }
+          lower.push(point);
+        });
+        const upper = [];
+        [...sorted].reverse().forEach(point => {
+          while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
+            upper.pop();
+          }
+          upper.push(point);
+        });
+        lower.pop();
+        upper.pop();
+        return lower.concat(upper);
+      };
+
       const drawExplainer = points => {
         const config = explainerSceneConfig(explainer.scene);
         explainerOverlay.style.opacity = explainer.active ? '1' : '0';
@@ -1608,7 +1643,11 @@ The question is whether we let it change how we understand, what we value, and w
         explainerGrowthLine.style.opacity = '0';
         Object.values(surfaceLabels).forEach(label => label.group.style.opacity = '0');
         explainerAxisLabels.forEach(label => label.text.style.opacity = '0');
-        facePolygons.forEach(item => item.polygon.style.opacity = '0');
+        structureBackdrop.style.opacity = '0';
+        facePolygons.forEach(item => {
+          item.polygon.style.opacity = '0';
+          item.polygon.style.fill = '#fff';
+        });
         if (!explainer.active) return;
 
         (config.markers || []).slice(0, explainerMarkers.length).forEach((anchor, index) => {
@@ -1658,9 +1697,13 @@ The question is whether we let it change how we understand, what we value, and w
         }
 
         if (config.translucentSurface) {
+          const hull = convexHull(points);
+          structureBackdrop.setAttribute('points', hull.map(point => point[0] + ',' + point[1]).join(' '));
+          structureBackdrop.style.opacity = '1';
           facePolygons.forEach(item => {
             item.polygon.setAttribute('points', item.face.map(index => points[index][0] + ',' + points[index][1]).join(' '));
-            item.polygon.style.opacity = '0.065';
+            item.polygon.style.fill = '#000';
+            item.polygon.style.opacity = '0.14';
           });
         }
 
