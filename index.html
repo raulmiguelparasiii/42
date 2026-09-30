@@ -334,6 +334,16 @@
       font: 400 11px/1.2 Arial, sans-serif;
       white-space: nowrap;
     }
+    .intro-primary,
+    .intro-aside {
+      display: block;
+    }
+    .intro-aside {
+      margin-top: 3px;
+      color: rgba(255,255,255,.48);
+      font-size: .82em;
+      line-height: 1.15;
+    }
     .intro-speech::after {
       content: '';
       position: absolute;
@@ -470,10 +480,12 @@
         gap: 14px;
         width: calc(100vw - 18px);
       }
-      .intro-person { width: 98px; }
+      .intro-person { width: 104px; }
       .intro-speech {
         padding: 6px 7px;
         font-size: 9px;
+        white-space: normal;
+        min-width: 96px;
       }
       .intro-figure {
         width: 42px;
@@ -515,15 +527,15 @@
     </header>
     <div id="intro-people" hidden aria-hidden="true">
       <div class="intro-person intro-person-considered">
-        <div class="intro-speech">I see no problem.</div>
+        <div class="intro-speech"><span class="intro-primary">I see no problem.</span><span class="intro-aside">(I can deal with this)</span></div>
         <div class="intro-figure"><span class="intro-head"></span><span class="intro-body"></span></div>
       </div>
       <div class="intro-person intro-person-closed">
-        <div class="intro-speech">I see no problem.</div>
+        <div class="intro-speech"><span class="intro-primary">I see no problem.</span><span class="intro-aside">(Not gonna deal with it)</span></div>
         <div class="intro-figure"><span class="intro-head"></span><span class="intro-body"></span></div>
       </div>
       <div class="intro-person intro-person-unformed">
-        <div class="intro-speech">I see no problem.</div>
+        <div class="intro-speech"><span class="intro-primary">I see no problem.</span><span class="intro-aside">(Idk what the deal is)</span></div>
         <div class="intro-figure"><span class="intro-head"></span><span class="intro-body"></span></div>
       </div>
     </div>
@@ -1697,13 +1709,24 @@ The question is whether we let it change how we understand, what we value, and w
         }
 
         if (config.translucentSurface) {
-          const hull = convexHull(points);
-          structureBackdrop.setAttribute('points', hull.map(point => point[0] + ',' + point[1]).join(' '));
-          structureBackdrop.style.opacity = '0.92';
+          const rotated = vertices.map(rotate);
+          const depth = item =>
+            item.face.reduce((sum, vertexIndex) => sum + rotated[vertexIndex][2], 0) / 3;
+          const depths = facePolygons.map(depth);
+          const minDepth = Math.min(...depths);
+          const maxDepth = Math.max(...depths);
+          const span = Math.max(maxDepth - minDepth, 0.0001);
+
+          structureBackdrop.style.opacity = '0';
+          [...facePolygons]
+            .sort((a, b) => depth(a) - depth(b))
+            .forEach(item => faceGroup.appendChild(item.polygon));
+
           facePolygons.forEach(item => {
+            const normalized = (depth(item) - minDepth) / span;
             item.polygon.setAttribute('points', item.face.map(index => points[index][0] + ',' + points[index][1]).join(' '));
-            item.polygon.style.fill = '#000';
-            item.polygon.style.opacity = '0.32';
+            item.polygon.style.fill = '#fff';
+            item.polygon.style.opacity = String(0.025 + normalized * 0.19);
           });
         }
 
