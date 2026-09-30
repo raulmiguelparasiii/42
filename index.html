@@ -1524,7 +1524,7 @@ The question is whether we let it change how we understand, what we value, and w
         if (text.includes('Does this work?')) return rise(-0.78);
         if (text.includes('And beneath all three')) return rise(0.66);
         if (text.includes('What am I allowing to correct me?')) return rise(0.66);
-        return [0, 0.9, 0];
+        return null;
       };
 
       const drawExplainer = points => {
