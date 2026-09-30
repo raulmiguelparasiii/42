@@ -167,8 +167,16 @@
       place-items: center;
       border: 1px solid rgba(255,255,255,.38);
       border-radius: 50%;
-      font: 9px Arial, sans-serif;
-      padding-left: 1px;
+    }
+    #explainer-launch .play-glyph::before {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      margin-left: 2px;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      border-left: 7px solid #fff;
     }
     #explainer-header {
       position: absolute;
@@ -517,7 +525,7 @@
     <div id="stone-shell">
       <svg id="octahedron" viewBox="-120 -120 240 240" aria-hidden="true"></svg>
       <button id="explainer-launch" type="button" aria-label="Play The structure in first principles">
-        <span class="play-glyph">▶</span>
+        <span class="play-glyph" aria-hidden="true"></span>
         <span>The structure in first principles</span>
       </button>
     </div>
@@ -1385,14 +1393,14 @@ The question is whether we let it change how we understand, what we value, and w
             markers: [[0, 0, 0], [0, 1, 0]]
           },
           'stance-shape': {
-            axes: [1], verticalMode: 'up', edges: false,
+            axes: [1], dimAxes: [0], verticalMode: 'up', edges: false,
             edgePairs: [[1, 2], [2, 0]],
             header: 'A formed stance',
             subtext: 'The old tug line lifts at its middle: integration above, Practicality and Empathy at the ends.',
             markers: [[0, 0, 0]]
           },
           experience: {
-            axes: [1], verticalMode: 'up', edges: false,
+            axes: [1], dimAxes: [0], verticalMode: 'up', edges: false,
             edgePairs: [[1, 2], [2, 0]],
             experience: true,
             header: 'Experience',
@@ -1400,48 +1408,48 @@ The question is whether we let it change how we understand, what we value, and w
             markers: [[0, 0, 0]]
           },
           friction: {
-            axes: [1], verticalMode: 'up', edges: false,
+            axes: [1], dimAxes: [0], verticalMode: 'up', edges: false,
             edgePairs: [[1, 2], [2, 0]],
             header: 'Friction',
             subtext: 'A relevant pressure the stance does not yet accommodate.',
             markers: [[0.58, 0.42, 0]]
           },
           answerability: {
-            axes: [1], verticalMode: 'up', edges: false,
+            axes: [1], dimAxes: [0], verticalMode: 'up', edges: false,
             edgePairs: [[1, 2], [2, 0]],
             header: 'Answerability',
             subtext: 'Corrective pressure can change how the judgment is organized.',
             markers: [[0, 1, 0]]
           },
           insulation: {
-            axes: [1], verticalMode: 'full', edges: false,
+            axes: [1], dimAxes: [0], verticalMode: 'full', edges: false,
             edgePairs: [[1, 2], [2, 0], [1, 3], [3, 0]],
             header: 'Insulation',
             subtext: 'A relevant pressure is denied corrective authority.',
             markers: [[0, -1, 0]]
           },
           'three-states': {
-            axes: [1], verticalMode: 'full', edges: false,
+            axes: [1], dimAxes: [0], verticalMode: 'full', edges: false,
             edgePairs: [[1, 2], [2, 0], [1, 3], [3, 0]],
             header: 'Three conditions',
             subtext: 'Absence at the origin · integration above · insulation below',
             markers: [[0, 0, 0], [0, 1, 0], [0, -1, 0]]
           },
           'meaning-prep': {
-            axes: [1, 2], verticalMode: 'full', edges: false,
+            axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
             axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge', W: 'Wisdom' },
             header: 'Information',
             subtext: 'What is actually happening?',
             markers: [[0, 0, -1]]
           },
           meaning: {
-            axes: [1, 2], verticalMode: 'full', edges: false,
+            axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
             axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge', W: 'Wisdom' },
             header: 'A second horizontal relation',
             subtext: 'Knowledge and Wisdom form the horizontal meaning relation; Answerability and Insulation remain vertical.'
           },
           'meaning-labeled': {
-            axes: [1, 2], verticalMode: 'full', edges: false,
+            axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
             axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge', W: 'Wisdom' },
             header: 'Knowledge ↔ Wisdom',
             subtext: 'Informational grounding and contextual interpretation.',
@@ -1449,23 +1457,24 @@ The question is whether we let it change how we understand, what we value, and w
           },
           full: {
             axes: [0, 1, 2], verticalMode: 'full', edges: true,
+            translucentSurface: true,
             header: 'The structure',
             subtext: 'Purpose · meaning · accountability'
           },
           'full-purpose': {
-            axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [0],
+            axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [0], focusAxes: true, dimEdges: true,
             header: 'Purpose',
             subtext: 'Concern and constraint.',
             markers: [[1, 0, 0], [-1, 0, 0]]
           },
           'full-meaning': {
-            axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [2],
+            axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [2], focusAxes: true, dimEdges: true,
             header: 'Meaning',
             subtext: 'Information and interpretation.',
             markers: [[0, 0, -1], [0, 0, 1]]
           },
           'full-accountability': {
-            axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [1],
+            axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [1], focusAxes: true, dimEdges: true,
             header: 'Accountability',
             subtext: 'Whether reality can govern and correct the organization.',
             markers: [[0, 1, 0]]
@@ -1478,15 +1487,16 @@ The question is whether we let it change how we understand, what we value, and w
             subtext: 'Each surface point is one possible organization of the whole stance; the internal axes are only its references.'
           },
           'central-question': {
-            axes: [1], verticalMode: 'full', edges: false,
-            edgePairs: [[1, 2], [2, 0]],
+            axes: [0, 1, 2], verticalMode: 'full', edges: true,
             centralPerson: true,
+            centralFocus: true,
             centralLabels: true,
             header: 'The central question',
             subtext: 'What am I allowing to correct me?'
           },
           closing: {
             axes: [0, 1, 2], verticalMode: 'full', edges: true,
+            translucentSurface: true,
             header: 'The structure',
             subtext: 'The possibility of maturity begins when reality is allowed to matter.'
           }
@@ -1564,6 +1574,17 @@ The question is whether we let it change how we understand, what we value, and w
         return {};
       };
 
+      const centralQuestionFocus = () => {
+        const text = currentExplainerSegment()?.text || '';
+        if (text.includes('Am I knowledgeable?')) return { axis: 2, edge: [5, 2] };
+        if (text.includes('Do I care?')) return { axis: 0, edge: [0, 2] };
+        if (text.includes('Does this work?')) return { axis: 0, edge: [1, 2] };
+        if (text.includes('And beneath all three') || text.includes('What am I allowing to correct me?')) {
+          return { axis: 1, edge: [0, 2] };
+        }
+        return { axis: 1, edge: null };
+      };
+
       const surfaceDescriptor = item => {
         const key = [...item.face].sort((a, b) => a - b).join('-');
         const words = {
@@ -1634,6 +1655,13 @@ The question is whether we let it change how we understand, what we value, and w
           explainerGrowthLine.setAttribute('x2', target[0]);
           explainerGrowthLine.setAttribute('y2', target[1]);
           explainerGrowthLine.style.opacity = Math.hypot(...personAnchor) > 0.05 ? '1' : '0';
+        }
+
+        if (config.translucentSurface) {
+          facePolygons.forEach(item => {
+            item.polygon.setAttribute('points', item.face.map(index => points[index][0] + ',' + points[index][1]).join(' '));
+            item.polygon.style.opacity = '0.065';
+          });
         }
 
         if (config.surface) {
@@ -1816,9 +1844,26 @@ The question is whether we let it change how we understand, what we value, and w
             axisLines[i].style.strokeWidth = '';
           } else {
             const visible = scene.axes.includes(i);
+            const dimmed = (scene.dimAxes || []).includes(i);
             const emphasized = (scene.emphasize || []).includes(i);
-            axisLines[i].style.opacity = visible ? (scene.surface ? '0.14' : (emphasized ? '1' : '0.78')) : '0';
-            axisLines[i].style.strokeWidth = visible ? (scene.surface ? '0.82' : (emphasized ? '1.35' : '1.05')) : '';
+            const centralFocus = scene.centralFocus ? centralQuestionFocus() : null;
+
+            if (centralFocus) {
+              axisLines[i].style.opacity = i === centralFocus.axis ? '1' : '0.13';
+              axisLines[i].style.strokeWidth = i === centralFocus.axis ? '1.35' : '0.82';
+            } else if (scene.focusAxes && visible) {
+              axisLines[i].style.opacity = emphasized ? '1' : '0.13';
+              axisLines[i].style.strokeWidth = emphasized ? '1.35' : '0.82';
+            } else if (visible) {
+              axisLines[i].style.opacity = scene.surface ? '0.14' : (emphasized ? '1' : '0.78');
+              axisLines[i].style.strokeWidth = scene.surface ? '0.82' : (emphasized ? '1.35' : '1.05');
+            } else if (dimmed) {
+              axisLines[i].style.opacity = '0.13';
+              axisLines[i].style.strokeWidth = '0.82';
+            } else {
+              axisLines[i].style.opacity = '0';
+              axisLines[i].style.strokeWidth = '';
+            }
           }
         });
 
@@ -1837,8 +1882,21 @@ The question is whether we let it change how we understand, what we value, and w
             lines[i].style.opacity = String(0.48 + 0.42 * ((z1 + z2 + 2) / 4));
           } else {
             const selected = scene.edges === true || sceneEdgePairs.has(pairKey(a, b));
-            const base = String(0.48 + 0.42 * ((z1 + z2 + 2) / 4));
-            lines[i].style.opacity = selected ? (scene.surface ? String(Number(base) * 0.66) : base) : '0';
+            const base = 0.48 + 0.42 * ((z1 + z2 + 2) / 4);
+            const centralFocus = scene.centralFocus ? centralQuestionFocus() : null;
+            const activeCentralEdge = centralFocus?.edge
+              ? pairKey(a, b) === pairKey(centralFocus.edge[0], centralFocus.edge[1])
+              : false;
+
+            if (centralFocus) {
+              lines[i].style.opacity = activeCentralEdge ? String(base) : '0.11';
+            } else if (scene.dimEdges) {
+              lines[i].style.opacity = selected ? '0.11' : '0';
+            } else {
+              lines[i].style.opacity = selected
+                ? (scene.surface ? String(base * 0.66) : String(base))
+                : '0';
+            }
           }
         });
 
