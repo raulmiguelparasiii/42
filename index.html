@@ -1119,7 +1119,8 @@ The question is whether we let it change how we understand, what we value, and w
         { at: explainerTimeFor('We now have three distinct conditions.'), scene: 'three-states' },
         { at: explainerTimeFor('That is information.'), scene: 'meaning-prep', camera: 'meaningCross' },
         { at: explainerTimeFor('We need a second horizontal relation.'), scene: 'meaning' },
-        { at: explainerTimeFor('Knowledge supplies informational grounding.'), scene: 'meaning-labeled' },
+        { at: explainerTimeFor('Knowledge supplies informational grounding.'), scene: 'meaning-knowledge' },
+        { at: explainerTimeFor('Wisdom supplies contextual understanding.'), scene: 'meaning-labeled' },
         { at: explainerTimeFor('Now the whole structure is visible.'), scene: 'full', camera: 'main' },
         { at: explainerTimeFor('Purpose: concern and constraint.'), scene: 'full-purpose' },
         { at: explainerTimeFor('Meaning: information and interpretation.'), scene: 'full-meaning' },
@@ -1457,16 +1458,23 @@ The question is whether we let it change how we understand, what we value, and w
           },
           'meaning-prep': {
             axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
-            axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge', W: 'Wisdom' },
+            axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge' },
             header: 'Information',
             subtext: 'What is actually happening?',
             markers: [[0, 0, -1]]
           },
           meaning: {
             axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
-            axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge', W: 'Wisdom' },
+            axisLabels: { M: 'Answerability', C: 'Insulation' },
             header: 'A second horizontal relation',
-            subtext: 'Knowledge and Wisdom form the horizontal meaning relation; Answerability and Insulation remain vertical.'
+            subtext: 'A second relation will organize meaning while Answerability and Insulation remain vertical.'
+          },
+          'meaning-knowledge': {
+            axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
+            axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge' },
+            header: 'Knowledge',
+            subtext: 'Informational grounding.',
+            markers: [[0, 0, -1]]
           },
           'meaning-labeled': {
             axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
@@ -1680,7 +1688,8 @@ The question is whether we let it change how we understand, what we value, and w
           if (!value) return;
           const point = points[vertexIndex[label.letter]];
           const length = Math.hypot(point[0], point[1]) || 1;
-          const offset = label.letter === 'M' || label.letter === 'C' ? 12 : 11;
+          const fullMeaningLabel = (label.letter === 'K' || label.letter === 'W') && value.length > 1;
+          const offset = fullMeaningLabel ? 18 : (label.letter === 'M' || label.letter === 'C' ? 12 : 11);
           label.text.textContent = value;
           label.text.setAttribute('x', point[0] + point[0] / length * offset);
           label.text.setAttribute('y', point[1] + point[1] / length * offset);
