@@ -407,12 +407,25 @@
       vector-effect: non-scaling-stroke;
     }
     #octahedron .surface-label-text {
-      fill: rgba(255,255,255,.78);
+      fill: rgba(255,255,255,.86);
       stroke: none;
       dominant-baseline: middle;
       text-anchor: middle;
-      font: italic 4px Georgia, "Times New Roman", serif;
-      letter-spacing: .12px;
+      font: italic 6px Georgia, "Times New Roman", serif;
+      letter-spacing: .16px;
+    }
+    #octahedron .explainer-axis-label {
+      fill: rgba(255,255,255,.76);
+      stroke: none;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      font: 4.4px Georgia, "Times New Roman", serif;
+      letter-spacing: .16px;
+      pointer-events: none;
+    }
+    @media (max-width: 700px) {
+      #octahedron .surface-label-text { font-size: 7px; }
+      #octahedron .explainer-axis-label { font-size: 5.2px; }
     }
     @media (max-width: 700px) {
       #stone-shell { width: min(108.8vw, 64vh); }
@@ -651,13 +664,18 @@
         top: { group: make('g', 'surface-label'), line: make('line', 'surface-label-line'), text: make('text', 'surface-label-text') },
         bottom: { group: make('g', 'surface-label'), line: make('line', 'surface-label-line'), text: make('text', 'surface-label-text') }
       };
-      surfaceLabels.top.text.textContent = 'answerable';
-      surfaceLabels.bottom.text.textContent = 'insulated';
       Object.values(surfaceLabels).forEach(label => {
         label.group.appendChild(label.line);
         label.group.appendChild(label.text);
         label.group.style.opacity = '0';
         explainerOverlay.appendChild(label.group);
+      });
+
+      const explainerAxisLabels = ['E','P','M','C','W','K'].map(letter => {
+        const text = make('text', 'explainer-axis-label');
+        text.style.opacity = '0';
+        explainerOverlay.appendChild(text);
+        return { letter, text };
       });
 
       const innerRing = make('circle', 'inner-ring');
@@ -1052,7 +1070,7 @@ The question is whether we let it change how we understand, what we value, and w
       const explainerCameras = {
         purposeTop: { id: 'explainer-purpose-top', yaw: 0, pitch: Math.PI / 2 },
         purposeSide: { id: 'explainer-purpose-side', yaw: 0, pitch: 0 },
-        meaningTop: { id: 'explainer-meaning-top', yaw: 0, pitch: Math.PI / 2 },
+        meaningCross: { id: 'explainer-meaning-cross', yaw: Math.PI / 2, pitch: 0 },
         stanceSide: { id: 'explainer-stance-side', yaw: Math.PI / 4, pitch: 0.12 },
         main: { id: 'explainer-main', yaw: Math.PI / 4, pitch: MAIN_PITCH }
       };
@@ -1071,7 +1089,7 @@ The question is whether we let it change how we understand, what we value, and w
         { at: explainerTimeFor('That is answerability.'), scene: 'answerability' },
         { at: explainerTimeFor('That is insulation.'), scene: 'insulation' },
         { at: explainerTimeFor('We now have three distinct conditions.'), scene: 'three-states' },
-        { at: explainerTimeFor('That is information.'), scene: 'meaning-prep', camera: 'meaningTop' },
+        { at: explainerTimeFor('That is information.'), scene: 'meaning-prep', camera: 'meaningCross' },
         { at: explainerTimeFor('We need a second horizontal relation.'), scene: 'meaning' },
         { at: explainerTimeFor('Knowledge supplies informational grounding.'), scene: 'meaning-labeled' },
         { at: explainerTimeFor('Now the whole structure is visible.'), scene: 'full', camera: 'main' },
@@ -1079,7 +1097,7 @@ The question is whether we let it change how we understand, what we value, and w
         { at: explainerTimeFor('Meaning: information and interpretation.'), scene: 'full-meaning' },
         { at: explainerTimeFor('Accountability: whether reality can govern and correct their organization.'), scene: 'full-accountability' },
         { at: explainerTimeFor('A formed stance lies on the surface of the structure.'), scene: 'whole', camera: 'stanceSide' },
-        { at: explainerTimeFor('And it changes the question we ask about ourselves.'), scene: 'central-question', camera: 'purposeSide' },
+        { at: explainerTimeFor('And it changes the question we ask about ourselves.'), scene: 'central-question', camera: 'main' },
         { at: explainerTimeFor('I want this structure to be understandable'), scene: 'closing', camera: 'main' }
       ].sort((a, b) => a.at - b.at);
 
@@ -1212,7 +1230,7 @@ The question is whether we let it change how we understand, what we value, and w
           if (!base) return null;
           if (explainerSceneConfig(explainer.scene).surfaceOrbit) {
             const start = explainerTimeFor('A formed stance lies on the surface of the structure.');
-            const orbit = clamp((explainer.playhead - start) * 0.08, 0, Math.PI / 2);
+            const orbit = Math.max(0, explainer.playhead - start) * 0.22;
             return { ...base, id: 'explainer-surface-orbit', yaw: base.yaw + orbit };
           }
           return { ...base };
@@ -1386,14 +1404,14 @@ The question is whether we let it change how we understand, what we value, and w
             edgePairs: [[1, 2], [2, 0]],
             header: 'Friction',
             subtext: 'A relevant pressure the stance does not yet accommodate.',
-            markers: [[0.58, 0, 0]]
+            markers: [[0.58, 0.42, 0]]
           },
           answerability: {
             axes: [1], verticalMode: 'up', edges: false,
             edgePairs: [[1, 2], [2, 0]],
             header: 'Answerability',
             subtext: 'Corrective pressure can change how the judgment is organized.',
-            markers: [[0, 0.62, 0]]
+            markers: [[0, 1, 0]]
           },
           insulation: {
             axes: [1], verticalMode: 'full', edges: false,
@@ -1407,21 +1425,24 @@ The question is whether we let it change how we understand, what we value, and w
             edgePairs: [[1, 2], [2, 0], [1, 3], [3, 0]],
             header: 'Three conditions',
             subtext: 'Absence at the origin · integration above · insulation below',
-            markers: [[0, 0, 0], [0, 0.72, 0], [0, -0.72, 0]]
+            markers: [[0, 0, 0], [0, 1, 0], [0, -1, 0]]
           },
           'meaning-prep': {
-            axes: [0], edges: false,
+            axes: [1, 2], verticalMode: 'full', edges: false,
+            axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge', W: 'Wisdom' },
             header: 'Information',
             subtext: 'What is actually happening?',
-            markers: [[0, 0, -0.74]]
+            markers: [[0, 0, -1]]
           },
           meaning: {
-            axes: [0, 2], edges: false,
+            axes: [1, 2], verticalMode: 'full', edges: false,
+            axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge', W: 'Wisdom' },
             header: 'A second horizontal relation',
-            subtext: 'Meaning also requires two functions that can correct each other.'
+            subtext: 'Knowledge and Wisdom form the horizontal meaning relation; Answerability and Insulation remain vertical.'
           },
           'meaning-labeled': {
-            axes: [0, 2], edges: false,
+            axes: [1, 2], verticalMode: 'full', edges: false,
+            axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge', W: 'Wisdom' },
             header: 'Knowledge ↔ Wisdom',
             subtext: 'Informational grounding and contextual interpretation.',
             markers: [[0, 0, -1], [0, 0, 1]]
@@ -1453,13 +1474,14 @@ The question is whether we let it change how we understand, what we value, and w
             axes: [0, 1, 2], verticalMode: 'full', edges: true,
             surface: true,
             surfaceOrbit: true,
-            header: 'A stance is the surface',
-            subtext: 'The surface records how the whole stance is organized; the internal axes are only its references.'
+            header: 'A stance is any point on the surface',
+            subtext: 'Each surface point is one possible organization of the whole stance; the internal axes are only its references.'
           },
           'central-question': {
             axes: [1], verticalMode: 'full', edges: false,
             edgePairs: [[1, 2], [2, 0]],
             centralPerson: true,
+            centralLabels: true,
             header: 'The central question',
             subtext: 'What am I allowing to correct me?'
           },
@@ -1514,17 +1536,47 @@ The question is whether we let it change how we understand, what we value, and w
       const centralQuestionAnchor = () => {
         const text = currentExplainerSegment()?.text || '';
         const t = segmentProgress();
-        const rise = (startX) => [
-          startX * (1 - t),
-          0.9 * t,
-          0
-        ];
-        if (text.includes('Am I knowledgeable?')) return rise(-0.78);
-        if (text.includes('Do I care?')) return rise(0.78);
-        if (text.includes('Does this work?')) return rise(-0.78);
-        if (text.includes('And beneath all three')) return rise(0.66);
-        if (text.includes('What am I allowing to correct me?')) return rise(0.66);
+        const riseFromX = sign => [sign * (1 - t), t, 0];
+        const riseFromZ = sign => [0, t, sign * (1 - t)];
+
+        if (text.includes('Am I knowledgeable?')) return riseFromZ(-1);
+        if (text.includes('Do I care?')) return riseFromX(1);
+        if (text.includes('Does this work?')) return riseFromX(-1);
+        if (text.includes('And beneath all three')) return riseFromX(1);
+        if (text.includes('What am I allowing to correct me?')) return riseFromX(1);
         return null;
+      };
+
+      const centralQuestionLabels = () => {
+        const text = currentExplainerSegment()?.text || '';
+        if (text.includes('Am I knowledgeable?')) {
+          return { K: 'Knowledge', W: 'Wisdom' };
+        }
+        if (text.includes('Do I care?')) {
+          return { P: 'Practicality', E: 'Empathy' };
+        }
+        if (text.includes('Does this work?')) {
+          return { P: 'Practicality', E: 'Empathy' };
+        }
+        if (text.includes('And beneath all three') || text.includes('What am I allowing to correct me?')) {
+          return { P: 'Practicality', E: 'Empathy', K: 'Knowledge', W: 'Wisdom' };
+        }
+        return {};
+      };
+
+      const surfaceDescriptor = item => {
+        const key = [...item.face].sort((a, b) => a - b).join('-');
+        const words = {
+          '0-2-4': 'thoughtful',
+          '0-2-5': 'caring',
+          '1-2-4': 'pragmatic',
+          '1-2-5': 'methodical',
+          '0-3-4': 'rationalizer',
+          '0-3-5': 'fixated',
+          '1-3-4': 'opportunist',
+          '1-3-5': 'rigid'
+        };
+        return words[key] || '';
       };
 
       const drawExplainer = points => {
@@ -1534,6 +1586,7 @@ The question is whether we let it change how we understand, what we value, and w
         explainerPerson.style.opacity = '0';
         explainerGrowthLine.style.opacity = '0';
         Object.values(surfaceLabels).forEach(label => label.group.style.opacity = '0');
+        explainerAxisLabels.forEach(label => label.text.style.opacity = '0');
         facePolygons.forEach(item => item.polygon.style.opacity = '0');
         if (!explainer.active) return;
 
@@ -1543,6 +1596,23 @@ The question is whether we let it change how we understand, what we value, and w
           marker.setAttribute('cx', point[0]);
           marker.setAttribute('cy', point[1]);
           marker.style.opacity = '1';
+        });
+
+        const vertexIndex = { E: 0, P: 1, M: 2, C: 3, W: 4, K: 5 };
+        const activeLabels = {
+          ...(config.axisLabels || {}),
+          ...(config.centralLabels ? centralQuestionLabels() : {})
+        };
+        explainerAxisLabels.forEach(label => {
+          const value = activeLabels[label.letter];
+          if (!value) return;
+          const point = points[vertexIndex[label.letter]];
+          const length = Math.hypot(point[0], point[1]) || 1;
+          const offset = label.letter === 'M' || label.letter === 'C' ? 12 : 11;
+          label.text.textContent = value;
+          label.text.setAttribute('x', point[0] + point[0] / length * offset);
+          label.text.setAttribute('y', point[1] + point[1] / length * offset);
+          label.text.style.opacity = '1';
         });
 
         let personAnchor = null;
@@ -1580,24 +1650,20 @@ The question is whether we let it change how we understand, what we value, and w
             item.polygon.style.opacity = front ? '0.13' : '0.035';
           });
 
-          const placeSurfaceLabel = (label, item, x, y) => {
+          const placeSurfaceLabel = (label, item, x, y, targetX, targetY) => {
             if (!item) return;
-            const centroid = item.face.reduce((acc, index) => {
-              acc[0] += points[index][0] / 3;
-              acc[1] += points[index][1] / 3;
-              return acc;
-            }, [0, 0]);
+            label.text.textContent = surfaceDescriptor(item);
             label.text.setAttribute('x', x);
             label.text.setAttribute('y', y);
-            label.line.setAttribute('x1', x + (x > 0 ? -13 : 13));
+            label.line.setAttribute('x1', x + (x > 0 ? -16 : 16));
             label.line.setAttribute('y1', y);
-            label.line.setAttribute('x2', centroid[0]);
-            label.line.setAttribute('y2', centroid[1]);
+            label.line.setAttribute('x2', targetX);
+            label.line.setAttribute('y2', targetY);
             label.group.style.opacity = '1';
           };
 
-          placeSurfaceLabel(surfaceLabels.top, frontTop, 76, -34);
-          placeSurfaceLabel(surfaceLabels.bottom, frontBottom, -76, 34);
+          placeSurfaceLabel(surfaceLabels.top, frontTop, 78, -38, 40, -13);
+          placeSurfaceLabel(surfaceLabels.bottom, frontBottom, -78, 38, -40, 13);
         }
       };
 
