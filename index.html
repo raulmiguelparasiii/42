@@ -396,7 +396,7 @@
     }
     #octahedron .structure-backdrop {
       stroke: none;
-      fill: #171717;
+      fill: #343434;
       pointer-events: none;
     }
     #octahedron .explainer-face {
@@ -1699,11 +1699,11 @@ The question is whether we let it change how we understand, what we value, and w
         if (config.translucentSurface) {
           const hull = convexHull(points);
           structureBackdrop.setAttribute('points', hull.map(point => point[0] + ',' + point[1]).join(' '));
-          structureBackdrop.style.opacity = '1';
+          structureBackdrop.style.opacity = '0.92';
           facePolygons.forEach(item => {
             item.polygon.setAttribute('points', item.face.map(index => points[index][0] + ',' + points[index][1]).join(' '));
             item.polygon.style.fill = '#000';
-            item.polygon.style.opacity = '0.14';
+            item.polygon.style.opacity = '0.32';
           });
         }
 
