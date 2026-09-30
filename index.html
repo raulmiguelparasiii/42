@@ -386,6 +386,34 @@
       stroke-width: .9;
       fill: none;
     }
+    #octahedron .explainer-face {
+      stroke: none;
+      fill: #fff;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+    #octahedron .explainer-growth-line {
+      stroke: rgba(255,255,255,.58);
+      stroke-width: .75;
+      stroke-dasharray: 2.4 2.4;
+      fill: none;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+    #octahedron .surface-label-line {
+      stroke: rgba(255,255,255,.46);
+      stroke-width: .65;
+      fill: none;
+      vector-effect: non-scaling-stroke;
+    }
+    #octahedron .surface-label-text {
+      fill: rgba(255,255,255,.78);
+      stroke: none;
+      dominant-baseline: middle;
+      text-anchor: middle;
+      font: italic 4px Georgia, "Times New Roman", serif;
+      letter-spacing: .12px;
+    }
     @media (max-width: 700px) {
       #stone-shell { width: min(108.8vw, 64vh); }
       #octahedron .outer-ring-text { font-size: 5.46px; }
@@ -547,6 +575,21 @@
         }
       }
 
+      const faceTriplets = [];
+      [0, 1].forEach(x => {
+        [2, 3].forEach(y => {
+          [4, 5].forEach(z => faceTriplets.push([x, y, z]));
+        });
+      });
+      const faceGroup = make('g', 'explainer-faces');
+      svg.appendChild(faceGroup);
+      const facePolygons = faceTriplets.map(face => {
+        const polygon = make('polygon', 'explainer-face');
+        polygon.style.opacity = '0';
+        faceGroup.appendChild(polygon);
+        return { face, polygon };
+      });
+
       const axisLines = axes.map(() => {
         const line = make('line', 'axis');
         svg.appendChild(line);
@@ -591,14 +634,31 @@
         explainerOverlay.appendChild(circle);
         return circle;
       });
+      const explainerGrowthLine = make('line', 'explainer-growth-line');
+      explainerGrowthLine.style.opacity = '0';
+      explainerOverlay.appendChild(explainerGrowthLine);
+
       const explainerPerson = make('g', 'explainer-person');
       const explainerPersonHead = make('circle', 'explainer-person-head');
       const explainerPersonBody = make('path', 'explainer-person-body');
       explainerPersonHead.setAttribute('r', '3.4');
-      explainerPersonBody.setAttribute('d', 'M -6 10 Q 0 4 6 10 M 0 4 L 0 14');
+      explainerPersonBody.setAttribute('d', 'M -6 10 Q 0 4 6 10 M 0 4 L 0 14 M 0 14 L -4 21 M 0 14 L 4 21');
       explainerPerson.appendChild(explainerPersonHead);
       explainerPerson.appendChild(explainerPersonBody);
       explainerOverlay.appendChild(explainerPerson);
+
+      const surfaceLabels = {
+        top: { group: make('g', 'surface-label'), line: make('line', 'surface-label-line'), text: make('text', 'surface-label-text') },
+        bottom: { group: make('g', 'surface-label'), line: make('line', 'surface-label-line'), text: make('text', 'surface-label-text') }
+      };
+      surfaceLabels.top.text.textContent = 'answerable';
+      surfaceLabels.bottom.text.textContent = 'insulated';
+      Object.values(surfaceLabels).forEach(label => {
+        label.group.appendChild(label.line);
+        label.group.appendChild(label.text);
+        label.group.style.opacity = '0';
+        explainerOverlay.appendChild(label.group);
+      });
 
       const innerRing = make('circle', 'inner-ring');
       innerRing.setAttribute('cx', '0');
@@ -800,9 +860,13 @@ Leave absence at the origin.
 
 Place the integrated stance above it.
 
+To make that distinction visible, move the line we were using. Keep practicality and empathy at the ends, but lift its middle to the integrated stance. The relation now runs from integration down to both ends.
+
+The origin stays where absence is. A formed stance now lies away from it.
+
 Now we can distinguish someone who has not formed a relationship with the situation from someone who has worked through its relevant pressures.
 
-And what develops a person from that absence?
+And what develops a person from that absence into a stance?
 
 Experience.
 
@@ -924,9 +988,9 @@ Meaning: information and interpretation.
 
 Accountability: whether reality can govern and correct their organization.
 
-The whole stance is represented as one unit.
+A formed stance lies on the surface of the structure.
 
-Its position describes how that stance is organized. It does not count how much compassion or knowledge a person possesses.
+Its position on that surface describes how the stance is organized. It does not count how much compassion or knowledge a person possesses.
 
 At the mature limit, none of those functions disappears.
 
@@ -942,7 +1006,7 @@ An unfamiliar situation may demand careful interpretation.
 
 Maturity allows the situation to determine what leads, while the other relevant considerations retain their authority.
 
-That is the central claim of the Stone.
+That is the central claim of the structure.
 
 And it changes the question we ask about ourselves.
 
@@ -989,6 +1053,7 @@ The question is whether we let it change how we understand, what we value, and w
         purposeTop: { id: 'explainer-purpose-top', yaw: 0, pitch: Math.PI / 2 },
         purposeSide: { id: 'explainer-purpose-side', yaw: 0, pitch: 0 },
         meaningTop: { id: 'explainer-meaning-top', yaw: 0, pitch: Math.PI / 2 },
+        stanceSide: { id: 'explainer-stance-side', yaw: Math.PI / 4, pitch: 0.12 },
         main: { id: 'explainer-main', yaw: Math.PI / 4, pitch: MAIN_PITCH }
       };
       const explainerCues = [
@@ -999,7 +1064,9 @@ The question is whether we let it change how we understand, what we value, and w
         { at: explainerTimeFor('That is integration.'), scene: 'integration' },
         { at: explainerTimeFor('We need another direction.'), scene: 'vertical', camera: 'purposeSide' },
         { at: explainerTimeFor('Leave absence at the origin.'), scene: 'origin' },
-        { at: explainerTimeFor('Place the integrated stance above it.'), scene: 'answerability-seed' },
+        { at: explainerTimeFor('Place the integrated stance above it.'), scene: 'with-stance' },
+        { at: explainerTimeFor('To make that distinction visible'), scene: 'stance-shape' },
+        { at: explainerTimeFor('And what develops a person from that absence into a stance?'), scene: 'experience' },
         { at: explainerTimeFor('I call that friction.'), scene: 'friction' },
         { at: explainerTimeFor('That is answerability.'), scene: 'answerability' },
         { at: explainerTimeFor('That is insulation.'), scene: 'insulation' },
@@ -1011,8 +1078,9 @@ The question is whether we let it change how we understand, what we value, and w
         { at: explainerTimeFor('Purpose: concern and constraint.'), scene: 'full-purpose' },
         { at: explainerTimeFor('Meaning: information and interpretation.'), scene: 'full-meaning' },
         { at: explainerTimeFor('Accountability: whether reality can govern and correct their organization.'), scene: 'full-accountability' },
-        { at: explainerTimeFor('The whole stance is represented as one unit.'), scene: 'whole' },
-        { at: explainerTimeFor('That is the central claim of the Stone.'), scene: 'closing' }
+        { at: explainerTimeFor('A formed stance lies on the surface of the structure.'), scene: 'whole', camera: 'stanceSide' },
+        { at: explainerTimeFor('And it changes the question we ask about ourselves.'), scene: 'central-question', camera: 'purposeSide' },
+        { at: explainerTimeFor('I want this structure to be understandable'), scene: 'closing', camera: 'main' }
       ].sort((a, b) => a.at - b.at);
 
       const explainer = {
@@ -1133,6 +1201,23 @@ The question is whether we let it change how we understand, what we value, and w
         snapTarget = { ...camera };
         velocityYaw *= 0.18;
         velocityPitch *= 0.18;
+      };
+
+      const currentExplainerCamera = () => {
+        if (!explainer.active || explainer.cueIndex < 0) return null;
+        for (let i = explainer.cueIndex; i >= 0; i--) {
+          const cameraName = explainerCues[i].camera;
+          if (!cameraName) continue;
+          const base = explainerCameras[cameraName];
+          if (!base) return null;
+          if (explainerSceneConfig(explainer.scene).surfaceOrbit) {
+            const start = explainerTimeFor('A formed stance lies on the surface of the structure.');
+            const orbit = clamp((explainer.playhead - start) * 0.08, 0, Math.PI / 2);
+            return { ...base, id: 'explainer-surface-orbit', yaw: base.yaw + orbit };
+          }
+          return { ...base };
+        }
+        return null;
       };
 
       const refreshExplainerCue = (forceCamera = false) => {
@@ -1266,41 +1351,60 @@ The question is whether we let it change how we understand, what we value, and w
           },
           vertical: {
             axes: [0, 1], verticalMode: 'up', edges: false,
-            header: 'A second direction',
-            subtext: 'The horizontal middle alone cannot distinguish integration from absence.'
+            header: 'With a stance vs without',
+            subtext: 'The same horizontal middle can mean integration—or simply that no stance has formed yet.'
           },
           origin: {
             axes: [0, 1], verticalMode: 'up', edges: false,
-            header: 'Origin',
-            subtext: 'No formed orientation to the situation.',
+            header: 'With a stance vs without',
+            subtext: 'Absence remains at the origin. A formed stance needs somewhere else to be.',
             markers: [[0, 0, 0]]
           },
-          'answerability-seed': {
+          'with-stance': {
             axes: [0, 1], verticalMode: 'up', edges: false,
-            header: 'Answerability',
-            subtext: 'Reality is allowed to correct the stance.',
-            markers: [[0, 1, 0]]
+            header: 'With a stance vs without',
+            subtext: 'Integration moves above absence; the origin stays unformed.',
+            markers: [[0, 0, 0], [0, 1, 0]]
+          },
+          'stance-shape': {
+            axes: [1], verticalMode: 'up', edges: false,
+            edgePairs: [[1, 2], [2, 0]],
+            header: 'A formed stance',
+            subtext: 'The old tug line lifts at its middle: integration above, Practicality and Empathy at the ends.',
+            markers: [[0, 0, 0]]
+          },
+          experience: {
+            axes: [1], verticalMode: 'up', edges: false,
+            edgePairs: [[1, 2], [2, 0]],
+            experience: true,
+            header: 'Experience',
+            subtext: 'A stance develops outward from absence—but experience can develop unevenly.',
+            markers: [[0, 0, 0]]
           },
           friction: {
-            axes: [0, 1], verticalMode: 'up', edges: false,
+            axes: [1], verticalMode: 'up', edges: false,
+            edgePairs: [[1, 2], [2, 0]],
             header: 'Friction',
             subtext: 'A relevant pressure the stance does not yet accommodate.',
             markers: [[0.58, 0, 0]]
           },
           answerability: {
-            axes: [0, 1], verticalMode: 'up', edges: false,
+            axes: [1], verticalMode: 'up', edges: false,
+            edgePairs: [[1, 2], [2, 0]],
             header: 'Answerability',
             subtext: 'Corrective pressure can change how the judgment is organized.',
             markers: [[0, 0.62, 0]]
           },
           insulation: {
-            axes: [0, 1], verticalMode: 'full', edges: false,
+            axes: [1], verticalMode: 'full', edges: false,
+            edgePairs: [[1, 2], [2, 0], [1, 3], [3, 0]],
             header: 'Insulation',
             subtext: 'A relevant pressure is denied corrective authority.',
             markers: [[0, -1, 0]]
           },
           'three-states': {
-            axes: [0, 1], verticalMode: 'full', edges: false,
+            axes: [1], verticalMode: 'full', edges: false,
+            edgePairs: [[1, 2], [2, 0], [1, 3], [3, 0]],
             header: 'Three conditions',
             subtext: 'Absence at the origin · integration above · insulation below',
             markers: [[0, 0, 0], [0, 0.72, 0], [0, -0.72, 0]]
@@ -1324,7 +1428,7 @@ The question is whether we let it change how we understand, what we value, and w
           },
           full: {
             axes: [0, 1, 2], verticalMode: 'full', edges: true,
-            header: 'The Stone',
+            header: 'The structure',
             subtext: 'Purpose · meaning · accountability'
           },
           'full-purpose': {
@@ -1347,13 +1451,22 @@ The question is whether we let it change how we understand, what we value, and w
           },
           whole: {
             axes: [0, 1, 2], verticalMode: 'full', edges: true,
-            header: 'The whole stance',
-            subtext: 'Its position describes organization—not how much compassion, knowledge, or experience a person possesses.'
+            surface: true,
+            surfaceOrbit: true,
+            header: 'A stance is the surface',
+            subtext: 'The surface records how the whole stance is organized; the internal axes are only its references.'
+          },
+          'central-question': {
+            axes: [1], verticalMode: 'full', edges: false,
+            edgePairs: [[1, 2], [2, 0]],
+            centralPerson: true,
+            header: 'The central question',
+            subtext: 'What am I allowing to correct me?'
           },
           closing: {
             axes: [0, 1, 2], verticalMode: 'full', edges: true,
-            header: 'The central question',
-            subtext: 'What am I allowing to correct me?'
+            header: 'The structure',
+            subtext: 'The possibility of maturity begins when reality is allowed to matter.'
           }
         };
         return config[scene] || config.blank;
@@ -1378,11 +1491,50 @@ The question is whether we let it change how we understand, what we value, and w
         return 0;
       };
 
+      const segmentProgress = () => {
+        const segment = currentExplainerSegment();
+        if (!segment) return 0;
+        return clamp((explainer.playhead - segment.start) / Math.max(segment.end - segment.start, 0.001), 0, 1);
+      };
+
+      const experienceAnchor = () => {
+        const text = currentExplainerSegment()?.text || '';
+        const progress = segmentProgress();
+        const scale = t => Math.min(0.88, 0.12 + t * 0.76);
+        if (text.includes('Experience.')) return [0, 0, 0];
+        if (text.includes('experience suffering')) return [scale(progress), 0, 0];
+        if (text.includes('experience consequences')) return [-scale(progress), 0, 0];
+        if (text.includes('each must correct the other')) return [0, scale(progress), 0];
+        if (text.includes('learning to care')) return [0.82, 0, 0];
+        if (text.includes('learning what works')) return [-0.82, 0, 0];
+        if (text.includes('Both have developed')) return [0, 0.48, 0];
+        return [0, 0, 0];
+      };
+
+      const centralQuestionAnchor = () => {
+        const text = currentExplainerSegment()?.text || '';
+        const t = segmentProgress();
+        const rise = (startX) => [
+          startX * (1 - t),
+          0.9 * t,
+          0
+        ];
+        if (text.includes('Am I knowledgeable?')) return rise(-0.78);
+        if (text.includes('Do I care?')) return rise(0.78);
+        if (text.includes('Does this work?')) return rise(-0.78);
+        if (text.includes('And beneath all three')) return rise(0.66);
+        if (text.includes('What am I allowing to correct me?')) return rise(0.66);
+        return [0, 0.9, 0];
+      };
+
       const drawExplainer = points => {
         const config = explainerSceneConfig(explainer.scene);
         explainerOverlay.style.opacity = explainer.active ? '1' : '0';
         explainerMarkers.forEach(marker => marker.style.opacity = '0');
         explainerPerson.style.opacity = '0';
+        explainerGrowthLine.style.opacity = '0';
+        Object.values(surfaceLabels).forEach(label => label.group.style.opacity = '0');
+        facePolygons.forEach(item => item.polygon.style.opacity = '0');
         if (!explainer.active) return;
 
         (config.markers || []).slice(0, explainerMarkers.length).forEach((anchor, index) => {
@@ -1393,10 +1545,59 @@ The question is whether we let it change how we understand, what we value, and w
           marker.style.opacity = '1';
         });
 
-        if (config.person) {
-          const point = project(rotate([explainerPersonPosition(), 0, 0]));
+        let personAnchor = null;
+        if (config.person) personAnchor = [explainerPersonPosition(), 0, 0];
+        if (config.experience) personAnchor = experienceAnchor();
+        if (config.centralPerson) personAnchor = centralQuestionAnchor();
+
+        if (personAnchor) {
+          const point = project(rotate(personAnchor));
           explainerPerson.setAttribute('transform', 'translate(' + point[0] + ' ' + (point[1] - 16) + ')');
           explainerPerson.style.opacity = '1';
+        }
+
+        if (config.experience && personAnchor) {
+          const origin = project(rotate([0, 0, 0]));
+          const target = project(rotate(personAnchor));
+          explainerGrowthLine.setAttribute('x1', origin[0]);
+          explainerGrowthLine.setAttribute('y1', origin[1]);
+          explainerGrowthLine.setAttribute('x2', target[0]);
+          explainerGrowthLine.setAttribute('y2', target[1]);
+          explainerGrowthLine.style.opacity = Math.hypot(...personAnchor) > 0.05 ? '1' : '0';
+        }
+
+        if (config.surface) {
+          const rotated = vertices.map(rotate);
+          const depth = item => item.face.reduce((sum, vertexIndex) => sum + rotated[vertexIndex][2], 0) / 3;
+          const topFaces = facePolygons.filter(item => item.face.includes(2));
+          const bottomFaces = facePolygons.filter(item => item.face.includes(3));
+          const frontTop = topFaces.reduce((best, item) => !best || depth(item) > depth(best) ? item : best, null);
+          const frontBottom = bottomFaces.reduce((best, item) => !best || depth(item) > depth(best) ? item : best, null);
+
+          facePolygons.forEach(item => {
+            item.polygon.setAttribute('points', item.face.map(index => points[index][0] + ',' + points[index][1]).join(' '));
+            const front = item === frontTop || item === frontBottom;
+            item.polygon.style.opacity = front ? '0.13' : '0.035';
+          });
+
+          const placeSurfaceLabel = (label, item, x, y) => {
+            if (!item) return;
+            const centroid = item.face.reduce((acc, index) => {
+              acc[0] += points[index][0] / 3;
+              acc[1] += points[index][1] / 3;
+              return acc;
+            }, [0, 0]);
+            label.text.setAttribute('x', x);
+            label.text.setAttribute('y', y);
+            label.line.setAttribute('x1', x + (x > 0 ? -13 : 13));
+            label.line.setAttribute('y1', y);
+            label.line.setAttribute('x2', centroid[0]);
+            label.line.setAttribute('y2', centroid[1]);
+            label.group.style.opacity = '1';
+          };
+
+          placeSurfaceLabel(surfaceLabels.top, frontTop, 76, -34);
+          placeSurfaceLabel(surfaceLabels.bottom, frontBottom, -76, 34);
         }
       };
 
@@ -1539,10 +1740,13 @@ The question is whether we let it change how we understand, what we value, and w
           } else {
             const visible = scene.axes.includes(i);
             const emphasized = (scene.emphasize || []).includes(i);
-            axisLines[i].style.opacity = visible ? (emphasized ? '1' : '0.78') : '0';
-            axisLines[i].style.strokeWidth = visible ? (emphasized ? '1.35' : '1.05') : '';
+            axisLines[i].style.opacity = visible ? (scene.surface ? '0.14' : (emphasized ? '1' : '0.78')) : '0';
+            axisLines[i].style.strokeWidth = visible ? (scene.surface ? '0.82' : (emphasized ? '1.35' : '1.05')) : '';
           }
         });
+
+        const pairKey = (a, b) => Math.min(a, b) + '-' + Math.max(a, b);
+        const sceneEdgePairs = new Set((scene?.edgePairs || []).map(pair => pairKey(pair[0], pair[1])));
 
         edges.forEach(([a, b], i) => {
           const [x1, y1, z1] = points[a];
@@ -1551,9 +1755,14 @@ The question is whether we let it change how we understand, what we value, and w
           lines[i].setAttribute('y1', y1);
           lines[i].setAttribute('x2', x2);
           lines[i].setAttribute('y2', y2);
-          lines[i].style.opacity = !explainer.active || scene.edges
-            ? String(0.48 + 0.42 * ((z1 + z2 + 2) / 4))
-            : '0';
+
+          if (!explainer.active) {
+            lines[i].style.opacity = String(0.48 + 0.42 * ((z1 + z2 + 2) / 4));
+          } else {
+            const selected = scene.edges === true || sceneEdgePairs.has(pairKey(a, b));
+            const base = String(0.48 + 0.42 * ((z1 + z2 + 2) / 4));
+            lines[i].style.opacity = selected ? (scene.surface ? String(Number(base) * 0.66) : base) : '0';
+          }
         });
 
         drawOverlay(points);
@@ -1640,6 +1849,11 @@ The question is whether we let it change how we understand, what we value, and w
           updateExplainerUI();
         }
 
+        if (explainer.active && !dragging && explainerSceneConfig(explainer.scene).surfaceOrbit) {
+          const target = currentExplainerCamera();
+          if (target) snapTarget = target;
+        }
+
         settlePhysics(now, dt);
         draw();
         requestAnimationFrame(frame);
@@ -1685,10 +1899,11 @@ The question is whether we let it change how we understand, what we value, and w
         releasedAt = performance.now();
         if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
 
-        if (explainer.active && explainer.pendingCamera) {
+        if (explainer.active) {
+          const target = explainer.pendingCamera || currentExplainerCamera();
           velocityYaw = 0;
           velocityPitch = 0;
-          snapTarget = { ...explainer.pendingCamera };
+          snapTarget = target ? { ...target } : null;
           explainer.pendingCamera = null;
         } else if (reduceMotion) {
           velocityYaw = 0;
