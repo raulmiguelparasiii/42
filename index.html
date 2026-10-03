@@ -451,12 +451,33 @@
       #octahedron .explainer-axis-label { font-size: 5.2px; }
     }
     @media (max-width: 700px) {
-      #stone-shell { width: min(108.8vw, 64vh); }
+      html, body {
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      #stone-shell {
+        width: min(108.8vw, 64vh);
+        --mobile-pan-x: 0px;
+        --mobile-pan-y: 0px;
+        --mobile-scale: 1;
+        --mobile-mode-y: 0px;
+        transform:
+          translate3d(
+            var(--mobile-pan-x),
+            calc(var(--mobile-pan-y) + var(--mobile-mode-y)),
+            0
+          )
+          scale(var(--mobile-scale));
+        transform-origin: center center;
+      }
+      #stone-shell.mobile-gesture-active {
+        transition: width 280ms ease;
+      }
       #octahedron .outer-ring-text { font-size: 5.46px; }
       #octahedron .top-concept { font-size: 5.2px; }
       #app.explainer-active #stone-shell {
         width: min(92vw, 48vh);
-        transform: translateY(1vh);
+        --mobile-mode-y: 1vh;
       }
       #explainer-launch {
         top: calc(100% + 12px);
@@ -575,6 +596,7 @@
 
       const svg = document.querySelector('#octahedron');
       const app = document.querySelector('#app');
+      const stoneShell = document.querySelector('#stone-shell');
       const explainerLaunch = document.querySelector('#explainer-launch');
       const explainerHeader = document.querySelector('#explainer-header');
       const explainerHeading = document.querySelector('#explainer-heading');
@@ -1152,6 +1174,18 @@ The question is whether we let it change how we understand, what we value, and w
       let releasedAt = 0;
 
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const mobileGestureMedia = matchMedia('(max-width: 700px)');
+      const activeTouchPointers = new Map();
+      const mobileViewport = {
+        panX: 0,
+        panY: 0,
+        scale: 1,
+        gesture: null,
+        suppressRotation: false,
+        savedBeforeExplainer: null
+      };
+      const MOBILE_MIN_SCALE = 0.5;
+      const MOBILE_MAX_SCALE = 1.6;
       const ROTATE_SPEED = 0.0075;
       const MOMENTUM_DAMPING = 0.003;
       const SNAP_SPEED = 0.00058;
@@ -1163,6 +1197,98 @@ The question is whether we let it change how we understand, what we value, and w
       const wrap = angle => Math.atan2(Math.sin(angle), Math.cos(angle));
       const deltaYaw = target => wrap(target - yaw);
       const distanceTo = target => Math.hypot(deltaYaw(target.yaw), target.pitch - pitch);
+
+      const applyMobileViewport = () => {
+        stoneShell.style.setProperty('--mobile-pan-x', mobileViewport.panX + 'px');
+        stoneShell.style.setProperty('--mobile-pan-y', mobileViewport.panY + 'px');
+        stoneShell.style.setProperty('--mobile-scale', String(mobileViewport.scale));
+      };
+
+      const mobileGestureMetrics = () => {
+        const points = [...activeTouchPointers.values()].slice(0, 2);
+        if (points.length < 2) return null;
+        const [a, b] = points;
+        return {
+          x: (a.x + b.x) / 2,
+          y: (a.y + b.y) / 2,
+          distance: Math.max(Math.hypot(b.x - a.x, b.y - a.y), 1)
+        };
+      };
+
+      const beginMobileGesture = () => {
+        if (!mobileGestureMedia.matches || explainer.active) return;
+        const metrics = mobileGestureMetrics();
+        if (!metrics) return;
+        mobileViewport.gesture = {
+          x: metrics.x,
+          y: metrics.y,
+          distance: metrics.distance,
+          panX: mobileViewport.panX,
+          panY: mobileViewport.panY,
+          scale: mobileViewport.scale
+        };
+        stoneShell.classList.add('mobile-gesture-active');
+      };
+
+      const updateMobileGesture = () => {
+        const start = mobileViewport.gesture;
+        const metrics = mobileGestureMetrics();
+        if (!start || !metrics || explainer.active) return;
+
+        const nextScale = clamp(
+          start.scale * (metrics.distance / start.distance),
+          MOBILE_MIN_SCALE,
+          MOBILE_MAX_SCALE
+        );
+        const viewportCenterX = innerWidth / 2;
+        const viewportCenterY = innerHeight / 2;
+        const localX = (start.x - viewportCenterX - start.panX) / start.scale;
+        const localY = (start.y - viewportCenterY - start.panY) / start.scale;
+        const maxPanX = innerWidth * 0.9;
+        const maxPanY = innerHeight * 0.9;
+
+        mobileViewport.panX = clamp(
+          metrics.x - viewportCenterX - localX * nextScale,
+          -maxPanX,
+          maxPanX
+        );
+        mobileViewport.panY = clamp(
+          metrics.y - viewportCenterY - localY * nextScale,
+          -maxPanY,
+          maxPanY
+        );
+        mobileViewport.scale = nextScale;
+        applyMobileViewport();
+      };
+
+      const endMobileGesture = () => {
+        mobileViewport.gesture = null;
+        stoneShell.classList.remove('mobile-gesture-active');
+      };
+
+      const centerMobileViewportForExplainer = () => {
+        if (!mobileGestureMedia.matches) return;
+        mobileViewport.savedBeforeExplainer = {
+          panX: mobileViewport.panX,
+          panY: mobileViewport.panY,
+          scale: mobileViewport.scale
+        };
+        mobileViewport.panX = 0;
+        mobileViewport.panY = 0;
+        mobileViewport.scale = 1;
+        endMobileGesture();
+        applyMobileViewport();
+      };
+
+      const restoreMobileViewportAfterExplainer = () => {
+        const saved = mobileViewport.savedBeforeExplainer;
+        mobileViewport.savedBeforeExplainer = null;
+        if (!saved || !mobileGestureMedia.matches) return;
+        mobileViewport.panX = saved.panX;
+        mobileViewport.panY = saved.panY;
+        mobileViewport.scale = saved.scale;
+        applyMobileViewport();
+      };
 
       const nearestSnap = () => {
         let best = snaps[0];
@@ -1331,6 +1457,7 @@ The question is whether we let it change how we understand, what we value, and w
       };
 
       const startExplainer = () => {
+        centerMobileViewportForExplainer();
         explainer.active = true;
         explainer.playing = true;
         explainer.playhead = 0;
@@ -1363,6 +1490,7 @@ The question is whether we let it change how we understand, what we value, and w
         explainerLaunch.hidden = false;
         explainerLaunch.classList.remove('is-visible');
         app.classList.remove('explainer-active');
+        restoreMobileViewportAfterExplainer();
         snapTarget = nearestSnap();
       };
 
@@ -2080,7 +2208,7 @@ The question is whether we let it change how we understand, what we value, and w
         requestAnimationFrame(frame);
       };
 
-      svg.addEventListener('pointerdown', event => {
+      const beginRotation = event => {
         dragging = true;
         snapTarget = null;
         velocityYaw = 0;
@@ -2088,10 +2216,10 @@ The question is whether we let it change how we understand, what we value, and w
         lastX = event.clientX;
         lastY = event.clientY;
         lastPointerTime = performance.now();
-        svg.setPointerCapture(event.pointerId);
-      });
+        if (!svg.hasPointerCapture(event.pointerId)) svg.setPointerCapture(event.pointerId);
+      };
 
-      svg.addEventListener('pointermove', event => {
+      const moveRotation = event => {
         if (!dragging) return;
 
         const now = performance.now();
@@ -2112,7 +2240,7 @@ The question is whether we let it change how we understand, what we value, and w
         lastX = event.clientX;
         lastY = event.clientY;
         lastPointerTime = now;
-      });
+      };
 
       const stopDrag = event => {
         if (!dragging) return;
@@ -2129,12 +2257,89 @@ The question is whether we let it change how we understand, what we value, and w
         } else if (reduceMotion) {
           velocityYaw = 0;
           velocityPitch = 0;
-          if (!explainer.active) snapTarget = nearestSnap();
+          snapTarget = nearestSnap();
         }
       };
 
-      svg.addEventListener('pointerup', stopDrag);
-      svg.addEventListener('pointercancel', stopDrag);
+      const isMobileTouch = event =>
+        mobileGestureMedia.matches && event.pointerType === 'touch';
+
+      svg.addEventListener('pointerdown', event => {
+        if (isMobileTouch(event)) {
+          activeTouchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (!svg.hasPointerCapture(event.pointerId)) svg.setPointerCapture(event.pointerId);
+
+          if (activeTouchPointers.size >= 2) {
+            dragging = false;
+            velocityYaw = 0;
+            velocityPitch = 0;
+            snapTarget = null;
+            mobileViewport.suppressRotation = true;
+            if (!explainer.active) beginMobileGesture();
+            return;
+          }
+
+          if (mobileViewport.suppressRotation) return;
+        }
+
+        beginRotation(event);
+      });
+
+      svg.addEventListener('pointermove', event => {
+        if (isMobileTouch(event) && activeTouchPointers.has(event.pointerId)) {
+          activeTouchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+          if (activeTouchPointers.size >= 2) {
+            if (!explainer.active) {
+              if (!mobileViewport.gesture) beginMobileGesture();
+              updateMobileGesture();
+            }
+            return;
+          }
+
+          if (mobileViewport.suppressRotation) return;
+        }
+
+        moveRotation(event);
+      });
+
+      const finishPointer = event => {
+        if (isMobileTouch(event)) {
+          activeTouchPointers.delete(event.pointerId);
+          if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+
+          if (activeTouchPointers.size >= 2) {
+            beginMobileGesture();
+            return;
+          }
+
+          if (mobileViewport.gesture) endMobileGesture();
+
+          if (mobileViewport.suppressRotation) {
+            dragging = false;
+            velocityYaw = 0;
+            velocityPitch = 0;
+
+            if (activeTouchPointers.size === 0) {
+              mobileViewport.suppressRotation = false;
+              releasedAt = performance.now();
+              if (explainer.active) {
+                const target = explainer.pendingCamera || currentExplainerCamera();
+                snapTarget = target ? { ...target } : null;
+                explainer.pendingCamera = null;
+              } else if (reduceMotion) {
+                snapTarget = nearestSnap();
+              }
+            }
+            return;
+          }
+        }
+
+        stopDrag(event);
+      };
+
+      svg.addEventListener('pointerup', finishPointer);
+      svg.addEventListener('pointercancel', finishPointer);
 
       explainerLaunch.addEventListener('click', startExplainer);
       explainerToggle.addEventListener('click', () => {
