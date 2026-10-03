@@ -457,6 +457,7 @@
       }
       #stone-shell {
         width: min(108.8vw, 64vh);
+        touch-action: none;
         --mobile-pan-x: 0px;
         --mobile-pan-y: 0px;
         --mobile-scale: 1;
@@ -1264,6 +1265,13 @@ The question is whether we let it change how we understand, what we value, and w
       const endMobileGesture = () => {
         mobileViewport.gesture = null;
         stoneShell.classList.remove('mobile-gesture-active');
+      };
+
+      const resetMobileViewport = () => {
+        mobileViewport.panX = 0;
+        mobileViewport.panY = 0;
+        mobileViewport.scale = 1;
+        applyMobileViewport();
       };
 
       const centerMobileViewportForExplainer = () => {
@@ -2323,6 +2331,7 @@ The question is whether we let it change how we understand, what we value, and w
             if (activeTouchPointers.size === 0) {
               mobileViewport.suppressRotation = false;
               releasedAt = performance.now();
+              if (!explainer.active) resetMobileViewport();
               if (explainer.active) {
                 const target = explainer.pendingCamera || currentExplainerCamera();
                 snapTarget = target ? { ...target } : null;
