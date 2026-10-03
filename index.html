@@ -2312,7 +2312,9 @@ The question is whether we let it change how we understand, what we value, and w
       });
 
       const finishPointer = event => {
-        if (isMobileTouch(event)) {
+        const mobileTouch = isMobileTouch(event);
+
+        if (mobileTouch) {
           activeTouchPointers.delete(event.pointerId);
           if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
 
@@ -2328,23 +2330,36 @@ The question is whether we let it change how we understand, what we value, and w
             velocityYaw = 0;
             velocityPitch = 0;
 
-            if (activeTouchPointers.size === 0) {
+            if (activeTouchPointers.size === 1) {
+              const [pointerId, point] = activeTouchPointers.entries().next().value;
               mobileViewport.suppressRotation = false;
-              releasedAt = performance.now();
-              if (!explainer.active) resetMobileViewport();
-              if (explainer.active) {
-                const target = explainer.pendingCamera || currentExplainerCamera();
-                snapTarget = target ? { ...target } : null;
-                explainer.pendingCamera = null;
-              } else if (reduceMotion) {
-                snapTarget = nearestSnap();
-              }
+              dragging = true;
+              snapTarget = null;
+              lastX = point.x;
+              lastY = point.y;
+              lastPointerTime = performance.now();
+              if (!svg.hasPointerCapture(pointerId)) svg.setPointerCapture(pointerId);
+              return;
+            }
+
+            mobileViewport.suppressRotation = false;
+            releasedAt = performance.now();
+            if (!explainer.active) resetMobileViewport();
+            if (explainer.active) {
+              const target = explainer.pendingCamera || currentExplainerCamera();
+              snapTarget = target ? { ...target } : null;
+              explainer.pendingCamera = null;
+            } else if (reduceMotion) {
+              snapTarget = nearestSnap();
             }
             return;
           }
         }
 
         stopDrag(event);
+        if (mobileTouch && activeTouchPointers.size === 0 && !explainer.active) {
+          resetMobileViewport();
+        }
       };
 
       svg.addEventListener('pointerup', finishPointer);
