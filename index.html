@@ -468,6 +468,22 @@
       letter-spacing: .16px;
       pointer-events: none;
     }
+    #octahedron .explainer-relation-line {
+      stroke: rgba(255,255,255,.5);
+      stroke-width: .68;
+      fill: none;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+    #octahedron .explainer-relation-label {
+      fill: rgba(255,255,255,.88);
+      stroke: none;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      font: italic 5.6px Georgia, "Times New Roman", serif;
+      letter-spacing: .18px;
+      pointer-events: none;
+    }
     @media (max-width: 700px) {
       #octahedron .surface-label-text { font-size: 7px; }
       #octahedron .explainer-axis-label { font-size: 5.2px; }
@@ -770,6 +786,16 @@
         explainerOverlay.appendChild(text);
         return { letter, text };
       });
+
+      const purposeRelation = {
+        line: make('line', 'explainer-relation-line'),
+        text: make('text', 'explainer-relation-label')
+      };
+      purposeRelation.text.textContent = 'Purpose';
+      purposeRelation.line.style.opacity = '0';
+      purposeRelation.text.style.opacity = '0';
+      explainerOverlay.appendChild(purposeRelation.line);
+      explainerOverlay.appendChild(purposeRelation.text);
 
       const innerRing = make('circle', 'inner-ring');
       innerRing.setAttribute('cx', '0');
@@ -1696,6 +1722,8 @@ The question is whether we let it change how we understand, what we value, and w
           },
           'full-purpose': {
             axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [0], focusAxes: true, dimEdges: true,
+            axisLabels: { E: 'Concern', P: 'Constraint' },
+            purposeRelation: true,
             header: 'Purpose',
             subtext: 'Concern and constraint.',
             markers: [[1, 0, 0], [-1, 0, 0]]
@@ -1909,6 +1937,8 @@ The question is whether we let it change how we understand, what we value, and w
         explainerPerson.style.opacity = '0';
         explainerGrowthLine.style.opacity = '0';
         frictionGroup.style.opacity = '0';
+        purposeRelation.line.style.opacity = '0';
+        purposeRelation.text.style.opacity = '0';
         Object.values(surfaceLabels).forEach(label => label.group.style.opacity = '0');
         explainerAxisLabels.forEach(label => label.text.style.opacity = '0');
         structureBackdrop.style.opacity = '0';
@@ -1972,6 +2002,34 @@ The question is whether we let it change how we understand, what we value, and w
           label.text.setAttribute('y', point[1] + point[1] / length * offset);
           label.text.style.opacity = '1';
         });
+
+        if (config.purposeRelation) {
+          const empathy = points[0];
+          const practicality = points[1];
+          const midX = (empathy[0] + practicality[0]) / 2;
+          const midY = (empathy[1] + practicality[1]) / 2;
+          const dx = empathy[0] - practicality[0];
+          const dy = empathy[1] - practicality[1];
+          const length = Math.max(Math.hypot(dx, dy), 0.001);
+          const nx = -dy / length;
+          const ny = dx / length;
+          const labelDistance = 24;
+          const lineEndGap = 7;
+          const labelX = midX + nx * labelDistance;
+          const labelY = midY + ny * labelDistance;
+          const lineEndX = labelX - nx * lineEndGap;
+          const lineEndY = labelY - ny * lineEndGap;
+
+          purposeRelation.line.setAttribute('x1', midX);
+          purposeRelation.line.setAttribute('y1', midY);
+          purposeRelation.line.setAttribute('x2', lineEndX);
+          purposeRelation.line.setAttribute('y2', lineEndY);
+          purposeRelation.line.style.opacity = '1';
+
+          purposeRelation.text.setAttribute('x', labelX);
+          purposeRelation.text.setAttribute('y', labelY);
+          purposeRelation.text.style.opacity = '1';
+        }
 
         let personAnchor = null;
         if (config.person) personAnchor = [explainerPersonPosition(), 0, 0];
