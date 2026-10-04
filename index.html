@@ -423,6 +423,28 @@
       vector-effect: non-scaling-stroke;
       pointer-events: none;
     }
+    #octahedron .explainer-friction-band,
+    #octahedron .explainer-friction-pressure {
+      stroke: #fff;
+      fill: none;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+    #octahedron .explainer-friction-pressure {
+      stroke-linecap: round;
+    }
+    #octahedron .explainer-friction-head {
+      fill: #fff;
+      stroke: none;
+      pointer-events: none;
+    }
+    #octahedron .explainer-friction-stance {
+      fill: #000;
+      stroke: #fff;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
     #octahedron .surface-label-line {
       stroke: rgba(255,255,255,.46);
       stroke-width: .65;
@@ -703,6 +725,24 @@
       const explainerGrowthLine = make('line', 'explainer-growth-line');
       explainerGrowthLine.style.opacity = '0';
       explainerOverlay.appendChild(explainerGrowthLine);
+
+      const frictionGroup = make('g', 'explainer-friction');
+      frictionGroup.style.opacity = '0';
+      explainerOverlay.appendChild(frictionGroup);
+      const frictionBands = [-1, 1].flatMap(side =>
+        Array.from({ length: 5 }, (_, index) => {
+          const line = make('line', 'explainer-friction-band');
+          frictionGroup.appendChild(line);
+          return { side, index, line };
+        })
+      );
+      const frictionPressureLine = make('line', 'explainer-friction-pressure');
+      frictionGroup.appendChild(frictionPressureLine);
+      const frictionPressureHead = make('path', 'explainer-friction-head');
+      frictionGroup.appendChild(frictionPressureHead);
+      const frictionStanceMarker = make('circle', 'explainer-friction-stance');
+      frictionStanceMarker.setAttribute('r', '3.5');
+      frictionGroup.appendChild(frictionStanceMarker);
 
       const explainerPerson = make('g', 'explainer-person');
       const explainerPersonHead = make('circle', 'explainer-person-head');
@@ -1135,7 +1175,7 @@ The question is whether we let it change how we understand, what we value, and w
         { at: explainerTimeFor('Place the integrated stance above it.'), scene: 'with-stance' },
         { at: explainerTimeFor('To make that distinction visible'), scene: 'stance-shape' },
         { at: explainerTimeFor('And what develops a person from that absence into a stance?'), scene: 'experience' },
-        { at: explainerTimeFor('I call that friction.'), scene: 'friction' },
+        { at: explainerTimeFor('When a stance built around empathy'), scene: 'friction' },
         { at: explainerTimeFor('That is answerability.'), scene: 'answerability' },
         { at: explainerTimeFor('That is insulation.'), scene: 'insulation' },
         { at: explainerTimeFor('We now have three distinct conditions.'), scene: 'three-states' },
@@ -1595,9 +1635,10 @@ The question is whether we let it change how we understand, what we value, and w
           friction: {
             axes: [1], dimAxes: [0], verticalMode: 'up', edges: false,
             edgePairs: [[1, 2], [2, 0]],
+            friction: true,
+            axisLabels: { M: 'Integration', E: 'Empathy', P: 'Practicality' },
             header: 'Friction',
-            subtext: 'A relevant pressure the stance does not yet accommodate.',
-            markers: [[0.58, 0.42, 0]]
+            subtext: 'The farther a one-sided stance sits from integration, the more relevant pressure it leaves unresolved.'
           },
           answerability: {
             axes: [1], dimAxes: [0], verticalMode: 'up', edges: false,
@@ -1736,6 +1777,26 @@ The question is whether we let it change how we understand, what we value, and w
         return [0, 0, 0];
       };
 
+      const frictionState = () => {
+        const text = currentExplainerSegment()?.text || '';
+        const progress = segmentProgress();
+        const strong = 0.78;
+        const moderate = 0.66;
+
+        if (text.includes('built around empathy')) return { side: 1, amount: strong };
+        if (text.includes('built around practicality')) return { side: -1, amount: strong };
+        if (text.includes('I call that friction')) return { side: 1, amount: strong };
+        if (text.includes('fails to accommodate')) return { side: 1, amount: moderate };
+        if (text.includes('vertical direction becomes important')) return { side: 1, amount: moderate };
+        if (text.includes('allow that pressure to change')) return { side: 1, amount: strong };
+        if (text.includes('practical limit change how you help')) return { side: 1, amount: strong };
+        if (text.includes('suffering change what you consider')) return { side: -1, amount: strong };
+        if (text.includes('reality has corrective authority')) {
+          return { side: -1, amount: strong * (1 - 0.9 * progress) };
+        }
+        return { side: 1, amount: moderate };
+      };
+
       const centralQuestionAnchor = () => {
         const text = currentExplainerSegment()?.text || '';
         const t = segmentProgress();
@@ -1826,6 +1887,7 @@ The question is whether we let it change how we understand, what we value, and w
         explainerMarkers.forEach(marker => marker.style.opacity = '0');
         explainerPerson.style.opacity = '0';
         explainerGrowthLine.style.opacity = '0';
+        frictionGroup.style.opacity = '0';
         Object.values(surfaceLabels).forEach(label => label.group.style.opacity = '0');
         explainerAxisLabels.forEach(label => label.text.style.opacity = '0');
         structureBackdrop.style.opacity = '0';
@@ -1880,6 +1942,64 @@ The question is whether we let it change how we understand, what we value, and w
           explainerGrowthLine.setAttribute('x2', target[0]);
           explainerGrowthLine.setAttribute('y2', target[1]);
           explainerGrowthLine.style.opacity = Math.hypot(...personAnchor) > 0.05 ? '1' : '0';
+        }
+
+        if (config.friction) {
+          frictionGroup.style.opacity = '1';
+
+          const pointOnPurposeSlope = (side, amount) =>
+            project(rotate([side * amount, 1 - amount, 0]));
+
+          frictionBands.forEach(({ side, index, line }) => {
+            const startAmount = index / 5;
+            const endAmount = (index + 1) / 5;
+            const start = pointOnPurposeSlope(side, startAmount);
+            const end = pointOnPurposeSlope(side, endAmount);
+            line.setAttribute('x1', start[0]);
+            line.setAttribute('y1', start[1]);
+            line.setAttribute('x2', end[0]);
+            line.setAttribute('y2', end[1]);
+            line.style.opacity = String(0.10 + index * 0.085);
+            line.style.strokeWidth = String(0.5 + index * 0.16);
+          });
+
+          const state = frictionState();
+          const amount = clamp(state.amount, 0.04, 0.96);
+          const stance = pointOnPurposeSlope(state.side, amount);
+          const integrated = pointOnPurposeSlope(state.side, 0);
+          const dx = integrated[0] - stance[0];
+          const dy = integrated[1] - stance[1];
+          const length = Math.max(Math.hypot(dx, dy), 0.001);
+          const ux = dx / length;
+          const uy = dy / length;
+          const tipGap = 7;
+          const tipX = integrated[0] - ux * tipGap;
+          const tipY = integrated[1] - uy * tipGap;
+          const baseX = tipX - ux * 6;
+          const baseY = tipY - uy * 6;
+          const px = -uy;
+          const py = ux;
+          const halfWidth = 3.2 + amount * 1.2;
+
+          frictionPressureLine.setAttribute('x1', stance[0]);
+          frictionPressureLine.setAttribute('y1', stance[1]);
+          frictionPressureLine.setAttribute('x2', baseX);
+          frictionPressureLine.setAttribute('y2', baseY);
+          frictionPressureLine.style.opacity = String(0.32 + amount * 0.58);
+          frictionPressureLine.style.strokeWidth = String(0.7 + amount * 0.9);
+
+          frictionPressureHead.setAttribute(
+            'd',
+            'M ' + tipX + ' ' + tipY +
+            ' L ' + (baseX + px * halfWidth) + ' ' + (baseY + py * halfWidth) +
+            ' L ' + (baseX - px * halfWidth) + ' ' + (baseY - py * halfWidth) +
+            ' Z'
+          );
+          frictionPressureHead.style.opacity = String(0.36 + amount * 0.6);
+
+          frictionStanceMarker.setAttribute('cx', stance[0]);
+          frictionStanceMarker.setAttribute('cy', stance[1]);
+          frictionStanceMarker.style.opacity = '1';
         }
 
         if (config.translucentSurface) {
