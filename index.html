@@ -787,15 +787,15 @@
         return { letter, text };
       });
 
-      const purposeRelation = {
+      const relationAnnotation = {
         line: make('line', 'explainer-relation-line'),
         text: make('text', 'explainer-relation-label')
       };
-      purposeRelation.text.textContent = 'Purpose';
-      purposeRelation.line.style.opacity = '0';
-      purposeRelation.text.style.opacity = '0';
-      explainerOverlay.appendChild(purposeRelation.line);
-      explainerOverlay.appendChild(purposeRelation.text);
+      relationAnnotation.text.textContent = 'Purpose';
+      relationAnnotation.line.style.opacity = '0';
+      relationAnnotation.text.style.opacity = '0';
+      explainerOverlay.appendChild(relationAnnotation.line);
+      explainerOverlay.appendChild(relationAnnotation.text);
 
       const innerRing = make('circle', 'inner-ring');
       innerRing.setAttribute('cx', '0');
@@ -1692,7 +1692,8 @@ The question is whether we let it change how we understand, what we value, and w
             axes: [0, 1], verticalMode: 'full', edges: false,
             emphasize: [0], focusAxes: true,
             axisLabels: { E: 'Concern', P: 'Constraint' },
-            purposeRelation: true,
+            axisLabelOffsets: { E: 24, P: 24 },
+            relationLabel: 'Purpose', relationAxis: 0,
             header: 'Purpose',
             subtext: 'Concern and constraint organize what matters and what can actually be done.'
           },
@@ -1732,22 +1733,29 @@ The question is whether we let it change how we understand, what we value, and w
           'full-purpose': {
             axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [0], focusAxes: true, dimEdges: true,
             axisLabels: { E: 'Concern', P: 'Constraint' },
-            purposeRelation: true,
+            axisLabelOffsets: { E: 24, P: 24 },
+            relationLabel: 'Purpose', relationAxis: 0,
             header: 'Purpose',
             subtext: 'Concern and constraint.',
             markers: [[1, 0, 0], [-1, 0, 0]]
           },
           'full-meaning': {
             axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [2], focusAxes: true, dimEdges: true,
+            axisLabels: { K: 'Information', W: 'Interpretation' },
+            axisLabelOffsets: { K: 24, W: 24 },
+            relationLabel: 'Meaning', relationAxis: 2,
             header: 'Meaning',
             subtext: 'Information and interpretation.',
             markers: [[0, 0, -1], [0, 0, 1]]
           },
           'full-accountability': {
             axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [1], focusAxes: true, dimEdges: true,
+            axisLabels: { M: 'Answerability', C: 'Insulation' },
+            axisLabelOffsets: { M: 20, C: 20 },
+            relationLabel: 'Accountability', relationAxis: 1,
             header: 'Accountability',
             subtext: 'Whether reality can govern and correct the organization.',
-            markers: [[0, 1, 0]]
+            markers: [[0, 1, 0], [0, -1, 0]]
           },
           whole: {
             axes: [0, 1, 2], verticalMode: 'full', edges: true,
@@ -1946,8 +1954,8 @@ The question is whether we let it change how we understand, what we value, and w
         explainerPerson.style.opacity = '0';
         explainerGrowthLine.style.opacity = '0';
         frictionGroup.style.opacity = '0';
-        purposeRelation.line.style.opacity = '0';
-        purposeRelation.text.style.opacity = '0';
+        relationAnnotation.line.style.opacity = '0';
+        relationAnnotation.text.style.opacity = '0';
         Object.values(surfaceLabels).forEach(label => label.group.style.opacity = '0');
         explainerAxisLabels.forEach(label => label.text.style.opacity = '0');
         structureBackdrop.style.opacity = '0';
@@ -2005,39 +2013,43 @@ The question is whether we let it change how we understand, what we value, and w
           const point = points[vertexIndex[label.letter]];
           const length = Math.hypot(point[0], point[1]) || 1;
           const fullMeaningLabel = (label.letter === 'K' || label.letter === 'W') && value.length > 1;
-          const offset = fullMeaningLabel ? 18 : (label.letter === 'M' || label.letter === 'C' ? 12 : 11);
+          const configuredOffset = config.axisLabelOffsets?.[label.letter];
+          const offset = configuredOffset ?? (fullMeaningLabel ? 18 : (label.letter === 'M' || label.letter === 'C' ? 12 : 11));
           label.text.textContent = value;
           label.text.setAttribute('x', point[0] + point[0] / length * offset);
           label.text.setAttribute('y', point[1] + point[1] / length * offset);
           label.text.style.opacity = '1';
         });
 
-        if (config.purposeRelation) {
-          const empathy = points[0];
-          const practicality = points[1];
-          const midX = (empathy[0] + practicality[0]) / 2;
-          const midY = (empathy[1] + practicality[1]) / 2;
-          const dx = empathy[0] - practicality[0];
-          const dy = empathy[1] - practicality[1];
+        if (config.relationLabel) {
+          const [firstIndex, secondIndex] = axes[config.relationAxis ?? 0];
+          const first = points[firstIndex];
+          const second = points[secondIndex];
+          const midX = (first[0] + second[0]) / 2;
+          const midY = (first[1] + second[1]) / 2;
+          const dx = first[0] - second[0];
+          const dy = first[1] - second[1];
           const length = Math.max(Math.hypot(dx, dy), 0.001);
-          const nx = -dy / length;
-          const ny = dx / length;
-          const labelDistance = 24;
+          const side = config.relationSide ?? 1;
+          const nx = (-dy / length) * side;
+          const ny = (dx / length) * side;
+          const labelDistance = config.relationLabelDistance ?? 24;
           const lineEndGap = 7;
           const labelX = midX + nx * labelDistance;
           const labelY = midY + ny * labelDistance;
           const lineEndX = labelX - nx * lineEndGap;
           const lineEndY = labelY - ny * lineEndGap;
 
-          purposeRelation.line.setAttribute('x1', midX);
-          purposeRelation.line.setAttribute('y1', midY);
-          purposeRelation.line.setAttribute('x2', lineEndX);
-          purposeRelation.line.setAttribute('y2', lineEndY);
-          purposeRelation.line.style.opacity = '1';
+          relationAnnotation.text.textContent = config.relationLabel;
+          relationAnnotation.line.setAttribute('x1', midX);
+          relationAnnotation.line.setAttribute('y1', midY);
+          relationAnnotation.line.setAttribute('x2', lineEndX);
+          relationAnnotation.line.setAttribute('y2', lineEndY);
+          relationAnnotation.line.style.opacity = '1';
 
-          purposeRelation.text.setAttribute('x', labelX);
-          purposeRelation.text.setAttribute('y', labelY);
-          purposeRelation.text.style.opacity = '1';
+          relationAnnotation.text.setAttribute('x', labelX);
+          relationAnnotation.text.setAttribute('y', labelY);
+          relationAnnotation.text.style.opacity = '1';
         }
 
         let personAnchor = null;
