@@ -1205,6 +1205,7 @@ The question is whether we let it change how we understand, what we value, and w
         { at: explainerTimeFor('That is answerability.'), scene: 'answerability' },
         { at: explainerTimeFor('That is insulation.'), scene: 'insulation' },
         { at: explainerTimeFor('We now have three distinct conditions.'), scene: 'three-states' },
+        { at: explainerTimeFor('We have discussed concern and constraint.'), scene: 'purpose-intro' },
         { at: explainerTimeFor('That is information.'), scene: 'meaning-prep', camera: 'meaningCross' },
         { at: explainerTimeFor('We need a second horizontal relation.'), scene: 'meaning' },
         { at: explainerTimeFor('Knowledge supplies informational grounding.'), scene: 'meaning-knowledge' },
@@ -1686,6 +1687,14 @@ The question is whether we let it change how we understand, what we value, and w
             header: 'Three conditions',
             subtext: 'Absence at the origin · integration above · insulation below',
             markers: [[0, 0, 0], [0, 1, 0], [0, -1, 0]]
+          },
+          'purpose-intro': {
+            axes: [0, 1], verticalMode: 'full', edges: false,
+            emphasize: [0], focusAxes: true,
+            axisLabels: { E: 'Concern', P: 'Constraint' },
+            purposeRelation: true,
+            header: 'Purpose',
+            subtext: 'Concern and constraint organize what matters and what can actually be done.'
           },
           'meaning-prep': {
             axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
