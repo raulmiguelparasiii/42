@@ -568,6 +568,7 @@
         <span>The structure in first principles</span>
       </button>
     </div>
+    <audio id="explainer-audio" preload="metadata" src="script.mp3"></audio>
     <section id="explainer-session" hidden aria-label="The structure in first principles">
       <div id="explainer-caption" aria-live="polite"></div>
       <div class="explainer-player-row">
@@ -604,6 +605,7 @@
       const explainerSubtext = document.querySelector('#explainer-subtext');
       const introPeople = document.querySelector('#intro-people');
       const introPersonNodes = [...document.querySelectorAll('.intro-person')];
+      const explainerAudio = document.querySelector('#explainer-audio');
       const explainerSession = document.querySelector('#explainer-session');
       const explainerToggle = document.querySelector('#explainer-toggle');
       const explainerBack = document.querySelector('#explainer-back');
@@ -1099,21 +1101,18 @@ The possibility of maturity begins when that reality is allowed to matter.
 
 The question is whether we let it change how we understand, what we value, and what we do.`;
 
-      const EXPLAINER_WPS = 2.35;
+      const EXPLAINER_SEGMENT_STARTS = Object.freeze([0,2.47766,5.806383,12.539362,15.017021,18.345745,23.376596,25.854255,35.565957,38.043617,41.37234,45.126596,48.029787,56.039362,58.517021,67.37766,70.280851,72.758511,74.508511,77.837234,80.314894,85.771277,92.929787,95.832979,103.417021,106.320213,110.925532,117.232979,118.982979,121.460638,124.36383,131.096809,134.425532,139.030851,141.934043,143.98617,146.46383,149.367021,165.03617,171.343617,181.480851,186.511702,188.261702,191.164894,194.068085,199.524468,203.704255,210.011702,216.744681,219.647872,221.7,225.028723,232.612766,238.920213,240.97234,246.428723,250.608511,254.788298,258.542553,263.573404,267.753191,269.503191,274.108511,277.862766,285.021277,288.35,293.806383,298.411702,304.719149,310.175532,312.653191,316.407447,318.157447,323.188298,332.9,334.952128,337.855319,340.758511,344.512766,348.692553,353.297872,356.626596,359.955319,363.709574,371.719149,375.473404,380.078723,381.828723,384.731915,393.167021,395.644681,398.547872,400.6,402.652128,406.831915,411.862766,415.617021,417.669149,420.57234,422.624468,424.676596,428.856383,433.461702,443.598936,447.778723,450.681915,453.585106,456.062766,459.391489,462.720213,469.878723,473.632979,477.812766,484.971277,492.129787,500.139362,502.191489,505.520213,516.934043,524.943617,532.102128,537.558511]);
+      const EXPLAINER_TIMELINE_DURATION = 545.568085;
       const explainerSegments = EXPLAINER_SCRIPT
         .split(/\n\s*\n/)
         .map(text => text.trim())
         .filter(Boolean)
-        .map(text => {
-          const words = text.split(/\s+/).length;
-          return { text, duration: Math.max(1.75, words / EXPLAINER_WPS + 0.35), start: 0, end: 0 };
-        });
-      let explainerTotalDuration = 0;
-      explainerSegments.forEach(segment => {
-        segment.start = explainerTotalDuration;
-        explainerTotalDuration += segment.duration;
-        segment.end = explainerTotalDuration;
-      });
+        .map((text, index) => ({
+          text,
+          start: EXPLAINER_SEGMENT_STARTS[index] ?? 0,
+          end: EXPLAINER_SEGMENT_STARTS[index + 1] ?? EXPLAINER_TIMELINE_DURATION
+        }));
+      const explainerTotalDuration = EXPLAINER_TIMELINE_DURATION;
       const explainerTimeFor = needle => {
         const segment = explainerSegments.find(item => item.text.includes(needle));
         return segment ? segment.start : 0;
@@ -1349,6 +1348,13 @@ The question is whether we let it change how we understand, what we value, and w
         return [a[0] + t * rX, a[1] + t * rY];
       };
 
+      const currentExplainerDuration = () => {
+        const duration = explainerAudio.duration;
+        return Number.isFinite(duration) && duration > 0
+          ? duration
+          : explainerTotalDuration;
+      };
+
       const formatTime = seconds => {
         const whole = Math.max(0, Math.floor(seconds));
         const minutes = Math.floor(whole / 60);
@@ -1443,10 +1449,11 @@ The question is whether we let it change how we understand, what we value, and w
 
       const updateExplainerUI = () => {
         if (!explainer.active) return;
+        const duration = currentExplainerDuration();
         explainerElapsed.textContent = formatTime(explainer.playhead);
-        explainerTotal.textContent = formatTime(explainerTotalDuration);
-        explainerProgress.max = String(explainerTotalDuration);
-        explainerProgress.value = String(explainer.playhead);
+        explainerTotal.textContent = formatTime(duration);
+        explainerProgress.max = String(duration);
+        explainerProgress.value = String(Math.min(explainer.playhead, duration));
         const segment = currentExplainerSegment();
         const scene = explainerSceneConfig(explainer.scene);
         explainerHeading.textContent = scene.header || '';
@@ -1458,7 +1465,9 @@ The question is whether we let it change how we understand, what we value, and w
       };
 
       const seekExplainer = seconds => {
-        explainer.playhead = clamp(seconds, 0, explainerTotalDuration);
+        const target = clamp(seconds, 0, currentExplainerDuration());
+        if (Number.isFinite(target)) explainerAudio.currentTime = target;
+        explainer.playhead = target;
         explainer.cueIndex = -1;
         refreshExplainerCue(true);
         updateExplainerUI();
@@ -1466,6 +1475,8 @@ The question is whether we let it change how we understand, what we value, and w
 
       const startExplainer = () => {
         centerMobileViewportForExplainer();
+        explainerAudio.pause();
+        explainerAudio.currentTime = 0;
         explainer.active = true;
         explainer.playing = true;
         explainer.playhead = 0;
@@ -1482,9 +1493,18 @@ The question is whether we let it change how we understand, what we value, and w
         app.classList.add('explainer-active');
         refreshExplainerCue();
         updateExplainerUI();
+        const playback = explainerAudio.play();
+        if (playback && typeof playback.catch === 'function') {
+          playback.catch(() => {
+            explainer.playing = false;
+            updateExplainerUI();
+          });
+        }
       };
 
       const stopExplainer = () => {
+        explainerAudio.pause();
+        explainerAudio.currentTime = 0;
         explainer.active = false;
         explainer.playing = false;
         explainer.playhead = 0;
@@ -1690,7 +1710,8 @@ The question is whether we let it change how we understand, what we value, and w
       const segmentProgress = () => {
         const segment = currentExplainerSegment();
         if (!segment) return 0;
-        return clamp((explainer.playhead - segment.start) / Math.max(segment.end - segment.start, 0.001), 0, 1);
+        const effectiveEnd = Math.min(segment.end, currentExplainerDuration());
+        return clamp((explainer.playhead - segment.start) / Math.max(effectiveEnd - segment.start, 0.001), 0, 1);
       };
 
       const experienceAnchor = () => {
@@ -2199,9 +2220,9 @@ The question is whether we let it change how we understand, what we value, and w
         const dt = Math.min(now - lastFrameTime, 32);
         lastFrameTime = now;
 
-        if (explainer.active && explainer.playing) {
-          explainer.playhead = Math.min(explainerTotalDuration, explainer.playhead + dt / 1000);
-          if (explainer.playhead >= explainerTotalDuration) explainer.playing = false;
+        if (explainer.active) {
+          explainer.playhead = Math.min(currentExplainerDuration(), explainerAudio.currentTime || 0);
+          explainer.playing = !explainerAudio.paused && !explainerAudio.ended;
           refreshExplainerCue();
           updateExplainerUI();
         }
@@ -2368,7 +2389,19 @@ The question is whether we let it change how we understand, what we value, and w
       explainerLaunch.addEventListener('click', startExplainer);
       explainerToggle.addEventListener('click', () => {
         if (!explainer.active) return;
-        explainer.playing = !explainer.playing;
+        if (explainerAudio.paused || explainerAudio.ended) {
+          if (explainerAudio.ended) seekExplainer(0);
+          const playback = explainerAudio.play();
+          if (playback && typeof playback.catch === 'function') {
+            playback.catch(() => {
+              explainer.playing = false;
+              updateExplainerUI();
+            });
+          }
+        } else {
+          explainerAudio.pause();
+        }
+        explainer.playing = !explainerAudio.paused;
         updateExplainerUI();
       });
       explainerBack.addEventListener('click', () => seekExplainer(explainer.playhead - 10));
@@ -2377,8 +2410,28 @@ The question is whether we let it change how we understand, what we value, and w
       explainerProgress.addEventListener('input', event => {
         seekExplainer(Number(event.target.value));
       });
+      explainerAudio.addEventListener('loadedmetadata', () => {
+        if (explainer.active) updateExplainerUI();
+        else explainerTotal.textContent = formatTime(currentExplainerDuration());
+      });
+      explainerAudio.addEventListener('play', () => {
+        explainer.playing = true;
+        if (explainer.active) updateExplainerUI();
+      });
+      explainerAudio.addEventListener('pause', () => {
+        explainer.playing = false;
+        if (explainer.active) updateExplainerUI();
+      });
+      explainerAudio.addEventListener('ended', () => {
+        explainer.playhead = currentExplainerDuration();
+        explainer.playing = false;
+        if (explainer.active) {
+          refreshExplainerCue();
+          updateExplainerUI();
+        }
+      });
       explainerLaunch.classList.remove('is-visible');
-      explainerTotal.textContent = formatTime(explainerTotalDuration);
+      explainerTotal.textContent = formatTime(currentExplainerDuration());
 
       draw();
       requestAnimationFrame(frame);
