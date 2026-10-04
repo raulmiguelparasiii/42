@@ -1158,7 +1158,9 @@ The question is whether we let it change how we understand, what we value, and w
         playhead: 0,
         cueIndex: -1,
         scene: 'blank',
-        pendingCamera: null
+        pendingCamera: null,
+        audioReady: false,
+        audioFallback: false
       };
 
       let yaw = snaps[0].yaw;
@@ -1466,7 +1468,9 @@ The question is whether we let it change how we understand, what we value, and w
 
       const seekExplainer = seconds => {
         const target = clamp(seconds, 0, currentExplainerDuration());
-        if (Number.isFinite(target)) explainerAudio.currentTime = target;
+        if (explainer.audioReady && !explainer.audioFallback && Number.isFinite(target)) {
+          explainerAudio.currentTime = target;
+        }
         explainer.playhead = target;
         explainer.cueIndex = -1;
         refreshExplainerCue(true);
@@ -1476,10 +1480,11 @@ The question is whether we let it change how we understand, what we value, and w
       const startExplainer = () => {
         centerMobileViewportForExplainer();
         explainerAudio.pause();
-        explainerAudio.currentTime = 0;
+        if (explainer.audioReady) explainerAudio.currentTime = 0;
         explainer.active = true;
         explainer.playing = true;
         explainer.playhead = 0;
+        explainer.audioFallback = !explainer.audioReady;
         explainer.cueIndex = -1;
         explainer.scene = 'blank';
         explainer.pendingCamera = null;
@@ -1493,18 +1498,21 @@ The question is whether we let it change how we understand, what we value, and w
         app.classList.add('explainer-active');
         refreshExplainerCue();
         updateExplainerUI();
-        const playback = explainerAudio.play();
-        if (playback && typeof playback.catch === 'function') {
-          playback.catch(() => {
-            explainer.playing = false;
-            updateExplainerUI();
-          });
+        if (!explainer.audioFallback) {
+          const playback = explainerAudio.play();
+          if (playback && typeof playback.catch === 'function') {
+            playback.catch(() => {
+              explainer.audioFallback = true;
+              explainer.playing = true;
+              updateExplainerUI();
+            });
+          }
         }
       };
 
       const stopExplainer = () => {
         explainerAudio.pause();
-        explainerAudio.currentTime = 0;
+        if (explainer.audioReady) explainerAudio.currentTime = 0;
         explainer.active = false;
         explainer.playing = false;
         explainer.playhead = 0;
@@ -2221,8 +2229,23 @@ The question is whether we let it change how we understand, what we value, and w
         lastFrameTime = now;
 
         if (explainer.active) {
-          explainer.playhead = Math.min(currentExplainerDuration(), explainerAudio.currentTime || 0);
-          explainer.playing = !explainerAudio.paused && !explainerAudio.ended;
+          if (explainer.audioFallback) {
+            if (explainer.playing) {
+              explainer.playhead = Math.min(
+                explainerTotalDuration,
+                explainer.playhead + dt / 1000
+              );
+              if (explainer.playhead >= explainerTotalDuration) {
+                explainer.playing = false;
+              }
+            }
+          } else {
+            explainer.playhead = Math.min(
+              currentExplainerDuration(),
+              explainerAudio.currentTime || 0
+            );
+            explainer.playing = !explainerAudio.paused && !explainerAudio.ended;
+          }
           refreshExplainerCue();
           updateExplainerUI();
         }
@@ -2389,12 +2412,20 @@ The question is whether we let it change how we understand, what we value, and w
       explainerLaunch.addEventListener('click', startExplainer);
       explainerToggle.addEventListener('click', () => {
         if (!explainer.active) return;
+
+        if (explainer.audioFallback) {
+          explainer.playing = !explainer.playing;
+          updateExplainerUI();
+          return;
+        }
+
         if (explainerAudio.paused || explainerAudio.ended) {
           if (explainerAudio.ended) seekExplainer(0);
           const playback = explainerAudio.play();
           if (playback && typeof playback.catch === 'function') {
             playback.catch(() => {
-              explainer.playing = false;
+              explainer.audioFallback = true;
+              explainer.playing = true;
               updateExplainerUI();
             });
           }
@@ -2411,8 +2442,18 @@ The question is whether we let it change how we understand, what we value, and w
         seekExplainer(Number(event.target.value));
       });
       explainerAudio.addEventListener('loadedmetadata', () => {
+        explainer.audioReady = true;
+        explainer.audioFallback = false;
         if (explainer.active) updateExplainerUI();
         else explainerTotal.textContent = formatTime(currentExplainerDuration());
+      });
+      explainerAudio.addEventListener('error', () => {
+        explainer.audioReady = false;
+        explainer.audioFallback = true;
+        if (explainer.active) {
+          explainer.playing = true;
+          updateExplainerUI();
+        }
       });
       explainerAudio.addEventListener('play', () => {
         explainer.playing = true;
