@@ -1643,16 +1643,16 @@ The question is whether we let it change how we understand, what we value, and w
           answerability: {
             axes: [1], dimAxes: [0], verticalMode: 'up', edges: false,
             edgePairs: [[1, 2], [2, 0]],
+            preInsulationDrift: true,
             header: 'Answerability',
-            subtext: 'Corrective pressure can change how the judgment is organized.',
-            markers: [[0, 1, 0]]
+            subtext: 'Corrective pressure can change how the judgment is organized.'
           },
           insulation: {
             axes: [1], dimAxes: [0], verticalMode: 'full', edges: false,
             edgePairs: [[1, 2], [2, 0], [1, 3], [3, 0]],
+            insulationReveal: true,
             header: 'Insulation',
-            subtext: 'A relevant pressure is denied corrective authority.',
-            markers: [[0, -1, 0]]
+            subtext: 'A relevant pressure is denied corrective authority.'
           },
           'three-states': {
             axes: [1], dimAxes: [0], verticalMode: 'full', edges: false,
@@ -1797,6 +1797,27 @@ The question is whether we let it change how we understand, what we value, and w
         return { side: 1, amount: moderate };
       };
 
+      const PRE_INSULATION_DRIFT_START = 302;
+      const preInsulationAnchor = () => {
+        const insulationAt = explainerTimeFor('That is insulation.');
+        const raw = clamp(
+          (explainer.playhead - PRE_INSULATION_DRIFT_START) /
+          Math.max(insulationAt - PRE_INSULATION_DRIFT_START, 0.001),
+          0,
+          1
+        );
+        const eased = raw * raw * (3 - 2 * raw);
+        const amount = eased * 1.14;
+        return [amount, 1 - amount, 0];
+      };
+
+      const insulationRevealAnchor = () => {
+        const text = currentExplainerSegment()?.text || '';
+        if (!text.includes('That is insulation')) return [0, -1, 0];
+        const t = segmentProgress();
+        return [1 - t, -t, 0];
+      };
+
       const centralQuestionAnchor = () => {
         const text = currentExplainerSegment()?.text || '';
         const t = segmentProgress();
@@ -1904,6 +1925,35 @@ The question is whether we let it change how we understand, what we value, and w
           marker.setAttribute('cy', point[1]);
           marker.style.opacity = '1';
         });
+
+        if (config.preInsulationDrift) {
+          const anchor = preInsulationAnchor();
+          const point = project(rotate(anchor));
+          const marker = explainerMarkers[0];
+          marker.setAttribute('cx', point[0]);
+          marker.setAttribute('cy', point[1]);
+          marker.style.opacity = '1';
+
+          if (anchor[0] > 1) {
+            const edge = project(rotate([1, 0, 0]));
+            explainerGrowthLine.setAttribute('x1', edge[0]);
+            explainerGrowthLine.setAttribute('y1', edge[1]);
+            explainerGrowthLine.setAttribute('x2', point[0]);
+            explainerGrowthLine.setAttribute('y2', point[1]);
+            explainerGrowthLine.style.opacity = String(
+              clamp((anchor[0] - 1) / 0.14, 0, 1) * 0.62
+            );
+          }
+        }
+
+        if (config.insulationReveal) {
+          const anchor = insulationRevealAnchor();
+          const point = project(rotate(anchor));
+          const marker = explainerMarkers[0];
+          marker.setAttribute('cx', point[0]);
+          marker.setAttribute('cy', point[1]);
+          marker.style.opacity = '1';
+        }
 
         const vertexIndex = { E: 0, P: 1, M: 2, C: 3, W: 4, K: 5 };
         const activeLabels = {
