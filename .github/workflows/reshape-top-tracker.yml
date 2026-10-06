@@ -14,4 +14,102 @@ jobs:
       - name: Patch tracker motion
         shell: bash
         run: |
-          python3 -c "import base64;exec(base64.b64decode('CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAoKZGVmIHJlcGxhY2Vfb25jZSh0ZXh0LCBvbGQsIG5ldywgbGFiZWwpOgogICAgY291bnQgPSB0ZXh0LmNvdW50KG9sZCkKICAgIGlmIGNvdW50ICE9IDE6CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdChmIntsYWJlbH0gYW5jaG9yIGNvdW50OiB7Y291bnR9IikKICAgIHJldHVybiB0ZXh0LnJlcGxhY2Uob2xkLCBuZXcsIDEpCgppbmRleF9wYXRoID0gUGF0aCgiaW5kZXguaHRtbCIpCnRleHQgPSBpbmRleF9wYXRoLnJlYWRfdGV4dCgpCgpvbGRfY29uc3RhbnRzID0gIiIiICAgICAgY29uc3QgVE9QX1RSQUNLRVJfQ09STkVSUyA9IFsKICAgICAgICB7IHg6IDAsIHo6IC0xLCBkaXJlY3Rpb246IC0xIH0sCiAgICAgICAgeyB4OiAwLCB6OiAxLCBkaXJlY3Rpb246IDEgfSwKICAgICAgICB7IHg6IDEsIHo6IDAsIGRpcmVjdGlvbjogMSB9LAogICAgICAgIHsgeDogLTEsIHo6IDAsIGRpcmVjdGlvbjogLTEgfQogICAgICBdOwogICAgICBjb25zdCBUT1BfVFJBQ0tFUl9ERVBBUlQgPSAyLjI7CiAgICAgIGNvbnN0IFRPUF9UUkFDS0VSX09SQklUID0gNy4yOwogICAgICBjb25zdCBUT1BfVFJBQ0tFUl9SRVRVUk4gPSAyLjg7CiAgICAgIGNvbnN0IFRPUF9UUkFDS0VSX0hPTEQgPSAxLjg7CiAgICAgIGNvbnN0IFRPUF9UUkFDS0VSX1BIQVNFID0gVE9QX1RSQUNLRVJfREVQQVJUICsgVE9QX1RSQUNLRVJfT1JCSVQgKyBUT1BfVFJBQ0tFUl9SRVRVUk4gKyBUT1BfVFJBQ0tFUl9IT0xEOwogICAgICBjb25zdCBUT1BfVFJBQ0tFUl9DWUNMRSA9IFRPUF9UUkFDS0VSX1BIQVNFICogVE9QX1RSQUNLRVJfQ09STkVSUy5sZW5ndGg7CiAgICAgIGxldCB0b3BUcmFja2VyVGltZSA9IDA7IiIiCgpuZXdfY29uc3RhbnRzID0gIiIiICAgICAgY29uc3QgVE9QX1RSQUNLRVJfTE9CRVMgPSBbCiAgICAgICAgeyB4OiAwLCB6OiAtMSwgZGlyZWN0aW9uOiAxIH0sCiAgICAgICAgeyB4OiAwLCB6OiAxLCBkaXJlY3Rpb246IC0xIH0sCiAgICAgICAgeyB4OiAxLCB6OiAwLCBkaXJlY3Rpb246IC0xIH0sCiAgICAgICAgeyB4OiAtMSwgejogMCwgZGlyZWN0aW9uOiAxIH0KICAgICAgXTsKICAgICAgY29uc3QgVE9QX1RSQUNLRVJfTE9PUCA9IDEwLjg7CiAgICAgIGNvbnN0IFRPUF9UUkFDS0VSX0hPTEQgPSAxLjg7CiAgICAgIGNvbnN0IFRPUF9UUkFDS0VSX1BIQVNFID0gVE9QX1RSQUNLRVJfTE9PUCArIFRPUF9UUkFDS0VSX0hPTEQ7CiAgICAgIGNvbnN0IFRPUF9UUkFDS0VSX0NZQ0xFID0gVE9QX1RSQUNLRVJfUEhBU0UgKiBUT1BfVFJBQ0tFUl9MT0JFUy5sZW5ndGg7CiAgICAgIGxldCB0b3BUcmFja2VyVGltZSA9IDA7IiIiCgp0ZXh0ID0gcmVwbGFjZV9vbmNlKHRleHQsIG9sZF9jb25zdGFudHMsIG5ld19jb25zdGFudHMsICJ0b3AgdHJhY2tlciBjb25zdGFudHMiKQoKb2xkX3N0YXRlID0gIiIiICAgICAgY29uc3QgdG9wVHJhY2tlclN0YXRlID0gKCkgPT4gewogICAgICAgIGlmIChyZWR1Y2VNb3Rpb24pIHJldHVybiB7IHg6IDAsIHo6IDAsIG1hdHVyZTogdHJ1ZSB9OwoKICAgICAgICBjb25zdCBwaGFzZUluZGV4ID0gTWF0aC5mbG9vcih0b3BUcmFja2VyVGltZSAvIFRPUF9UUkFDS0VSX1BIQVNFKSAlIFRPUF9UUkFDS0VSX0NPUk5FUlMubGVuZ3RoOwogICAgICAgIGNvbnN0IGxvY2FsVGltZSA9IHRvcFRyYWNrZXJUaW1lICUgVE9QX1RSQUNLRVJfUEhBU0U7CiAgICAgICAgY29uc3QgY29ybmVyID0gVE9QX1RSQUNLRVJfQ09STkVSU1twaGFzZUluZGV4XTsKICAgICAgICBjb25zdCB0YW5nZW50ID0geyB4OiAtY29ybmVyLnosIHo6IGNvcm5lci54IH07CiAgICAgICAgY29uc3Qgb3JiaXRQb2ludCA9IHRoZXRhID0+ICh7CiAgICAgICAgICB4OiBjb3JuZXIueCAqICgwLjc4ICsgMC4wOCAqIE1hdGguY29zKHRoZXRhKSkgKyB0YW5nZW50LnggKiAwLjEzICogTWF0aC5zaW4odGhldGEpLAogICAgICAgICAgejogY29ybmVyLnogKiAoMC43OCArIDAuMDggKiBNYXRoLmNvcyh0aGV0YSkpICsgdGFuZ2VudC56ICogMC4xMyAqIE1hdGguc2luKHRoZXRhKQogICAgICAgIH0pOwogICAgICAgIGNvbnN0IHN0YXJ0ID0gb3JiaXRQb2ludCgwKTsKCiAgICAgICAgaWYgKGxvY2FsVGltZSA8IFRPUF9UUkFDS0VSX0RFUEFSVCkgewogICAgICAgICAgY29uc3QgdCA9IHNtb290aHN0ZXAobG9jYWxUaW1lIC8gVE9QX1RSQUNLRVJfREVQQVJUKTsKICAgICAgICAgIHJldHVybiB7IHg6IHN0YXJ0LnggKiB0LCB6OiBzdGFydC56ICogdCwgbWF0dXJlOiBsb2NhbFRpbWUgPT09IDAgfTsKICAgICAgICB9CgogICAgICAgIGlmIChsb2NhbFRpbWUgPCBUT1BfVFJBQ0tFUl9ERVBBUlQgKyBUT1BfVFJBQ0tFUl9PUkJJVCkgewogICAgICAgICAgY29uc3QgdCA9IChsb2NhbFRpbWUgLSBUT1BfVFJBQ0tFUl9ERVBBUlQpIC8gVE9QX1RSQUNLRVJfT1JCSVQ7CiAgICAgICAgICBjb25zdCBwb2ludCA9IG9yYml0UG9pbnQoY29ybmVyLmRpcmVjdGlvbiAqIE1hdGguUEkgKiAyICogdCk7CiAgICAgICAgICByZXR1cm4geyAuLi5wb2ludCwgbWF0dXJlOiBmYWxzZSB9OwogICAgICAgIH0KCiAgICAgICAgaWYgKGxvY2FsVGltZSA8IFRPUF9UUkFDS0VSX0RFUEFSVCArIFRPUF9UUkFDS0VSX09SQklUICsgVE9QX1RSQUNLRVJfUkVUVVJOKSB7CiAgICAgICAgICBjb25zdCB0ID0gc21vb3Roc3RlcCgKICAgICAgICAgICAgKGxvY2FsVGltZSAtIFRPUF9UUkFDS0VSX0RFUEFSVCAtIFRPUF9UUkFDS0VSX09SQklUKSAvIFRPUF9UUkFDS0VSX1JFVFVSTgogICAgICAgICAgKTsKICAgICAgICAgIHJldHVybiB7IHg6IHN0YXJ0LnggKiAoMSAtIHQpLCB6OiBzdGFydC56ICogKDEgLSB0KSwgbWF0dXJlOiBmYWxzZSB9OwogICAgICAgIH0KCiAgICAgICAgcmV0dXJuIHsgeDogMCwgejogMCwgbWF0dXJlOiB0cnVlIH07CiAgICAgIH07IiIiCgpuZXdfc3RhdGUgPSAiIiIgICAgICBjb25zdCB0b3BUcmFja2VyU3RhdGUgPSAoKSA9PiB7CiAgICAgICAgaWYgKHJlZHVjZU1vdGlvbikgcmV0dXJuIHsgeDogMCwgejogMCwgbWF0dXJlOiB0cnVlIH07CgogICAgICAgIGNvbnN0IHBoYXNlSW5kZXggPSBNYXRoLmZsb29yKHRvcFRyYWNrZXJUaW1lIC8gVE9QX1RSQUNLRVJfUEhBU0UpICUgVE9QX1RSQUNLRVJfTE9CRVMubGVuZ3RoOwogICAgICAgIGNvbnN0IGxvY2FsVGltZSA9IHRvcFRyYWNrZXJUaW1lICUgVE9QX1RSQUNLRVJfUEhBU0U7CiAgICAgICAgaWYgKGxvY2FsVGltZSA+PSBUT1BfVFJBQ0tFUl9MT09QKSB7CiAgICAgICAgICByZXR1cm4geyB4OiAwLCB6OiAwLCBtYXR1cmU6IHRydWUgfTsKICAgICAgICB9CgogICAgICAgIGNvbnN0IGxvYmUgPSBUT1BfVFJBQ0tFUl9MT0JFU1twaGFzZUluZGV4XTsKICAgICAgICBjb25zdCB0ID0gbG9jYWxUaW1lIC8gVE9QX1RSQUNLRVJfTE9PUDsKICAgICAgICBjb25zdCB0aGV0YSA9IGxvYmUuZGlyZWN0aW9uICogTWF0aC5QSSAqIDIgKiB0OwogICAgICAgIGNvbnN0IGNlbnRlclggPSBsb2JlLnggKiAwLjU7CiAgICAgICAgY29uc3QgY2VudGVyWiA9IGxvYmUueiAqIDAuNTsKICAgICAgICBjb25zdCByYWRpYWxYID0gLWNlbnRlclg7CiAgICAgICAgY29uc3QgcmFkaWFsWiA9IC1jZW50ZXJaOwogICAgICAgIGxldCB4ID0gY2VudGVyWCArIHJhZGlhbFggKiBNYXRoLmNvcyh0aGV0YSkgLSByYWRpYWxaICogTWF0aC5zaW4odGhldGEpOwogICAgICAgIGxldCB6ID0gY2VudGVyWiArIHJhZGlhbFggKiBNYXRoLnNpbih0aGV0YSkgKyByYWRpYWxaICogTWF0aC5jb3ModGhldGEpOwoKICAgICAgICBjb25zdCBsMSA9IE1hdGguYWJzKHgpICsgTWF0aC5hYnMoeik7CiAgICAgICAgaWYgKGwxID4gMSkgewogICAgICAgICAgeCAvPSBsMTsKICAgICAgICAgIHogLz0gbDE7CiAgICAgICAgfQoKICAgICAgICByZXR1cm4geyB4LCB6LCBtYXR1cmU6IGZhbHNlIH07CiAgICAgIH07IiIiCgp0ZXh0ID0gcmVwbGFjZV9vbmNlKHRleHQsIG9sZF9zdGF0ZSwgbmV3X3N0YXRlLCAidG9wIHRyYWNrZXIgbG9iZSBzdGF0ZSIpCmluZGV4X3BhdGgud3JpdGVfdGV4dCh0ZXh0KQoKYWdlbnRzX3BhdGggPSBQYXRoKCJBR0VOVFMubWQiKQphZ2VudHMgPSBhZ2VudHNfcGF0aC5yZWFkX3RleHQoKQpvbGRfYWdlbnRzID0gIiIiLSBTZXQtYW5nbGUgb3ZlcmxheXMgZmFkZSBpbiBvbmx5IGFzIG1vdGlvbiBiZWNvbWVzIHNsb3cgYW5kIGFuIGFuY2hvciBpcyBhcHByb2FjaGVkLiBUaGUgZGV0YWlsZWQgcmluZyBvdmVybGF5IGFwcGVhcnMgb25seSBhdCB0aGUgbWFpbiBhbmNob3IuIFRoZSB0b3AgYW5jaG9yIGxhYmVscyBLbm93bGVkZ2UsIEVtcGF0aHksIFByYWN0aWNhbGl0eSwgYW5kIFdpc2RvbSBhdCB0aGVpciBwcm9qZWN0ZWQgZW5kcG9pbnRzIGFuZCBub3cgaW5jbHVkZXMgYSBub24taW50ZXJhY3RpdmUgYW5pbWF0ZWQgc3RhbmNlIHRyYWNrZXIgb24gdGhlIHRvcCBMMSBzdXJmYWNlOiBhIHJlZCBwb2ludCwgZGltIHNjcmVlbi1ob3Jpem9udGFsL3NjcmVlbi12ZXJ0aWNhbCBjcm9zc2hhaXIsIGFuZCBhIGxhcmdlciByZWFkaW5nIGFib3ZlIHRoZSBpbnRlcmZhY2UuIFRoZSBwb2ludCBzdGF5cyBvbiB5PTE14oiJJeHniiIYr4oiJenwsIGN5Y2xlcyBzeW1tZXRyaWNhbGx5IHRocm91Z2ggS25vd2xlZGdlIENDVyDigJIgTWF0dXJpdHkg4oaSIFdpc2RvbSBDVyDigJIgTWF0dXJpdHkg4oaSIEVtcGF0aHkgQ1cg4oaSIE1hdHVyaXR5IOKGkiBQcmFjdGljYWxpdHkgQ0NXIOKGkiBNYXR1cml0eSwgdGhlbiByZXBlYXRzLiBUaGUgZWlnaHQgbm9uY2VudHJhbCByZWFkaW5ncyBjcm9zc2ZhZGUgYnkgYW5ndWxhciBwb3NpdGlvbiBiZXR3ZWVuIHRoZSBmb3VyIHNpbmdsZS1mdW5jdGlvbiBhbmQgZm91ciBwYWlyZWQtZnVuY3Rpb24gc3RyaW5nczsgYG1hdHVyaXR5YCBhcHBlYXJzIG9ubHkgYXQgdGhlIGV4YWN0IGNlbnRlciBzbmFwLiBSZWR1Y2VkLW1vdGlvbiBtb2RlIGhvbGRzIHRoZSB0cmFja2VyIGF0IE1hdHVyaXR5LiIiIgoKbmV3X2FnZW50cyA9ICIiIi0gU2V0LWFuZ2xlIG92ZXJsYXlzIGZhZGUgaW4gb25seSBhcyBtb3Rpb24gYmVjb21lcyBzbG93IGFuZCBhbiBhbmNob3IgaXMgYXBwcm9hY2hlZC4gVGhlIGRldGFpbGVkIHJpbmcgb3ZlcmxheSBhcHBlYXJzIG9ubHkgYXQgdGhlIG1haW4gYW5jaG9yLiBUaGUgdG9wIGFuY2hvciBsYWJlbHMgS25vd2xlZGdlLCBFbXBhdGh5LCBQcmFjdGljYWxpdHksIGFuZCBXaXNkb20gYXQgdGhlaXIgcHJvamVjdGVkIGVuZHBvaW50cyBhbmQgaW5jbHVkZXMgYSBub24taW50ZXJhY3RpdmUgYW5pbWF0ZWQgc3RhbmNlIHRyYWNrZXIgb24gdGhlIHRvcCBMMSBzdXJmYWNlOiBhIHJlZCBwb2ludCwgZGltIHNjcmVlbi1ob3Jpem9udGFsL3NjcmVlbi12ZXJ0aWNhbCBjcm9zc2hhaXIsIGFuZCBhIGxhcmdlciByZWFkaW5nIGFib3ZlIHRoZSBpbnRlcmZhY2UuIEl0cyBtb3Rpb24gaXMgYSBmb3VyLXBldGFsIHJvc2V0dGUgc2hhcmluZyBNLCBub3QgYSBzcG9rZSBwbHVzIGEgc21hbGwgZW5kcG9pbnQgb3JiaXQuIEVhY2ggbG9iZSBzdGFydHMgYW5kIGVuZHMgYXQgTSBhbmQgdHJhdmVyc2VzIHRoZSBhZGphY2VudCBwYWlyZWQgcG9pbnRzIHBsdXMgaXRzIGVuZHBvaW50OiBLbm93bGVkZ2UgQ0NXIGlzIE3ihpJQK0vihpJLaw+Sytl4...TRUNCATED...'))"
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label} anchor count: {count}')
+              return text.replace(old, new, 1)
+
+          index_path = Path('index.html')
+          text = index_path.read_text()
+
+          old_constants = """      const TOP_TRACKER_CORNERS = [
+        { x: 0, z: -1, direction: -1 },
+        { x: 0, z: 1, direction: 1 },
+        { x: 1, z: 0, direction: 1 },
+        { x: -1, z: 0, direction: -1 }
+      ];
+      const TOP_TRACKER_DEPART = 2.2;
+      const TOP_TRACKER_ORBIT = 7.2;
+      const TOP_TRACKER_RETURN = 2.8;
+      const TOP_TRACKER_HOLD = 1.8;
+      const TOP_TRACKER_PHASE = TOP_TRACKER_DEPART + TOP_TRACKER_ORBIT + TOP_TRACKER_RETURN + TOP_TRACKER_HOLD;
+      const TOP_TRACKER_CYCLE = TOP_TRACKER_PHASE * TOP_TRACKER_CORNERS.length;
+      let topTrackerTime = 0;"""
+
+          new_constants = """      const TOP_TRACKER_LOBES = [
+        { x: 0, z: -1, direction: 1 },
+        { x: 0, z: 1, direction: -1 },
+        { x: 1, z: 0, direction: -1 },
+        { x: -1, z: 0, direction: 1 }
+      ];
+      const TOP_TRACKER_LOOP = 10.8;
+      const TOP_TRACKER_HOLD = 1.8;
+      const TOP_TRACKER_PHASE = TOP_TRACKER_LOOP + TOP_TRACKER_HOLD;
+      const TOP_TRACKER_CYCLE = TOP_TRACKER_PHASE * TOP_TRACKER_LOBES.length;
+      let topTrackerTime = 0;"""
+
+          text = replace_once(text, old_constants, new_constants, 'tracker constants')
+
+          start = text.index("      const topTrackerState = () => {")
+          end = text.index("\n\n      const topTrackerReading = state => {", start)
+          if start < 0 or end < 0:
+              raise SystemExit('tracker state boundaries not found')
+
+          new_state = """      const topTrackerState = () => {
+        if (reduceMotion) return { x: 0, z: 0, mature: true };
+
+        const phaseIndex = Math.floor(topTrackerTime / TOP_TRACKER_PHASE) % TOP_TRACKER_LOBES.length;
+        const localTime = topTrackerTime % TOP_TRACKER_PHASE;
+        if (localTime >= TOP_TRACKER_LOOP) {
+          return { x: 0, z: 0, mature: true };
+        }
+
+        const lobe = TOP_TRACKER_LOBES[phaseIndex];
+        const t = localTime / TOP_TRACKER_LOOP;
+        const theta = lobe.direction * Math.PI * 2 * t;
+        const centerX = lobe.x * 0.5;
+        const centerZ = lobe.z * 0.5;
+        const radialX = -centerX;
+        const radialZ = -centerZ;
+        let x = centerX + radialX * Math.cos(theta) - radialZ * Math.sin(theta);
+        let z = centerZ + radialX * Math.sin(theta) + radialZ * Math.cos(theta);
+
+        const l1 = Math.abs(x) + Math.abs(z);
+        if (l1 > 1) {
+          x /= l1;
+          z /= l1;
+        }
+
+        return { x, z, mature: false };
+      };"""
+          text = text[:start] + new_state + text[end:]
+          index_path.write_text(text)
+
+          agents_path = Path('AGENTS.md')
+          agents = agents_path.read_text()
+          old_agents = """- Set-angle overlays fade in only as motion becomes slow and an anchor is approached. The detailed ring overlay appears only at the main anchor. The top anchor labels Knowledge, Empathy, Practicality, and Wisdom at their projected endpoints and now includes a non-interactive animated stance tracker on the top L1 surface: a red point, dim screen-horizontal/screen-vertical crosshair, and a larger reading above the interface. The point stays on y=1−|x|−|z|, cycles symmetrically through Knowledge CCW → Maturity → Wisdom CW → Maturity → Empathy CW → Maturity → Practicality CCW → Maturity, then repeats. The eight noncentral readings crossfade by angular position between the four single-function and four paired-function strings; `maturity` appears only at the exact center snap. Reduced-motion mode holds the tracker at Maturity."""
+          new_agents = """- Set-angle overlays fade in only as motion becomes slow and an anchor is approached. The detailed ring overlay appears only at the main anchor. The top anchor labels Knowledge, Empathy, Practicality, and Wisdom at their projected endpoints and includes a non-interactive animated stance tracker on the top L1 surface: a red point, dim screen-horizontal/screen-vertical crosshair, and a larger reading above the interface. Its motion is a four-petal rosette sharing M, not a spoke plus a small endpoint orbit. Each lobe starts and ends at M and traverses the adjacent paired points plus its endpoint: Knowledge CCW is M→P+K→K→K+E→M; Wisdom CW is M→P+W→W→E+W→M; Empathy CW is M→E+W→E→E+K→M; Practicality CCW is M→P+W→P→P+K→M. The underlying circular lobes are constrained to |x|+|z|≤1 so the point remains on y=1−|x|−|z|, with a brief exact-M hold between petals. The eight noncentral readings crossfade by angular position between the four single-function and four paired-function strings; `maturity` appears only at the exact center snap. Reduced-motion mode holds the tracker at Maturity."""
+          agents = replace_once(agents, old_agents, new_agents, 'AGENTS tracker description')
+          agents_path.write_text(agents)
+          PY
+      - name: Validate and commit
+        shell: bash
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const match = html.match(/<script>([\s\S]*?)<\/script>/i);
+          if (!match) throw new Error('script block missing');
+          new Function(match[1]);
+          if (!html.includes('TOP_TRACKER_LOBES')) throw new Error('lobe tracker missing');
+          if (html.includes('TOP_TRACKER_DEPART')) throw new Error('old spoke tracker remains');
+          JS
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html AGENTS.md
+          git commit -m "Shape top tracker as four-petal loop"
+          git push
