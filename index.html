@@ -1293,18 +1293,16 @@ The question is whether we let it change how we understand, what we value, and w
         'knowledge over epw',
         'empathy + knowledge over p & w'
       ];
-      const TOP_TRACKER_CORNERS = [
-        { x: 0, z: -1, direction: -1 },
-        { x: 0, z: 1, direction: 1 },
-        { x: 1, z: 0, direction: 1 },
-        { x: -1, z: 0, direction: -1 }
+      const TOP_TRACKER_LOBES = [
+        { x: 0, z: -1, direction: 1 },
+        { x: 0, z: 1, direction: -1 },
+        { x: 1, z: 0, direction: -1 },
+        { x: -1, z: 0, direction: 1 }
       ];
-      const TOP_TRACKER_DEPART = 2.2;
-      const TOP_TRACKER_ORBIT = 7.2;
-      const TOP_TRACKER_RETURN = 2.8;
+      const TOP_TRACKER_LOOP = 10.8;
       const TOP_TRACKER_HOLD = 1.8;
-      const TOP_TRACKER_PHASE = TOP_TRACKER_DEPART + TOP_TRACKER_ORBIT + TOP_TRACKER_RETURN + TOP_TRACKER_HOLD;
-      const TOP_TRACKER_CYCLE = TOP_TRACKER_PHASE * TOP_TRACKER_CORNERS.length;
+      const TOP_TRACKER_PHASE = TOP_TRACKER_LOOP + TOP_TRACKER_HOLD;
+      const TOP_TRACKER_CYCLE = TOP_TRACKER_PHASE * TOP_TRACKER_LOBES.length;
       let topTrackerTime = 0;
       const activeTouchPointers = new Map();
       const mobileViewport = {
@@ -1333,35 +1331,29 @@ The question is whether we let it change how we understand, what we value, and w
       const topTrackerState = () => {
         if (reduceMotion) return { x: 0, z: 0, mature: true };
 
-        const phaseIndex = Math.floor(topTrackerTime / TOP_TRACKER_PHASE) % TOP_TRACKER_CORNERS.length;
+        const phaseIndex = Math.floor(topTrackerTime / TOP_TRACKER_PHASE) % TOP_TRACKER_LOBES.length;
         const localTime = topTrackerTime % TOP_TRACKER_PHASE;
-        const corner = TOP_TRACKER_CORNERS[phaseIndex];
-        const tangent = { x: -corner.z, z: corner.x };
-        const orbitPoint = theta => ({
-          x: corner.x * (0.78 + 0.08 * Math.cos(theta)) + tangent.x * 0.13 * Math.sin(theta),
-          z: corner.z * (0.78 + 0.08 * Math.cos(theta)) + tangent.z * 0.13 * Math.sin(theta)
-        });
-        const start = orbitPoint(0);
-
-        if (localTime < TOP_TRACKER_DEPART) {
-          const t = smoothstep(localTime / TOP_TRACKER_DEPART);
-          return { x: start.x * t, z: start.z * t, mature: localTime === 0 };
+        if (localTime >= TOP_TRACKER_LOOP) {
+          return { x: 0, z: 0, mature: true };
         }
 
-        if (localTime < TOP_TRACKER_DEPART + TOP_TRACKER_ORBIT) {
-          const t = (localTime - TOP_TRACKER_DEPART) / TOP_TRACKER_ORBIT;
-          const point = orbitPoint(corner.direction * Math.PI * 2 * t);
-          return { ...point, mature: false };
+        const lobe = TOP_TRACKER_LOBES[phaseIndex];
+        const t = localTime / TOP_TRACKER_LOOP;
+        const theta = lobe.direction * Math.PI * 2 * t;
+        const centerX = lobe.x * 0.5;
+        const centerZ = lobe.z * 0.5;
+        const radialX = -centerX;
+        const radialZ = -centerZ;
+        let x = centerX + radialX * Math.cos(theta) - radialZ * Math.sin(theta);
+        let z = centerZ + radialX * Math.sin(theta) + radialZ * Math.cos(theta);
+
+        const l1 = Math.abs(x) + Math.abs(z);
+        if (l1 > 1) {
+          x /= l1;
+          z /= l1;
         }
 
-        if (localTime < TOP_TRACKER_DEPART + TOP_TRACKER_ORBIT + TOP_TRACKER_RETURN) {
-          const t = smoothstep(
-            (localTime - TOP_TRACKER_DEPART - TOP_TRACKER_ORBIT) / TOP_TRACKER_RETURN
-          );
-          return { x: start.x * (1 - t), z: start.z * (1 - t), mature: false };
-        }
-
-        return { x: 0, z: 0, mature: true };
+        return { x, z, mature: false };
       };
 
       const topTrackerReading = state => {
