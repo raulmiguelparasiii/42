@@ -75,30 +75,15 @@ jobs:
               raise SystemExit('active labels anchor not found')
           text = text.replace(old, new, 1)
 
-          old = """          if (anchor[0] > 1) {
-            const edge = project(rotate([1, 0, 0]));
-            explainerGrowthLine.setAttribute('x1', edge[0]);
-            explainerGrowthLine.setAttribute('y1', edge[1]);
-            explainerGrowthLine.setAttribute('x2', point[0]);
-            explainerGrowthLine.setAttribute('y2', point[1]);
-            explainerGrowthLine.style.opacity = String(
-              clamp((anchor[0] - 1) / 0.14, 0, 1) * 0.62
-            );
-          }"""
-          new = """          if (Math.abs(anchor[0]) > 1) {
-            const side = Math.sign(anchor[0]);
-            const edge = project(rotate([side, 0, 0]));
-            explainerGrowthLine.setAttribute('x1', edge[0]);
-            explainerGrowthLine.setAttribute('y1', edge[1]);
-            explainerGrowthLine.setAttribute('x2', point[0]);
-            explainerGrowthLine.setAttribute('y2', point[1]);
-            explainerGrowthLine.style.opacity = String(
-              clamp((Math.abs(anchor[0]) - 1) / 0.14, 0, 1) * 0.62
-            );
-          }"""
-          if old not in text:
-              raise SystemExit('continuation anchor not found')
-          text = text.replace(old, new, 1)
+          changes = [
+              ("          if (anchor[0] > 1) {", "          if (Math.abs(anchor[0]) > 1) {"),
+              ("            const edge = project(rotate([1, 0, 0]));", "            const side = Math.sign(anchor[0]);\n            const edge = project(rotate([side, 0, 0]));"),
+              ("              clamp((anchor[0] - 1) / 0.14, 0, 1) * 0.62", "              clamp((Math.abs(anchor[0]) - 1) / 0.14, 0, 1) * 0.62")
+          ]
+          for old, new in changes:
+              if old not in text:
+                  raise SystemExit('continuation fragment not found: ' + old)
+              text = text.replace(old, new, 1)
           index_path.write_text(text)
 
           agents_path = Path('AGENTS.md')
