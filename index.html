@@ -1303,6 +1303,7 @@ The question is whether we let it change how we understand, what we value, and w
       const TOP_TRACKER_HOLD = 1.8;
       const TOP_TRACKER_PHASE = TOP_TRACKER_LOOP + TOP_TRACKER_HOLD;
       const TOP_TRACKER_CYCLE = TOP_TRACKER_PHASE * TOP_TRACKER_LOBES.length;
+      const TOP_TRACKER_EXTENT = 0.82;
       let topTrackerTime = 0;
       const activeTouchPointers = new Map();
       const mobileViewport = {
@@ -1352,6 +1353,9 @@ The question is whether we let it change how we understand, what we value, and w
           x /= l1;
           z /= l1;
         }
+
+        x *= TOP_TRACKER_EXTENT;
+        z *= TOP_TRACKER_EXTENT;
 
         return { x, z, mature: false };
       };
