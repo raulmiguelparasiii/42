@@ -1186,6 +1186,7 @@ The question is whether we let it change how we understand, what we value, and w
       const explainerCameras = {
         purposeTop: { id: 'explainer-purpose-top', yaw: 0, pitch: Math.PI / 2 },
         purposeSide: { id: 'explainer-purpose-side', yaw: 0, pitch: 0 },
+        purposeVertical: { id: 'explainer-purpose-vertical', yaw: Math.PI / 2, pitch: Math.PI / 2 },
         meaningCross: { id: 'explainer-meaning-cross', yaw: Math.PI / 2, pitch: 0 },
         stanceSide: { id: 'explainer-stance-side', yaw: Math.PI / 4, pitch: 0.12 },
         main: { id: 'explainer-main', yaw: Math.PI / 4, pitch: MAIN_PITCH }
@@ -1206,8 +1207,8 @@ The question is whether we let it change how we understand, what we value, and w
         { at: explainerTimeFor('That is insulation.'), scene: 'insulation' },
         { at: explainerTimeFor('We now have three distinct conditions.'), scene: 'three-states' },
         { at: explainerTimeFor('We have discussed concern and constraint.'), scene: 'purpose-intro' },
-        { at: explainerTimeFor('That is information.'), scene: 'meaning-prep', camera: 'meaningCross' },
-        { at: explainerTimeFor('We need a second horizontal relation.'), scene: 'meaning' },
+        { at: explainerTimeFor('That is information.'), scene: 'meaning-prep', camera: 'purposeVertical' },
+        { at: explainerTimeFor('We need a second horizontal relation.'), scene: 'meaning', camera: 'meaningCross' },
         { at: explainerTimeFor('Knowledge supplies informational grounding.'), scene: 'meaning-knowledge' },
         { at: explainerTimeFor('Wisdom supplies contextual understanding.'), scene: 'meaning-labeled' },
         { at: explainerTimeFor('Now the whole structure is visible.'), scene: 'full', camera: 'main' },
@@ -1698,11 +1699,15 @@ The question is whether we let it change how we understand, what we value, and w
             subtext: 'Concern and constraint organize what matters and what can actually be done.'
           },
           'meaning-prep': {
-            axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
-            axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge' },
+            axes: [0, 2], edges: false,
+            meaningLeadIn: true,
+            axisLabels: { E: 'Concern', P: 'Constraint' },
+            axisLabelOffsets: { E: 24, P: 24 },
+            relationLabel: 'Purpose', relationAxis: 0,
+            relationAxisPosition: 0.28,
+            relationLabelDistance: 28,
             header: 'Information',
-            subtext: 'What is actually happening?',
-            markers: [[0, 0, -1]]
+            subtext: 'What is actually happening?'
           },
           meaning: {
             axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
@@ -1806,6 +1811,27 @@ The question is whether we let it change how we understand, what we value, and w
         if (!segment) return 0;
         const effectiveEnd = Math.min(segment.end, currentExplainerDuration());
         return clamp((explainer.playhead - segment.start) / Math.max(effectiveEnd - segment.start, 0.001), 0, 1);
+      };
+
+      const meaningLeadInAnchor = () => {
+        const text = currentExplainerSegment()?.text || '';
+        if (text.includes('And how do you understand it?')) {
+          return [0, 0, -1 + 2 * segmentProgress()];
+        }
+        if (
+          text.includes('Is this an emergency?') ||
+          text.includes('That requires context and interpretation.')
+        ) {
+          return [0, 0, 1];
+        }
+        return [0, 0, -1];
+      };
+
+      const meaningLeadInLabels = () => {
+        const text = currentExplainerSegment()?.text || '';
+        return text.includes('That requires context and interpretation.')
+          ? { K: 'Knowledge', W: 'Wisdom' }
+          : { K: 'Knowledge' };
       };
 
       const experienceAnchor = () => {
@@ -1994,6 +2020,14 @@ const insulationRevealAnchor = () => {
           marker.style.opacity = '1';
         });
 
+        if (config.meaningLeadIn) {
+          const point = project(rotate(meaningLeadInAnchor()));
+          const marker = explainerMarkers[0];
+          marker.setAttribute('cx', point[0]);
+          marker.setAttribute('cy', point[1]);
+          marker.style.opacity = '1';
+        }
+
         if (config.preInsulationDrift) {
           const anchor = preInsulationAnchor();
           const point = project(rotate(anchor));
@@ -2027,6 +2061,7 @@ const insulationRevealAnchor = () => {
         const vertexIndex = { E: 0, P: 1, M: 2, C: 3, W: 4, K: 5 };
         const activeLabels = {
           ...(config.axisLabels || {}),
+          ...(config.meaningLeadIn ? meaningLeadInLabels() : {}),
           ...(config.preInsulationDrift ? preInsulationEndpointLabels() : {}),
           ...(config.centralLabels ? centralQuestionLabels() : {})
         };
@@ -2048,8 +2083,9 @@ const insulationRevealAnchor = () => {
           const [firstIndex, secondIndex] = axes[config.relationAxis ?? 0];
           const first = points[firstIndex];
           const second = points[secondIndex];
-          const midX = (first[0] + second[0]) / 2;
-          const midY = (first[1] + second[1]) / 2;
+          const relationPosition = clamp(config.relationAxisPosition ?? 0.5, 0, 1);
+          const midX = first[0] + (second[0] - first[0]) * relationPosition;
+          const midY = first[1] + (second[1] - first[1]) * relationPosition;
           const dx = first[0] - second[0];
           const dy = first[1] - second[1];
           const length = Math.max(Math.hypot(dx, dy), 0.001);
