@@ -1,0 +1,205 @@
+name: Adjust information lead-in
+
+on:
+  push:
+    paths:
+      - .github/workflows/adjust-information-leadin.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch explainer lead-in
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f'{label} anchor not found')
+              if text.count(old) != 1:
+                  raise SystemExit(f'{label} anchor not unique: {text.count(old)}')
+              return text.replace(old, new, 1)
+
+          index_path = Path('index.html')
+          text = index_path.read_text()
+
+          text = replace_once(
+              text,
+              """      const explainerCameras = {
+        purposeTop: { id: 'explainer-purpose-top', yaw: 0, pitch: Math.PI / 2 },
+        purposeSide: { id: 'explainer-purpose-side', yaw: 0, pitch: 0 },
+        meaningCross: { id: 'explainer-meaning-cross', yaw: Math.PI / 2, pitch: 0 },""",
+              """      const explainerCameras = {
+        purposeTop: { id: 'explainer-purpose-top', yaw: 0, pitch: Math.PI / 2 },
+        purposeSide: { id: 'explainer-purpose-side', yaw: 0, pitch: 0 },
+        purposeVertical: { id: 'explainer-purpose-vertical', yaw: Math.PI / 2, pitch: Math.PI / 2 },
+        meaningCross: { id: 'explainer-meaning-cross', yaw: Math.PI / 2, pitch: 0 },""",
+              'camera'
+          )
+
+          text = replace_once(
+              text,
+              """        { at: explainerTimeFor('We have discussed concern and constraint.'), scene: 'purpose-intro' },
+        { at: explainerTimeFor('That is information.'), scene: 'meaning-prep', camera: 'meaningCross' },
+        { at: explainerTimeFor('We need a second horizontal relation.'), scene: 'meaning' },""",
+              """        { at: explainerTimeFor('We have discussed concern and constraint.'), scene: 'purpose-intro' },
+        { at: explainerTimeFor('That is information.'), scene: 'meaning-prep', camera: 'purposeVertical' },
+        { at: explainerTimeFor('We need a second horizontal relation.'), scene: 'meaning', camera: 'meaningCross' },""",
+              'meaning cue cameras'
+          )
+
+          text = replace_once(
+              text,
+              """          'meaning-prep': {
+            axes: [1, 2], dimAxes: [0], verticalMode: 'full', edges: false,
+            axisLabels: { M: 'Answerability', C: 'Insulation', K: 'Knowledge' },
+            header: 'Information',
+            subtext: 'What is actually happening?',
+            markers: [[0, 0, -1]]
+          },""",
+              """          'meaning-prep': {
+            axes: [0, 2], edges: false,
+            meaningLeadIn: true,
+            axisLabels: { E: 'Concern', P: 'Constraint' },
+            axisLabelOffsets: { E: 24, P: 24 },
+            relationLabel: 'Purpose', relationAxis: 0,
+            relationAxisPosition: 0.28,
+            relationLabelDistance: 28,
+            header: 'Information',
+            subtext: 'What is actually happening?'
+          },""",
+              'meaning prep scene'
+          )
+
+          text = replace_once(
+              text,
+              """      const segmentProgress = () => {
+        const segment = currentExplainerSegment();
+        if (!segment) return 0;
+        const effectiveEnd = Math.min(segment.end, currentExplainerDuration());
+        return clamp((explainer.playhead - segment.start) / Math.max(effectiveEnd - segment.start, 0.001), 0, 1);
+      };
+
+      const experienceAnchor = () => {""",
+              """      const segmentProgress = () => {
+        const segment = currentExplainerSegment();
+        if (!segment) return 0;
+        const effectiveEnd = Math.min(segment.end, currentExplainerDuration());
+        return clamp((explainer.playhead - segment.start) / Math.max(effectiveEnd - segment.start, 0.001), 0, 1);
+      };
+
+      const meaningLeadInAnchor = () => {
+        const text = currentExplainerSegment()?.text || '';
+        if (text.includes('And how do you understand it?')) {
+          return [0, 0, -1 + 2 * segmentProgress()];
+        }
+        if (
+          text.includes('Is this an emergency?') ||
+          text.includes('That requires context and interpretation.')
+        ) {
+          return [0, 0, 1];
+        }
+        return [0, 0, -1];
+      };
+
+      const meaningLeadInLabels = () => {
+        const text = currentExplainerSegment()?.text || '';
+        return text.includes('That requires context and interpretation.')
+          ? { K: 'Knowledge', W: 'Wisdom' }
+          : { K: 'Knowledge' };
+      };
+
+      const experienceAnchor = () => {""",
+              'meaning lead-in helpers'
+          )
+
+          text = replace_once(
+              text,
+              """        (config.markers || []).slice(0, explainerMarkers.length).forEach((anchor, index) => {
+          const point = project(rotate(anchor));
+          const marker = explainerMarkers[index];
+          marker.setAttribute('cx', point[0]);
+          marker.setAttribute('cy', point[1]);
+          marker.style.opacity = '1';
+        });
+
+        if (config.preInsulationDrift) {""",
+              """        (config.markers || []).slice(0, explainerMarkers.length).forEach((anchor, index) => {
+          const point = project(rotate(anchor));
+          const marker = explainerMarkers[index];
+          marker.setAttribute('cx', point[0]);
+          marker.setAttribute('cy', point[1]);
+          marker.style.opacity = '1';
+        });
+
+        if (config.meaningLeadIn) {
+          const point = project(rotate(meaningLeadInAnchor()));
+          const marker = explainerMarkers[0];
+          marker.setAttribute('cx', point[0]);
+          marker.setAttribute('cy', point[1]);
+          marker.style.opacity = '1';
+        }
+
+        if (config.preInsulationDrift) {""",
+              'meaning lead-in marker'
+          )
+
+          text = replace_once(
+              text,
+              """        const activeLabels = {
+          ...(config.axisLabels || {}),
+          ...(config.preInsulationDrift ? preInsulationEndpointLabels() : {}),
+          ...(config.centralLabels ? centralQuestionLabels() : {})
+        };""",
+              """        const activeLabels = {
+          ...(config.axisLabels || {}),
+          ...(config.meaningLeadIn ? meaningLeadInLabels() : {}),
+          ...(config.preInsulationDrift ? preInsulationEndpointLabels() : {}),
+          ...(config.centralLabels ? centralQuestionLabels() : {})
+        };""",
+              'dynamic lead-in labels'
+          )
+
+          text = replace_once(
+              text,
+              """          const midX = (first[0] + second[0]) / 2;
+          const midY = (first[1] + second[1]) / 2;
+          const dx = first[0] - second[0];""",
+              """          const relationPosition = clamp(config.relationAxisPosition ?? 0.5, 0, 1);
+          const midX = first[0] + (second[0] - first[0]) * relationPosition;
+          const midY = first[1] + (second[1] - first[1]) * relationPosition;
+          const dx = first[0] - second[0];""",
+              'relation annotation position'
+          )
+
+          index_path.write_text(text)
+
+          agents_path = Path('AGENTS.md')
+          agents = agents_path.read_text()
+          old = """- The explainer avoids calling the object “the Stone” during this walkthrough; it uses “the structure.” In the Knowledge/Wisdom section, K–W is shown horizontally while M–C remains vertical and labeled Answerability / Insulation; the previously established P–E relation stays faintly visible. During the information lead-in, only Knowledge is labeled; Wisdom remains hidden until the narration explicitly says “Wisdom supplies contextual understanding.” Full Knowledge/Wisdom labels are pushed farther outward than ordinary endpoint labels so they clear the endpoint markers. After the full structure has been introduced, focus scenes keep all other axes and shell edges faint instead of hiding them, while the active relation is strongly highlighted. When the narration first says ‘We have discussed concern and constraint’ around 6:10, a dedicated Purpose scene emphasizes P–E, places Concern and Constraint farther beyond E/P for clear leader-line spacing, and connects a separate Purpose label to the axis midpoint. In the later full-structure recap, the same endpoint-plus-relation annotation is reused across all three relations: Purpose = Concern/Constraint, Meaning = Information/Interpretation, and Accountability = Answerability/Insulation."""
+          new = """- The explainer avoids calling the object “the Stone” during this walkthrough; it uses “the structure.” When the narration first says ‘We have discussed concern and constraint’ around 6:10, a dedicated Purpose scene emphasizes P–E, places Concern and Constraint farther beyond E/P for clear leader-line spacing, and connects a separate Purpose label to the axis midpoint. At “That is information,” that same Purpose relation rotates vertical while M–C/accountability stays hidden; the Purpose leader shifts off the center crossing, K–W appears horizontally, and Knowledge remains labeled at K. During “And how do you understand it?” the stance marker travels from K to W; Wisdom first appears at “That requires context and interpretation.” Only at “We need a second horizontal relation” does the camera switch so M–C becomes the vertical Answerability / Insulation reference for the Knowledge/Wisdom construction. Full Knowledge/Wisdom labels are pushed farther outward than ordinary endpoint labels so they clear the endpoint markers. After the full structure has been introduced, focus scenes keep all other axes and shell edges faint instead of hiding them, while the active relation is strongly highlighted. In the later full-structure recap, the same endpoint-plus-relation annotation is reused across all three relations: Purpose = Concern/Constraint, Meaning = Information/Interpretation, and Accountability = Answerability/Insulation."""
+          if old not in agents:
+              raise SystemExit('AGENTS meaning-section anchor not found')
+          agents_path.write_text(agents.replace(old, new, 1))
+          PY
+      - name: Validate and commit
+        shell: bash
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const match = html.match(/<script>([\s\S]*?)<\/script>/i);
+          if (!match) throw new Error('script block missing');
+          new Function(match[1]);
+          JS
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html AGENTS.md
+          git commit -m "Refine information lead-in visuals"
+          git push
