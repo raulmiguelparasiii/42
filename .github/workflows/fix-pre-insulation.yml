@@ -1,0 +1,151 @@
+name: Fix pre-insulation visuals
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-pre-insulation.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch pre-insulation visuals
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          index_path = Path('index.html')
+          text = index_path.read_text()
+
+          old = """      const PRE_INSULATION_DRIFT_START = 302;
+                const preInsulationAnchor = () => {
+                  const insulationAt = explainerTimeFor('That is insulation.');
+                  const raw = clamp(
+                    (explainer.playhead - PRE_INSULATION_DRIFT_START) /
+                    Math.max(insulationAt - PRE_INSULATION_DRIFT_START, 0.001),
+                    0,
+                    1
+                  );
+                  const eased = raw * raw * (3 - 2 * raw);
+                  const amount = eased * 1.14;
+                  return [amount, 1 - amount, 0];
+                };
+
+                const insulationRevealAnchor = () => {
+                  const text = currentExplainerSegment()?.text || '';
+                  if (!text.includes('That is insulation')) return [0, -1, 0];
+                  const t = segmentProgress();
+                  return [1 - t, -t, 0];
+                };"""
+          new = """      const preInsulationDriftState = () => {
+                  const text = currentExplainerSegment()?.text || '';
+                  const progress = segmentProgress();
+                  const eased = progress * progress * (3 - 2 * progress);
+
+                  if (text.includes('As long as my intentions are good')) {
+                    return { side: 1, amount: eased * 1.14 };
+                  }
+                  if (text.includes('As long as it works for me')) {
+                    return { side: -1, amount: eased * 1.14 };
+                  }
+                  if (
+                    text.includes('Now the conflict becomes easier') ||
+                    text.includes('removed something’s permission')
+                  ) {
+                    return { side: -1, amount: 1.14 };
+                  }
+                  return { side: 0, amount: 0 };
+                };
+
+                const preInsulationAnchor = () => {
+                  const state = preInsulationDriftState();
+                  return [state.side * state.amount, 1 - state.amount, 0];
+                };
+
+                const preInsulationEndpointLabels = () => {
+                  const text = currentExplainerSegment()?.text || '';
+                  const visible =
+                    text.includes('As long as my intentions are good') ||
+                    text.includes('As long as it works for me') ||
+                    text.includes('Now the conflict becomes easier') ||
+                    text.includes('removed something’s permission');
+                  return visible ? { E: 'E', P: 'P' } : {};
+                };
+
+                const insulationRevealAnchor = () => {
+                  const text = currentExplainerSegment()?.text || '';
+                  if (!text.includes('That is insulation')) return [0, -1, 0];
+                  const t = segmentProgress();
+                  return [-(1 - t), -t, 0];
+                };"""
+          if old not in text:
+              raise SystemExit('pre-insulation helper anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = """        const activeLabels = {
+                  ...(config.axisLabels || {}),
+                  ...(config.centralLabels ? centralQuestionLabels() : {})
+                };"""
+          new = """        const activeLabels = {
+                  ...(config.axisLabels || {}),
+                  ...(config.preInsulationDrift ? preInsulationEndpointLabels() : {}),
+                  ...(config.centralLabels ? centralQuestionLabels() : {})
+                };"""
+          if old not in text:
+              raise SystemExit('active labels anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = """          if (anchor[0] > 1) {
+                    const edge = project(rotate([1, 0, 0]));
+                    explainerGrowthLine.setAttribute('x1', edge[0]);
+                    explainerGrowthLine.setAttribute('y1', edge[1]);
+                    explainerGrowthLine.setAttribute('x2', point[0]);
+                    explainerGrowthLine.setAttribute('y2', point[1]);
+                    explainerGrowthLine.style.opacity = String(
+                      clamp((anchor[0] - 1) / 0.14, 0, 1) * 0.62
+                    );
+                  }"""
+          new = """          if (Math.abs(anchor[0]) > 1) {
+                    const side = Math.sign(anchor[0]);
+                    const edge = project(rotate([side, 0, 0]));
+                    explainerGrowthLine.setAttribute('x1', edge[0]);
+                    explainerGrowthLine.setAttribute('y1', edge[1]);
+                    explainerGrowthLine.setAttribute('x2', point[0]);
+                    explainerGrowthLine.setAttribute('y2', point[1]);
+                    explainerGrowthLine.style.opacity = String(
+                      clamp((Math.abs(anchor[0]) - 1) / 0.14, 0, 1) * 0.62
+                    );
+                  }"""
+          if old not in text:
+              raise SystemExit('pre-insulation continuation anchor not found')
+          text = text.replace(old, new, 1)
+          index_path.write_text(text)
+
+          agents_path = Path('AGENTS.md')
+          agents = agents_path.read_text()
+          old = """- Experience is visualized as growth outward from the origin: the same person and a subtle dashed guide move toward Empathy, Practicality, or integration as the script describes uneven experience. Friction is no longer represented as a special surface point. During the two “reality pushes back” examples and the Friction section, the P–M and M–E slopes visually encode increasing unresolved pressure away from M; the current one-sided stance sits on the relevant slope and a corrective vector points back toward integration, growing with its distance from M. During “reality has corrective authority,” that stance moves back toward M. Answerability is not named in the header until the script actually reaches “That is answerability.” Near 5:02, before Insulation is named, the Answerability marker slowly veers down the Empathy-side M–E slope and slightly beyond the still-visible top geometry, with only a faint dashed continuation once it passes E. When “That is insulation” arrives, the lower E–C/P–C geometry is revealed and the marker is recontextualized onto E→C, sliding to C rather than exposing the lower structure early."""
+          new = """- Experience is visualized as growth outward from the origin: the same person and a subtle dashed guide move toward Empathy, Practicality, or integration as the script describes uneven experience. Friction is no longer represented as a special surface point. During the two “reality pushes back” examples and the Friction section, the P–M and M–E slopes visually encode increasing unresolved pressure away from M; the current one-sided stance sits on the relevant slope and a corrective vector points back toward integration, growing with its distance from M. During “reality has corrective authority,” that stance moves back toward M. Answerability is not named in the header until the script actually reaches “That is answerability.” Before Insulation is named, each rationalization gets its own visible slide from M: “my intentions are good” moves down the M→E side while “it works for me” moves down the M→P side. E and P remain labeled during both examples so the direction is legible, and a faint dashed continuation appears when either stance passes its endpoint. After the second example, the stance remains just beyond P until “That is insulation,” when the lower geometry is revealed and the point is recontextualized onto P→C, sliding to C rather than exposing the lower structure early."""
+          if old not in agents:
+              raise SystemExit('AGENTS pre-insulation statement not found')
+          agents_path.write_text(agents.replace(old, new, 1))
+          PY
+      - name: Validate and commit
+        shell: bash
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const match = html.match(/<script>([\s\S]*?)<\/script>/i);
+          if (!match) throw new Error('script block missing');
+          new Function(match[1]);
+          JS
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html AGENTS.md
+          git commit -m "Correct pre-insulation rationalization visuals"
+          git push
