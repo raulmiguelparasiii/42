@@ -1842,26 +1842,47 @@ The question is whether we let it change how we understand, what we value, and w
         return { side: 1, amount: moderate };
       };
 
-      const PRE_INSULATION_DRIFT_START = 302;
-      const preInsulationAnchor = () => {
-        const insulationAt = explainerTimeFor('That is insulation.');
-        const raw = clamp(
-          (explainer.playhead - PRE_INSULATION_DRIFT_START) /
-          Math.max(insulationAt - PRE_INSULATION_DRIFT_START, 0.001),
-          0,
-          1
-        );
-        const eased = raw * raw * (3 - 2 * raw);
-        const amount = eased * 1.14;
-        return [amount, 1 - amount, 0];
-      };
+      const preInsulationDriftState = () => {
+  const text = currentExplainerSegment()?.text || '';
+  const progress = segmentProgress();
+  const eased = progress * progress * (3 - 2 * progress);
 
-      const insulationRevealAnchor = () => {
-        const text = currentExplainerSegment()?.text || '';
-        if (!text.includes('That is insulation')) return [0, -1, 0];
-        const t = segmentProgress();
-        return [1 - t, -t, 0];
-      };
+  if (text.includes('As long as my intentions are good')) {
+    return { side: 1, amount: eased * 1.14 };
+  }
+  if (text.includes('As long as it works for me')) {
+    return { side: -1, amount: eased * 1.14 };
+  }
+  if (
+    text.includes('Now the conflict becomes easier') ||
+    text.includes('removed something’s permission')
+  ) {
+    return { side: -1, amount: 1.14 };
+  }
+  return { side: 0, amount: 0 };
+};
+
+const preInsulationAnchor = () => {
+  const state = preInsulationDriftState();
+  return [state.side * state.amount, 1 - state.amount, 0];
+};
+
+const preInsulationEndpointLabels = () => {
+  const text = currentExplainerSegment()?.text || '';
+  const visible =
+    text.includes('As long as my intentions are good') ||
+    text.includes('As long as it works for me') ||
+    text.includes('Now the conflict becomes easier') ||
+    text.includes('removed something’s permission');
+  return visible ? { E: 'E', P: 'P' } : {};
+};
+
+const insulationRevealAnchor = () => {
+  const text = currentExplainerSegment()?.text || '';
+  if (!text.includes('That is insulation')) return [0, -1, 0];
+  const t = segmentProgress();
+  return [-(1 - t), -t, 0];
+};
 
       const centralQuestionAnchor = () => {
         const text = currentExplainerSegment()?.text || '';
@@ -1981,14 +2002,15 @@ The question is whether we let it change how we understand, what we value, and w
           marker.setAttribute('cy', point[1]);
           marker.style.opacity = '1';
 
-          if (anchor[0] > 1) {
-            const edge = project(rotate([1, 0, 0]));
+          if (Math.abs(anchor[0]) > 1) {
+            const side = Math.sign(anchor[0]);
+            const edge = project(rotate([side, 0, 0]));
             explainerGrowthLine.setAttribute('x1', edge[0]);
             explainerGrowthLine.setAttribute('y1', edge[1]);
             explainerGrowthLine.setAttribute('x2', point[0]);
             explainerGrowthLine.setAttribute('y2', point[1]);
             explainerGrowthLine.style.opacity = String(
-              clamp((anchor[0] - 1) / 0.14, 0, 1) * 0.62
+              clamp((Math.abs(anchor[0]) - 1) / 0.14, 0, 1) * 0.62
             );
           }
         }
@@ -2005,6 +2027,7 @@ The question is whether we let it change how we understand, what we value, and w
         const vertexIndex = { E: 0, P: 1, M: 2, C: 3, W: 4, K: 5 };
         const activeLabels = {
           ...(config.axisLabels || {}),
+          ...(config.preInsulationDrift ? preInsulationEndpointLabels() : {}),
           ...(config.centralLabels ? centralQuestionLabels() : {})
         };
         explainerAxisLabels.forEach(label => {
