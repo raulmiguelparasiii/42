@@ -1303,7 +1303,8 @@ The question is whether we let it change how we understand, what we value, and w
       const TOP_TRACKER_HOLD = 1.8;
       const TOP_TRACKER_PHASE = TOP_TRACKER_LOOP + TOP_TRACKER_HOLD;
       const TOP_TRACKER_CYCLE = TOP_TRACKER_PHASE * TOP_TRACKER_LOBES.length;
-      const TOP_TRACKER_EXTENT = 0.82;
+      const TOP_TRACKER_LOBE_CENTER = 0.42;
+      const TOP_TRACKER_LOBE_WIDTH = 0.24;
       let topTrackerTime = 0;
       const activeTouchPointers = new Map();
       const mobileViewport = {
@@ -1341,21 +1342,14 @@ The question is whether we let it change how we understand, what we value, and w
         const lobe = TOP_TRACKER_LOBES[phaseIndex];
         const t = localTime / TOP_TRACKER_LOOP;
         const theta = lobe.direction * Math.PI * 2 * t;
-        const centerX = lobe.x * 0.5;
-        const centerZ = lobe.z * 0.5;
-        const radialX = -centerX;
-        const radialZ = -centerZ;
-        let x = centerX + radialX * Math.cos(theta) - radialZ * Math.sin(theta);
-        let z = centerZ + radialX * Math.sin(theta) + radialZ * Math.cos(theta);
-
-        const l1 = Math.abs(x) + Math.abs(z);
-        if (l1 > 1) {
-          x /= l1;
-          z /= l1;
-        }
-
-        x *= TOP_TRACKER_EXTENT;
-        z *= TOP_TRACKER_EXTENT;
+        const centerX = lobe.x * TOP_TRACKER_LOBE_CENTER;
+        const centerZ = lobe.z * TOP_TRACKER_LOBE_CENTER;
+        const tangentX = lobe.z;
+        const tangentZ = -lobe.x;
+        const cos = Math.cos(theta);
+        const sin = Math.sin(theta);
+        const x = centerX * (1 - cos) + tangentX * TOP_TRACKER_LOBE_WIDTH * sin;
+        const z = centerZ * (1 - cos) + tangentZ * TOP_TRACKER_LOBE_WIDTH * sin;
 
         return { x, z, mature: false };
       };
