@@ -165,54 +165,48 @@
       text-anchor: start;
       font-style: italic;
     }
-    #octahedron .bottom-pathology-label { text-anchor: start; }
+    #octahedron .bottom-depth-line {
+      stroke: rgba(255,59,48,.72);
+      stroke-width: .82;
+      fill: none;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+    #octahedron .bottom-depth-head {
+      fill: #ff3b30;
+      stroke: none;
+      pointer-events: none;
+    }
+    #octahedron .bottom-equator-dot,
+    #octahedron .bottom-collapse-dot {
+      fill: #000;
+      stroke: rgba(255,255,255,.74);
+      stroke-width: .72;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
     #octahedron .bottom-pathology-dot {
       fill: #ff3b30;
       stroke: none;
       pointer-events: none;
     }
-    #octahedron .bottom-pathology-loop {
-      stroke: rgba(255,59,48,.66);
-      stroke-width: .78;
-      stroke-dasharray: 2.6 2.1;
-      fill: none;
-      vector-effect: non-scaling-stroke;
-      pointer-events: none;
-    }
-    #octahedron .bottom-correction-line {
-      stroke: rgba(255,255,255,.62);
-      stroke-width: .72;
-      fill: none;
-      vector-effect: non-scaling-stroke;
-      pointer-events: none;
-    }
-    #octahedron .bottom-correction-head {
-      fill: rgba(255,255,255,.78);
-      stroke: none;
-      pointer-events: none;
-    }
-    #octahedron .bottom-barrier {
-      stroke: #ff3b30;
-      stroke-width: 1.35;
-      fill: none;
-      vector-effect: non-scaling-stroke;
-      pointer-events: none;
-    }
-    #octahedron .bottom-small-label {
-      fill: rgba(255,255,255,.58);
+    #octahedron .bottom-map-label {
+      fill: rgba(255,255,255,.72);
       stroke: none;
       text-anchor: middle;
       dominant-baseline: middle;
-      font: italic 4.2px Georgia, "Times New Roman", serif;
+      font: 400 4.6px Georgia, "Times New Roman", serif;
       letter-spacing: .12px;
       pointer-events: none;
     }
-    #octahedron .bottom-collapse-dot {
-      fill: #000;
-      stroke: rgba(255,255,255,.72);
-      stroke-width: .72;
-      vector-effect: non-scaling-stroke;
-      pointer-events: none;
+    #octahedron .bottom-pathology-label {
+      fill: rgba(255,88,78,.92);
+      font-style: italic;
+    }
+    #octahedron .bottom-depth-label {
+      fill: rgba(255,255,255,.54);
+      font-style: italic;
+      font-size: 4.2px;
     }
     #octahedron .explainer-marker {
       stroke: #fff;
@@ -642,7 +636,8 @@
       #octahedron .surface-label-text { font-size: 7px; }
       #octahedron .explainer-axis-label { font-size: 5.2px; }
       #octahedron .snap-annotation-text { font-size: 5.8px; }
-      #octahedron .bottom-small-label { font-size: 4.8px; }
+      #octahedron .bottom-map-label { font-size: 5.3px; }
+      #octahedron .bottom-depth-label { font-size: 4.8px; }
     }
     @media (max-width: 700px) {
       html, body {
@@ -993,21 +988,33 @@
         const line = make('line', 'snap-annotation-line');
         const target = make('circle', 'snap-annotation-target');
         const text = make('text', 'snap-annotation-text ' + textClass);
+        const textLines = Array.isArray(textValue) ? textValue : [textValue];
+        const tspans = [];
         target.setAttribute('r', '1.55');
-        text.textContent = textValue;
+        if (textLines.length === 1) {
+          text.textContent = textLines[0];
+        } else {
+          textLines.forEach((value, index) => {
+            const tspan = make('tspan');
+            tspan.textContent = value;
+            tspan.setAttribute('dy', index === 0 ? '-0.58em' : '1.16em');
+            text.appendChild(tspan);
+            tspans.push(tspan);
+          });
+        }
         group.appendChild(line);
         group.appendChild(target);
         group.appendChild(text);
-        return { line, target, text };
+        return { line, target, text, tspans };
       };
 
       const sideOverlay = make('g', 'side-overlay');
       sideOverlay.style.opacity = '0';
       svg.appendChild(sideOverlay);
       const sideAnnotations = [
-        { text: 'answerable stance', anchor: [-0.34, 0.46, -0.20] },
-        { text: 'prejudiced stance', anchor: [-0.50, 0, -0.50] },
-        { text: 'insulated stance', anchor: [-0.34, -0.46, -0.20] }
+        { text: ['answerable', 'stance'], anchor: [-0.34, 0.46, -0.20] },
+        { text: ['prejudiced', 'stance'], anchor: [-0.50, 0, -0.50] },
+        { text: ['insulated', 'stance'], anchor: [-0.34, -0.46, -0.20] }
       ].map(item => ({
         ...item,
         callout: createSnapCallout(sideOverlay, item.text, 'side-left-label')
@@ -1017,38 +1024,35 @@
       const bottomOverlay = make('g', 'bottom-overlay');
       bottomOverlay.style.opacity = '0';
       svg.appendChild(bottomOverlay);
-      const bottomPathologyLeader = make('line', 'snap-annotation-line');
-      const bottomPathologyLabel = make('text', 'snap-annotation-text bottom-pathology-label');
-      const bottomPathologyLoop = make('circle', 'bottom-pathology-loop');
+      const bottomDepthLine = make('line', 'bottom-depth-line');
+      const bottomDepthHead = make('path', 'bottom-depth-head');
+      const bottomEquatorDot = make('circle', 'bottom-equator-dot');
       const bottomPathologyDot = make('circle', 'bottom-pathology-dot');
-      const bottomCorrectionLine = make('line', 'bottom-correction-line');
-      const bottomCorrectionHead = make('path', 'bottom-correction-head');
-      const bottomBarrier = make('line', 'bottom-barrier');
-      const bottomCorrectionLabel = make('text', 'bottom-small-label');
-      const bottomSelfLabel = make('text', 'bottom-small-label');
       const bottomCollapseDot = make('circle', 'bottom-collapse-dot');
-      const bottomCollapseLabel = make('text', 'bottom-small-label');
+      const bottomEquatorLabel = make('text', 'bottom-map-label');
+      const bottomPathologyLabel = make('text', 'bottom-map-label bottom-pathology-label');
+      const bottomDepthLabel = make('text', 'bottom-map-label bottom-depth-label');
+      const bottomCollapseLabel = make('text', 'bottom-map-label');
+      bottomEquatorLabel.textContent = 'prejudice';
       bottomPathologyLabel.textContent = 'pathological judgement';
-      bottomCorrectionLabel.textContent = 'corrective reality';
-      bottomSelfLabel.textContent = 'self-sealing';
+      bottomDepthLabel.textContent = 'deepening insulation';
       bottomCollapseLabel.textContent = 'Collapse';
-      bottomPathologyLoop.setAttribute('r', '9');
+      bottomEquatorDot.setAttribute('r', '2.1');
       bottomPathologyDot.setAttribute('r', '2.7');
       bottomCollapseDot.setAttribute('r', '2.1');
       [
-        bottomPathologyLeader,
-        bottomPathologyLoop,
-        bottomCorrectionLine,
-        bottomCorrectionHead,
-        bottomBarrier,
-        bottomCollapseDot,
+        bottomDepthLine,
+        bottomDepthHead,
+        bottomEquatorDot,
         bottomPathologyDot,
+        bottomCollapseDot,
+        bottomEquatorLabel,
         bottomPathologyLabel,
-        bottomCorrectionLabel,
-        bottomSelfLabel,
+        bottomDepthLabel,
         bottomCollapseLabel
       ].forEach(node => bottomOverlay.appendChild(node));
-      const BOTTOM_PATHOLOGY_ANCHOR = [0.34, -0.38, 0.28];
+      const BOTTOM_FAMILY_EQUATOR = [0.5, 0, 0.5];
+      const BOTTOM_FAMILY_PATHOLOGY = [0.28, -0.44, 0.28];
 
       const explainerOverlay = make('g', 'explainer-overlay');
       explainerOverlay.style.opacity = '0';
@@ -2144,7 +2148,7 @@ The question is whether we let it change how we understand, what we value, and w
             relationLabel: 'Meaning', relationAxis: 2,
             header: 'Meaning',
             subtext: 'Information and interpretation.',
-            markers: [[0, 0, -1], [0, 0, 1]]
+            markers: [[0, 0,-1], [0, 0, 1]]
           },
           'full-accountability': {
             axes: [0, 1, 2], verticalMode: 'full', edges: true, emphasize: [1], focusAxes: true, dimEdges: true,
@@ -2712,8 +2716,12 @@ const insulationRevealAnchor = () => {
         const labelX = Math.max(-104, minX - 16);
         sideAnnotations.forEach(item => {
           const target = project(rotate(item.anchor));
-          item.callout.text.setAttribute('x', labelX);
           item.callout.text.setAttribute('y', target[1]);
+          if (item.callout.tspans.length) {
+            item.callout.tspans.forEach(tspan => tspan.setAttribute('x', labelX));
+          } else {
+            item.callout.text.setAttribute('x', labelX);
+          }
           item.callout.line.setAttribute('x1', labelX + 6);
           item.callout.line.setAttribute('y1', target[1]);
           item.callout.line.setAttribute('x2', target[0] - 3);
@@ -2735,66 +2743,55 @@ const insulationRevealAnchor = () => {
         sideNullCallout.target.setAttribute('cy', origin[1]);
       };
 
-      const drawBottomOverlay = () => {
+      const drawBottomOverlay = points => {
         const opacity = snapOverlayOpacity(snaps[3]);
         bottomOverlay.style.opacity = String(opacity);
         if (opacity <= 0.001) return;
 
-        const pathology = project(rotate(BOTTOM_PATHOLOGY_ANCHOR));
-        const labelX = pathology[0] + 23;
-        const labelY = pathology[1] - 16;
-        bottomPathologyDot.setAttribute('cx', pathology[0]);
-        bottomPathologyDot.setAttribute('cy', pathology[1]);
-        bottomPathologyLoop.setAttribute('cx', pathology[0]);
-        bottomPathologyLoop.setAttribute('cy', pathology[1]);
-        bottomPathologyLabel.setAttribute('x', labelX);
-        bottomPathologyLabel.setAttribute('y', labelY);
-        bottomPathologyLeader.setAttribute('x1', pathology[0] + 4);
-        bottomPathologyLeader.setAttribute('y1', pathology[1] - 3);
-        bottomPathologyLeader.setAttribute('x2', labelX - 5);
-        bottomPathologyLeader.setAttribute('y2', labelY + 2);
-
-        const sourceX = pathology[0] - 48;
-        const sourceY = pathology[1] - 27;
-        const dx = pathology[0] - sourceX;
-        const dy = pathology[1] - sourceY;
+        const equator = project(rotate(BOTTOM_FAMILY_EQUATOR));
+        const pathology = project(rotate(BOTTOM_FAMILY_PATHOLOGY));
+        const collapse = points[3];
+        const dx = collapse[0] - equator[0];
+        const dy = collapse[1] - equator[1];
         const length = Math.max(Math.hypot(dx, dy), 0.001);
         const ux = dx / length;
         const uy = dy / length;
         const px = -uy;
         const py = ux;
-        const barrierX = pathology[0] - ux * 13;
-        const barrierY = pathology[1] - uy * 13;
-        const tipX = barrierX - ux * 3;
-        const tipY = barrierY - uy * 3;
+        const startX = equator[0] + ux * 4;
+        const startY = equator[1] + uy * 4;
+        const tipX = collapse[0] - ux * 5;
+        const tipY = collapse[1] - uy * 5;
         const baseX = tipX - ux * 5;
         const baseY = tipY - uy * 5;
 
-        bottomCorrectionLine.setAttribute('x1', sourceX);
-        bottomCorrectionLine.setAttribute('y1', sourceY);
-        bottomCorrectionLine.setAttribute('x2', baseX);
-        bottomCorrectionLine.setAttribute('y2', baseY);
-        bottomCorrectionHead.setAttribute(
+        bottomDepthLine.setAttribute('x1', startX);
+        bottomDepthLine.setAttribute('y1', startY);
+        bottomDepthLine.setAttribute('x2', baseX);
+        bottomDepthLine.setAttribute('y2', baseY);
+        bottomDepthHead.setAttribute(
           'd',
           'M ' + tipX + ' ' + tipY +
           ' L ' + (baseX + px * 2.8) + ' ' + (baseY + py * 2.8) +
           ' L ' + (baseX - px * 2.8) + ' ' + (baseY - py * 2.8) +
           ' Z'
         );
-        bottomBarrier.setAttribute('x1', barrierX + px * 5.2);
-        bottomBarrier.setAttribute('y1', barrierY + py * 5.2);
-        bottomBarrier.setAttribute('x2', barrierX - px * 5.2);
-        bottomBarrier.setAttribute('y2', barrierY - py * 5.2);
-        bottomCorrectionLabel.setAttribute('x', sourceX + 2);
-        bottomCorrectionLabel.setAttribute('y', sourceY - 7);
-        bottomSelfLabel.setAttribute('x', pathology[0]);
-        bottomSelfLabel.setAttribute('y', pathology[1] + 16);
 
-        const collapse = project(rotate([0, -1, 0]));
+        bottomEquatorDot.setAttribute('cx', equator[0]);
+        bottomEquatorDot.setAttribute('cy', equator[1]);
+        bottomPathologyDot.setAttribute('cx', pathology[0]);
+        bottomPathologyDot.setAttribute('cy', pathology[1]);
         bottomCollapseDot.setAttribute('cx', collapse[0]);
         bottomCollapseDot.setAttribute('cy', collapse[1]);
+
+        bottomEquatorLabel.setAttribute('x', equator[0]);
+        bottomEquatorLabel.setAttribute('y', equator[1] - 12);
+        bottomPathologyLabel.setAttribute('x', pathology[0]);
+        bottomPathologyLabel.setAttribute('y', pathology[1] - 12);
+        bottomDepthLabel.setAttribute('x', (pathology[0] + collapse[0]) / 2);
+        bottomDepthLabel.setAttribute('y', (pathology[1] + collapse[1]) / 2 + 11);
         bottomCollapseLabel.setAttribute('x', collapse[0]);
-        bottomCollapseLabel.setAttribute('y', collapse[1] + 13);
+        bottomCollapseLabel.setAttribute('y', collapse[1] + 14);
       };
 
       const drawOverlay = points => {
@@ -2982,7 +2979,7 @@ const insulationRevealAnchor = () => {
         drawOverlay(points);
         drawTopOverlay(points);
         drawSideOverlay(points);
-        drawBottomOverlay();
+        drawBottomOverlay(points);
         drawExplainer(points);
       };
 
