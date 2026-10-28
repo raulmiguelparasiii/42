@@ -163,7 +163,7 @@
     #explainer-launch {
       position: absolute;
       left: 50%;
-      top: 78%;
+      top: 84%;
       transform: translateX(-50%) translateY(4px);
       display: inline-flex;
       align-items: center;
@@ -171,7 +171,7 @@
       white-space: nowrap;
       opacity: 0;
       pointer-events: none;
-      font: 12px Georgia, "Times New Roman", serif;
+      font: 13px Georgia, "Times New Roman", serif;
       letter-spacing: 0.18px;
       transition: opacity 180ms ease, transform 180ms ease;
     }
@@ -202,22 +202,23 @@
     #first-principles-panel {
       position: absolute;
       left: 50%;
-      top: 74dvh;
+      top: 81dvh;
       bottom: max(14px, env(safe-area-inset-bottom));
       transform: translateX(-50%) translateY(6px);
-      width: min(760px, calc(100vw - 36px));
-      padding: 0 18px 28px;
+      width: min(820px, calc(100vw - 64px));
+      padding: 20px 48px 56px;
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
-      color: rgba(255,255,255,.74);
+      color: rgba(255,255,255,.82);
       background: linear-gradient(to bottom, rgba(0,0,0,.96), #000 34px);
       opacity: 0;
       pointer-events: none;
       z-index: 4;
       scrollbar-width: thin;
       scrollbar-color: rgba(255,255,255,.2) transparent;
+      scrollbar-gutter: stable both-edges;
       transition: opacity 180ms ease, transform 180ms ease;
     }
     #first-principles-panel.is-visible {
@@ -232,26 +233,26 @@
       border-radius: 999px;
     }
     #first-principles-panel h2 {
-      margin: 0 0 18px;
-      padding-top: 8px;
+      margin: 0 0 28px;
+      padding-top: 0;
       color: #fff;
       text-align: center;
-      font: 500 18px/1.2 Georgia, "Times New Roman", serif;
+      font: 500 21px/1.25 Georgia, "Times New Roman", serif;
       letter-spacing: .01em;
     }
     #first-principles-panel p {
-      max-width: 690px;
-      margin: 0 auto 17px;
-      font: 400 13.5px/1.72 Georgia, "Times New Roman", serif;
+      max-width: 650px;
+      margin: 0 auto 24px;
+      font: 400 16px/1.86 Georgia, "Times New Roman", serif;
     }
     #first-principles-panel .first-principles-law {
-      margin-top: 30px;
-      padding-top: 26px;
+      margin-top: 42px;
+      padding-top: 34px;
       border-top: 1px solid rgba(255,255,255,.12);
       color: rgba(255,255,255,.9);
     }
     #first-principles-panel .first-principles-law p {
-      font: 400 15px/1.78 "Segoe Script", "Brush Script MT", "Apple Chancery", cursive;
+      font: 400 17px/1.92 "Segoe Script", "Brush Script MT", "Apple Chancery", cursive;
       letter-spacing: .01em;
     }
     #explainer-header {
@@ -596,31 +597,31 @@
         --mobile-mode-y: 1vh;
       }
       #explainer-launch {
-        top: 78%;
-        font-size: 11px;
+        top: 84%;
+        font-size: 12px;
       }
       #first-principles-panel {
-        top: 72dvh;
+        top: 79dvh;
         bottom: max(10px, env(safe-area-inset-bottom));
-        width: calc(100vw - 20px);
-        padding: 0 10px 24px;
+        width: calc(100vw - 28px);
+        padding: 18px 26px 44px;
       }
       #first-principles-panel h2 {
-        margin-bottom: 14px;
-        font-size: 16px;
+        margin-bottom: 24px;
+        font-size: 19px;
       }
       #first-principles-panel p {
-        margin-bottom: 15px;
-        font-size: 12.5px;
-        line-height: 1.68;
+        margin-bottom: 22px;
+        font-size: 15px;
+        line-height: 1.82;
       }
       #first-principles-panel .first-principles-law {
-        margin-top: 26px;
-        padding-top: 22px;
+        margin-top: 34px;
+        padding-top: 28px;
       }
       #first-principles-panel .first-principles-law p {
-        font-size: 14px;
-        line-height: 1.74;
+        font-size: 16px;
+        line-height: 1.9;
       }
       #explainer-header {
         top: max(22px, env(safe-area-inset-top));
