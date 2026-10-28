@@ -169,8 +169,8 @@
       fill: rgba(255,255,255,.64);
       stroke: none;
       text-anchor: end;
-      font: 400 4.8px "Segoe Script", "Brush Script MT", "Apple Chancery", cursive;
-      letter-spacing: .04px;
+      font: 400 4.8px Georgia, "Times New Roman", serif;
+      letter-spacing: .08px;
       pointer-events: none;
     }
     #octahedron .bottom-depth-line {
@@ -1032,8 +1032,8 @@
       const sideNullNote = make('text', 'side-null-note');
       const sideNullNoteTspans = [
         'Absence is not a balanced stance.',
-        'It is no formed stance at all.',
-        'A stance exists on the surface.'
+        'No materially relevant orientation has yet formed.',
+        'A formed stance lies on the surface.'
       ].map((value, index) => {
         const tspan = make('tspan');
         tspan.textContent = value;
@@ -1053,7 +1053,6 @@
       const bottomCollapseDot = make('circle', 'bottom-collapse-dot');
       const bottomEquatorLeader = make('line', 'snap-annotation-line');
       const bottomPathologyLeader = make('line', 'snap-annotation-line');
-      const bottomCollapseLeader = make('line', 'snap-annotation-line');
       const bottomEquatorLabel = make('text', 'bottom-map-label');
       const bottomPathologyLabel = make('text', 'bottom-map-label bottom-pathology-label');
       const bottomDepthLabel = make('text', 'bottom-map-label bottom-depth-label');
@@ -1070,7 +1069,6 @@
         bottomDepthHead,
         bottomEquatorLeader,
         bottomPathologyLeader,
-        bottomCollapseLeader,
         bottomEquatorDot,
         bottomPathologyDot,
         bottomCollapseDot,
@@ -2776,8 +2774,8 @@ const insulationRevealAnchor = () => {
         sideNullCallout.target.setAttribute('cx', origin[0]);
         sideNullCallout.target.setAttribute('cy', origin[1]);
 
-        const noteX = Math.min(108, maxX + 47);
-        const noteY = maxY - 34;
+        const noteX = Math.min(96, maxX + 35);
+        const noteY = maxY - 24;
         sideNullNote.setAttribute('y', noteY);
         sideNullNoteTspans.forEach(tspan => tspan.setAttribute('x', noteX));
       };
@@ -2823,11 +2821,15 @@ const insulationRevealAnchor = () => {
         bottomCollapseDot.setAttribute('cx', collapse[0]);
         bottomCollapseDot.setAttribute('cy', collapse[1]);
 
-        const equatorLabel = [equator[0] - px * 24 - ux * 8, equator[1] - py * 24 - uy * 8];
+        const equatorLabel = [equator[0] - ux * 27, equator[1] - uy * 27 - 10];
         const pathologyLabel = [pathology[0] + px * 27 - ux * 25, pathology[1] + py * 27 - uy * 25];
         const depthMid = [(equator[0] + collapse[0]) / 2, (equator[1] + collapse[1]) / 2];
-        const depthLabel = [depthMid[0] - px * 22, depthMid[1] - py * 22];
-        const collapseLabel = [collapse[0] + px * 23 + ux * 18, collapse[1] + py * 23 + uy * 18];
+        const depthLabel = [depthMid[0] - px * 8, depthMid[1] - py * 8];
+        const collapseLabel = [collapse[0], collapse[1] - 13];
+        const arrowAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+        const readableArrowAngle = arrowAngle > 90 || arrowAngle < -90
+          ? arrowAngle + 180
+          : arrowAngle;
 
         bottomEquatorLabel.setAttribute('x', equatorLabel[0]);
         bottomEquatorLabel.setAttribute('y', equatorLabel[1]);
@@ -2835,23 +2837,22 @@ const insulationRevealAnchor = () => {
         bottomPathologyLabel.setAttribute('y', pathologyLabel[1]);
         bottomDepthLabel.setAttribute('x', depthLabel[0]);
         bottomDepthLabel.setAttribute('y', depthLabel[1]);
+        bottomDepthLabel.setAttribute(
+          'transform',
+          'rotate(' + readableArrowAngle + ' ' + depthLabel[0] + ' ' + depthLabel[1] + ')'
+        );
         bottomCollapseLabel.setAttribute('x', collapseLabel[0]);
         bottomCollapseLabel.setAttribute('y', collapseLabel[1]);
 
-        bottomEquatorLeader.setAttribute('x1', equator[0] - px * 3);
-        bottomEquatorLeader.setAttribute('y1', equator[1] - py * 3);
-        bottomEquatorLeader.setAttribute('x2', equatorLabel[0] + px * 6);
-        bottomEquatorLeader.setAttribute('y2', equatorLabel[1] + py * 6);
+        bottomEquatorLeader.setAttribute('x1', equator[0] - ux * 3);
+        bottomEquatorLeader.setAttribute('y1', equator[1] - uy * 3);
+        bottomEquatorLeader.setAttribute('x2', equatorLabel[0] + ux * 7);
+        bottomEquatorLeader.setAttribute('y2', equatorLabel[1] + uy * 7);
 
         bottomPathologyLeader.setAttribute('x1', pathology[0] + px * 3);
         bottomPathologyLeader.setAttribute('y1', pathology[1] + py * 3);
         bottomPathologyLeader.setAttribute('x2', pathologyLabel[0] - px * 6);
         bottomPathologyLeader.setAttribute('y2', pathologyLabel[1] - py * 6);
-
-        bottomCollapseLeader.setAttribute('x1', collapse[0] + px * 3);
-        bottomCollapseLeader.setAttribute('y1', collapse[1] + py * 3);
-        bottomCollapseLeader.setAttribute('x2', collapseLabel[0] - px * 5);
-        bottomCollapseLeader.setAttribute('y2', collapseLabel[1] - py * 5);
       };
 
       const drawOverlay = points => {
