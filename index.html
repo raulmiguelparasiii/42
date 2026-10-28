@@ -211,6 +211,14 @@
       fill: rgba(255,88,78,.92);
       font-style: italic;
     }
+    #octahedron .bottom-pathology-definition {
+      fill: rgba(255,255,255,.58);
+      stroke: none;
+      text-anchor: middle;
+      font: 400 3.75px Georgia, "Times New Roman", serif;
+      letter-spacing: .04px;
+      pointer-events: none;
+    }
     #octahedron .bottom-depth-label {
       fill: rgba(255,255,255,.54);
       font-style: italic;
@@ -646,6 +654,7 @@
       #octahedron .snap-annotation-text { font-size: 5.8px; }
       #octahedron .side-null-note { font-size: 5.6px; }
       #octahedron .bottom-map-label { font-size: 5.3px; }
+      #octahedron .bottom-pathology-definition { font-size: 4.3px; }
       #octahedron .bottom-depth-label { font-size: 4.8px; }
     }
     @media (max-width: 700px) {
@@ -1053,8 +1062,22 @@
       const bottomCollapseDot = make('circle', 'bottom-collapse-dot');
       const bottomEquatorLeader = make('line', 'snap-annotation-line');
       const bottomPathologyLeader = make('line', 'snap-annotation-line');
+      const bottomCollapseLeader = make('line', 'snap-annotation-line');
       const bottomEquatorLabel = make('text', 'bottom-map-label');
       const bottomPathologyLabel = make('text', 'bottom-map-label bottom-pathology-label');
+      const bottomPathologyDefinition = make('text', 'bottom-pathology-definition');
+      const bottomPathologyDefinitionTspans = [
+        'is judgment that protects itself from materially relevant',
+        'correction by bending, dismissing, or insulating',
+        'against reality whenever reality threatens',
+        'what is already held.'
+      ].map((value, index) => {
+        const tspan = make('tspan');
+        tspan.textContent = value;
+        tspan.setAttribute('dy', index === 0 ? '0' : '1.28em');
+        bottomPathologyDefinition.appendChild(tspan);
+        return tspan;
+      });
       const bottomDepthLabel = make('text', 'bottom-map-label bottom-depth-label');
       const bottomCollapseLabel = make('text', 'bottom-map-label');
       bottomEquatorLabel.textContent = 'prejudice';
@@ -1069,11 +1092,13 @@
         bottomDepthHead,
         bottomEquatorLeader,
         bottomPathologyLeader,
+        bottomCollapseLeader,
         bottomEquatorDot,
         bottomPathologyDot,
         bottomCollapseDot,
         bottomEquatorLabel,
         bottomPathologyLabel,
+        bottomPathologyDefinition,
         bottomDepthLabel,
         bottomCollapseLabel
       ].forEach(node => bottomOverlay.appendChild(node));
@@ -2775,7 +2800,7 @@ const insulationRevealAnchor = () => {
         sideNullCallout.target.setAttribute('cy', origin[1]);
 
         const noteX = Math.min(96, maxX + 35);
-        const noteY = maxY - 24;
+        const noteY = maxY + 7;
         sideNullNote.setAttribute('y', noteY);
         sideNullNoteTspans.forEach(tspan => tspan.setAttribute('x', noteX));
       };
@@ -2821,11 +2846,13 @@ const insulationRevealAnchor = () => {
         bottomCollapseDot.setAttribute('cx', collapse[0]);
         bottomCollapseDot.setAttribute('cy', collapse[1]);
 
+        const maxY = Math.max(...points.map(point => point[1]));
         const equatorLabel = [equator[0] - ux * 27, equator[1] - uy * 27 - 10];
-        const pathologyLabel = [pathology[0] + px * 27 - ux * 25, pathology[1] + py * 27 - uy * 25];
+        const pathologyLabel = [0, maxY + 14];
+        const pathologyDefinitionY = maxY + 24;
         const depthMid = [(equator[0] + collapse[0]) / 2, (equator[1] + collapse[1]) / 2];
-        const depthLabel = [depthMid[0] - px * 8, depthMid[1] - py * 8];
-        const collapseLabel = [collapse[0], collapse[1] - 13];
+        const depthLabel = [depthMid[0] + 9, depthMid[1] - 9];
+        const collapseLabel = [collapse[0], collapse[1] - 22];
         const arrowAngle = Math.atan2(dy, dx) * 180 / Math.PI;
         const readableArrowAngle = arrowAngle > 90 || arrowAngle < -90
           ? arrowAngle + 180
@@ -2835,6 +2862,8 @@ const insulationRevealAnchor = () => {
         bottomEquatorLabel.setAttribute('y', equatorLabel[1]);
         bottomPathologyLabel.setAttribute('x', pathologyLabel[0]);
         bottomPathologyLabel.setAttribute('y', pathologyLabel[1]);
+        bottomPathologyDefinition.setAttribute('y', pathologyDefinitionY);
+        bottomPathologyDefinitionTspans.forEach(tspan => tspan.setAttribute('x', pathologyLabel[0]));
         bottomDepthLabel.setAttribute('x', depthLabel[0]);
         bottomDepthLabel.setAttribute('y', depthLabel[1]);
         bottomDepthLabel.setAttribute(
@@ -2849,10 +2878,15 @@ const insulationRevealAnchor = () => {
         bottomEquatorLeader.setAttribute('x2', equatorLabel[0] + ux * 7);
         bottomEquatorLeader.setAttribute('y2', equatorLabel[1] + uy * 7);
 
-        bottomPathologyLeader.setAttribute('x1', pathology[0] + px * 3);
-        bottomPathologyLeader.setAttribute('y1', pathology[1] + py * 3);
-        bottomPathologyLeader.setAttribute('x2', pathologyLabel[0] - px * 6);
-        bottomPathologyLeader.setAttribute('y2', pathologyLabel[1] - py * 6);
+        bottomPathologyLeader.setAttribute('x1', pathology[0] - 2);
+        bottomPathologyLeader.setAttribute('y1', pathology[1] + 3);
+        bottomPathologyLeader.setAttribute('x2', pathologyLabel[0] + 4);
+        bottomPathologyLeader.setAttribute('y2', pathologyLabel[1] - 7);
+
+        bottomCollapseLeader.setAttribute('x1', collapse[0]);
+        bottomCollapseLeader.setAttribute('y1', collapse[1] - 3);
+        bottomCollapseLeader.setAttribute('x2', collapse[0]);
+        bottomCollapseLeader.setAttribute('y2', collapseLabel[1] + 6);
       };
 
       const drawOverlay = points => {
