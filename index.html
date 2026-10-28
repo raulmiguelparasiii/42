@@ -163,7 +163,7 @@
     #explainer-launch {
       position: absolute;
       left: 50%;
-      top: calc(100% + 15px);
+      top: 78%;
       transform: translateX(-50%) translateY(4px);
       display: inline-flex;
       align-items: center;
@@ -198,6 +198,61 @@
       border-top: 4px solid transparent;
       border-bottom: 4px solid transparent;
       border-left: 7px solid #fff;
+    }
+    #first-principles-panel {
+      position: absolute;
+      left: 50%;
+      top: 74dvh;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      transform: translateX(-50%) translateY(6px);
+      width: min(760px, calc(100vw - 36px));
+      padding: 0 18px 28px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      color: rgba(255,255,255,.74);
+      background: linear-gradient(to bottom, rgba(0,0,0,.96), #000 34px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 4;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,.2) transparent;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+    #first-principles-panel.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    #first-principles-panel::-webkit-scrollbar { width: 5px; }
+    #first-principles-panel::-webkit-scrollbar-track { background: transparent; }
+    #first-principles-panel::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.2);
+      border-radius: 999px;
+    }
+    #first-principles-panel h2 {
+      margin: 0 0 18px;
+      padding-top: 8px;
+      color: #fff;
+      text-align: center;
+      font: 500 18px/1.2 Georgia, "Times New Roman", serif;
+      letter-spacing: .01em;
+    }
+    #first-principles-panel p {
+      max-width: 690px;
+      margin: 0 auto 17px;
+      font: 400 13.5px/1.72 Georgia, "Times New Roman", serif;
+    }
+    #first-principles-panel .first-principles-law {
+      margin-top: 30px;
+      padding-top: 26px;
+      border-top: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.9);
+      font-family: "Segoe Script", "Brush Script MT", "Apple Chancery", cursive;
+      font-size: 15px;
+      line-height: 1.78;
+      letter-spacing: .01em;
     }
     #explainer-header {
       position: absolute;
@@ -541,8 +596,29 @@
         --mobile-mode-y: 1vh;
       }
       #explainer-launch {
-        top: calc(100% + 12px);
+        top: 78%;
         font-size: 11px;
+      }
+      #first-principles-panel {
+        top: 72dvh;
+        bottom: max(10px, env(safe-area-inset-bottom));
+        width: calc(100vw - 20px);
+        padding: 0 10px 24px;
+      }
+      #first-principles-panel h2 {
+        margin-bottom: 14px;
+        font-size: 16px;
+      }
+      #first-principles-panel p {
+        margin-bottom: 15px;
+        font-size: 12.5px;
+        line-height: 1.68;
+      }
+      #first-principles-panel .first-principles-law {
+        margin-top: 26px;
+        padding-top: 22px;
+        font-size: 14px;
+        line-height: 1.74;
       }
       #explainer-header {
         top: max(22px, env(safe-area-inset-top));
@@ -623,13 +699,76 @@
     </div>
     <div id="stone-shell">
       <svg id="octahedron" viewBox="-120 -120 240 240" aria-hidden="true"></svg>
-      <button id="explainer-launch" type="button" aria-label="Play The structure in first principles">
+      <button id="explainer-launch" type="button" aria-label="Play The structure in geometry">
         <span class="play-glyph" aria-hidden="true"></span>
-        <span>The structure in first principles</span>
+        <span>The structure in geometry</span>
       </button>
     </div>
+    <section id="first-principles-panel" aria-label="The structure in first principles" aria-hidden="true">
+      <h2>The structure in first principles</h2>
+
+      <p>For any given referent, maturity has one objective structure.</p>
+
+      <p>The referent presents four unavoidable pressures. There is affected welfare: what matters to those who are affected. There is real-world constraint: what reality actually permits, prevents, requires, or makes possible. There is informational grounding: what is actually known, unknown, supported, doubtful, or established. And there is contextual interpretation: what that information means in this situation, in proportion, with its limits, implications, and consequences.</p>
+
+      <p>These four pressures are not optional additions to judgment. Any formed judgment already stands in some relation to all four. Ignoring one does not make that relation disappear. It simply makes the judgment deficient in that respect. A person who ignores practical constraint is still related to constraint through that neglect. A person who ignores affected welfare is still related to welfare through exclusion or indifference. A person who has facts without context is still interpretively deficient, and a person who has interpretation without adequate facts is still informationally deficient.</p>
+
+      <p>That is why integration of all four is required.</p>
+
+      <p>If one materially relevant pressure is missing, distorted, exaggerated, or suppressed, then some part of the relevant reality is not properly governing the judgment. If that missing pressure is restored while everything that was already valid is preserved, the resulting judgment is objectively better relative to that same referent. It contains more of the relevant reality and loses nothing that was already correct.</p>
+
+      <p>This gives the direction of maturity. Maturity cannot consist in becoming increasingly extreme toward one of the four pressures. It consists in allowing each pressure to carry the authority that the actual referent warrants.</p>
+
+      <p>Empathy without practicality can demand what reality cannot sustain. Practicality without empathy can achieve an outcome while disregarding the people who bear its cost. Knowledge without wisdom can possess correct information but apply it blindly. Wisdom without knowledge can produce an elegant interpretation that is no longer constrained by evidence.</p>
+
+      <p>Integration means none of these pressures is allowed to become absolute. It also does not mean giving them equal weight in every situation. Reality itself can make one pressure more important in a particular case. A crisis can demand practicality. Caregiving can place immediate welfare in the foreground. Technical investigation can require informational grounding to lead. A complicated human situation can require contextual judgment to lead. Mature integration means that whichever pressure leads remains answerable to the others and to the whole reality of the referent.</p>
+
+      <p>But integration by itself is still not enough.</p>
+
+      <p>A person can arrive at a balanced judgment and then become incapable of correction. They can begin protecting the judgment because it has become part of their identity, status, ideology, pride, fear, or interest. This is why the structure of maturity requires accountability to reality as a separate relation.</p>
+
+      <p>Full answerability means that materially relevant reality retains governing and corrective authority over the stance. Evidence can correct it. Consequences can correct it. Affected welfare can correct it. Practical impossibility can correct it. Context can correct it. New information can correct it. Contradiction can correct it. The stance does not get to decide in advance that it is immune.</p>
+
+      <p>Psychologically, this is the crucial difference between maturity and merely having a sophisticated belief system.</p>
+
+      <p>An immature mind can be intelligent, informed, compassionate, efficient, experienced, or even internally consistent. The failure occurs when one of those strengths becomes protected from the rest of reality.</p>
+
+      <p>A person may care deeply and use that compassion to dismiss constraints. Another may be highly practical and use effectiveness to excuse harm. Another may know enormous amounts and use expertise to dismiss context. Another may be very good at interpretation and use a larger narrative to explain away inconvenient evidence.</p>
+
+      <p>The psychological mechanism of immaturity is therefore not simply ignorance. It is one-sided organization combined, to some degree, with a failure to let the rest of reality govern.</p>
+
+      <p>Maturity is different. The mature person can hold a strong judgment without needing that judgment to be untouchable. When reality supports it, the judgment can remain firm. When reality qualifies it, it can be qualified. When reality defeats it, it can be abandoned. The person does not become mature by having weak convictions. A mature conviction can be extremely strong when the relevant reality strongly warrants it. What remains open is the governing authority of reality itself.</p>
+
+      <p>This also explains why answerability necessarily belongs with integration.</p>
+
+      <p>Suppose some materially relevant pressure within the referent remains genuinely unintegrated. Then the stance is not yet fully governed by the whole relevant reality. Something that should bear on the judgment is not yet carrying its warranted authority. Therefore full answerability has not yet been reached.</p>
+
+      <p>Conversely, if the stance is fully answerable to the whole referent, then no materially relevant pressure can remain excluded from governing it. If such a pressure remained excluded, answerability would be selective rather than full. The structure explicitly treats selective reality-governance as insufficient for maximal answerability.</p>
+
+      <p>So integration and full answerability meet at the same condition for a simple reason.</p>
+
+      <p>Integration means that all materially relevant pressures within the referent have been allowed their warranted place in the judgment.</p>
+
+      <p>Full answerability means that materially relevant reality continues to have authority to preserve, qualify, revise, or defeat that judgment.</p>
+
+      <p>Together, these conditions exhaust maturity-relevant organization.</p>
+
+      <p>Anything else that appears important, such as courage, justice, autonomy, intelligence, humility, expertise, emotional regulation, honesty, tradition, creativity, or discipline, matters to maturity through the way it affects these underlying relations. If it changes what is known, how it is interpreted, what reality permits, how affected welfare is treated, or whether reality can correct the stance, then its maturity-relevant effect is already expressed here. If all of those relations remain genuinely unchanged, then merely adding another label does not create another way for the stance to become philosophically better. That is the exhaustion claim at the center of the structure.</p>
+
+      <div class="first-principles-law">
+        <p>For any given referent, a judgment becomes objectively better as every materially relevant aspect of reality is properly integrated through affected welfare, real-world constraint, informational grounding, and contextual interpretation, while the resulting stance remains answerable to reality.</p>
+
+        <p>When that integration is complete, and materially relevant reality retains full governing and corrective authority over the whole stance, the judgment becomes objectively mature.</p>
+
+        <p>Nothing materially relevant may remain unintegrated, and nothing materially relevant may be insulated from correction.</p>
+
+        <p>When both conditions are complete, there is no remaining maturity-relevant failure to correct without first introducing a new failure.</p>
+
+        <p>That is why complete integration of empathy, practicality, knowledge, and wisdom under full answerability to reality is the point of maturity.</p>
+      </div>
+    </section>
     <audio id="explainer-audio" preload="metadata" src="script.mp3"></audio>
-    <section id="explainer-session" hidden aria-label="The structure in first principles">
+    <section id="explainer-session" hidden aria-label="The structure in geometry">
       <div id="explainer-caption" aria-live="polite"></div>
       <div class="explainer-player-row">
         <button id="explainer-back" class="explainer-skip" type="button" aria-label="Back 10 seconds">−10</button>
@@ -660,6 +799,7 @@
       const app = document.querySelector('#app');
       const stoneShell = document.querySelector('#stone-shell');
       const explainerLaunch = document.querySelector('#explainer-launch');
+      const firstPrinciplesPanel = document.querySelector('#first-principles-panel');
       const explainerHeader = document.querySelector('#explainer-header');
       const explainerHeading = document.querySelector('#explainer-heading');
       const explainerSubtext = document.querySelector('#explainer-subtext');
@@ -1663,6 +1803,8 @@ The question is whether we let it change how we understand, what we value, and w
         velocityPitch = 0;
         explainerLaunch.hidden = true;
         explainerLaunch.classList.remove('is-visible');
+        firstPrinciplesPanel.classList.remove('is-visible');
+        firstPrinciplesPanel.setAttribute('aria-hidden', 'true');
         explainerHeader.hidden = false;
         explainerSession.hidden = false;
         app.classList.add('explainer-active');
@@ -2359,6 +2501,8 @@ const insulationRevealAnchor = () => {
       const drawTopOverlay = points => {
         if (explainer.active) {
           topOverlay.style.opacity = '0';
+          firstPrinciplesPanel.classList.remove('is-visible');
+          firstPrinciplesPanel.setAttribute('aria-hidden', 'true');
           return;
         }
         const speed = Math.hypot(velocityYaw, velocityPitch);
@@ -2368,6 +2512,8 @@ const insulationRevealAnchor = () => {
         topOverlay.style.opacity = String(opacity);
         const launchVisible = opacity > 0.86 && !explainer.active;
         explainerLaunch.classList.toggle('is-visible', launchVisible);
+        firstPrinciplesPanel.classList.toggle('is-visible', launchVisible);
+        firstPrinciplesPanel.setAttribute('aria-hidden', String(!launchVisible));
         if (opacity <= 0.001) return;
         topConcepts.forEach(item => {
           const point = points[item.vertex];
@@ -2923,6 +3069,7 @@ const insulationRevealAnchor = () => {
         }
       });
       explainerLaunch.classList.remove('is-visible');
+      firstPrinciplesPanel.classList.remove('is-visible');
       explainerTotal.textContent = formatTime(currentExplainerDuration());
 
       draw();
