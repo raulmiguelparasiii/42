@@ -1284,14 +1284,14 @@ The question is whether we let it change how we understand, what we value, and w
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
       const mobileGestureMedia = matchMedia('(max-width: 700px)');
       const TOP_TRACKER_READINGS = [
-        'empathy over kpw',
-        'empathy + wisdom over p & k',
-        'wisdom over epk',
-        'practicality + wisdom over e & k',
-        'practicality over ekw',
-        'practicality + knowledge over e & w',
-        'knowledge over epw',
-        'empathy + knowledge over p & w'
+        'Welfarism',
+        'Romanticism',
+        'Interpretivism',
+        'Realism',
+        'Pragmatism',
+        'Rationalism',
+        'Evidentialism',
+        'Advocacy'
       ];
       const TOP_TRACKER_LOBES = [
         { x: 0, z: -1, direction: 1 },
@@ -1356,7 +1356,7 @@ The question is whether we let it change how we understand, what we value, and w
 
       const topTrackerReading = state => {
         if (state.mature || Math.hypot(state.x, state.z) < 1e-6) {
-          return { first: 'maturity', second: '', mix: 0 };
+          return { first: 'Maturity', second: '', mix: 0 };
         }
         const angle = (Math.atan2(state.z, state.x) + Math.PI * 2) % (Math.PI * 2);
         const sector = angle / (Math.PI / 4);
@@ -1971,46 +1971,46 @@ The question is whether we let it change how we understand, what we value, and w
       };
 
       const preInsulationDriftState = () => {
-  const text = currentExplainerSegment()?.text || '';
-  const progress = segmentProgress();
-  const eased = progress * progress * (3 - 2 * progress);
+        const text = currentExplainerSegment()?.text || '';
+        const progress = segmentProgress();
+        const eased = progress * progress * (3 - 2 * progress);
 
-  if (text.includes('As long as my intentions are good')) {
-    return { side: 1, amount: eased * 1.14 };
-  }
-  if (text.includes('As long as it works for me')) {
-    return { side: -1, amount: eased * 1.14 };
-  }
-  if (
-    text.includes('Now the conflict becomes easier') ||
-    text.includes('removed something’s permission')
-  ) {
-    return { side: -1, amount: 1.14 };
-  }
-  return { side: 0, amount: 0 };
-};
+        if (text.includes('As long as my intentions are good')) {
+          return { side: 1, amount: eased * 1.14 };
+        }
+        if (text.includes('As long as it works for me')) {
+          return { side: -1, amount: eased * 1.14 };
+        }
+        if (
+          text.includes('Now the conflict becomes easier') ||
+          text.includes('removed something’s permission')
+        ) {
+          return { side: -1, amount: 1.14 };
+        }
+        return { side: 0, amount: 0 };
+      };
 
-const preInsulationAnchor = () => {
-  const state = preInsulationDriftState();
-  return [state.side * state.amount, 1 - state.amount, 0];
-};
+      const preInsulationAnchor = () => {
+        const state = preInsulationDriftState();
+        return [state.side * state.amount, 1 - state.amount, 0];
+      };
 
-const preInsulationEndpointLabels = () => {
-  const text = currentExplainerSegment()?.text || '';
-  const visible =
-    text.includes('As long as my intentions are good') ||
-    text.includes('As long as it works for me') ||
-    text.includes('Now the conflict becomes easier') ||
-    text.includes('removed something’s permission');
-  return visible ? { E: 'E', P: 'P' } : {};
-};
+      const preInsulationEndpointLabels = () => {
+        const text = currentExplainerSegment()?.text || '';
+        const visible =
+          text.includes('As long as my intentions are good') ||
+          text.includes('As long as it works for me') ||
+          text.includes('Now the conflict becomes easier') ||
+          text.includes('removed something’s permission');
+        return visible ? { E: 'E', P: 'P' } : {};
+      };
 
-const insulationRevealAnchor = () => {
-  const text = currentExplainerSegment()?.text || '';
-  if (!text.includes('That is insulation')) return [0, -1, 0];
-  const t = segmentProgress();
-  return [-(1 - t), -t, 0];
-};
+      const insulationRevealAnchor = () => {
+        const text = currentExplainerSegment()?.text || '';
+        if (!text.includes('That is insulation')) return [0, -1, 0];
+        const t = segmentProgress();
+        return [-(1 - t), -t, 0];
+      };
 
       const centralQuestionAnchor = () => {
         const text = currentExplainerSegment()?.text || '';
