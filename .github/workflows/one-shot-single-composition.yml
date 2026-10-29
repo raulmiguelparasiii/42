@@ -1,0 +1,29 @@
+name: One-shot single-page Stone composition switch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/one-shot-single-composition.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply single-page composition switch
+        run: python .github/one-shot-single-composition.py
+      - name: Commit implementation and remove one-shot files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-single-composition.yml .github/one-shot-single-composition.py
+          git add index.html AGENTS.md
+          git diff --cached --check
+          git commit -m "Switch Atlas as an in-page composition"
+          git push
