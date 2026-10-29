@@ -1025,6 +1025,40 @@ const ATLAS_ORIGIN = new URL(ATLAS_URL).origin;
       const mainOverlay = make('g', 'main-overlay');
       svg.appendChild(mainOverlay);
 
+      const mainReturnRevealDefs = make('defs');
+      const mainReturnRevealGradient = make('radialGradient');
+      mainReturnRevealGradient.setAttribute('id', 'main-return-reveal-gradient');
+      const mainReturnRevealInner = make('stop');
+      mainReturnRevealInner.setAttribute('offset', '0%');
+      mainReturnRevealInner.setAttribute('stop-color', '#fff');
+      const mainReturnRevealFeather = make('stop');
+      mainReturnRevealFeather.setAttribute('offset', '84%');
+      mainReturnRevealFeather.setAttribute('stop-color', '#fff');
+      const mainReturnRevealEdge = make('stop');
+      mainReturnRevealEdge.setAttribute('offset', '100%');
+      mainReturnRevealEdge.setAttribute('stop-color', '#000');
+      mainReturnRevealGradient.append(
+        mainReturnRevealInner,
+        mainReturnRevealFeather,
+        mainReturnRevealEdge
+      );
+      const mainReturnRevealMask = make('mask');
+      mainReturnRevealMask.setAttribute('id', 'main-return-reveal-mask');
+      mainReturnRevealMask.setAttribute('maskUnits', 'userSpaceOnUse');
+      mainReturnRevealMask.setAttribute('x', '-180');
+      mainReturnRevealMask.setAttribute('y', '-180');
+      mainReturnRevealMask.setAttribute('width', '360');
+      mainReturnRevealMask.setAttribute('height', '360');
+      const mainReturnRevealCircle = make('circle');
+      mainReturnRevealCircle.setAttribute('cx', '0');
+      mainReturnRevealCircle.setAttribute('cy', '0');
+      mainReturnRevealCircle.setAttribute('r', '0');
+      mainReturnRevealCircle.style.fill = 'url(#main-return-reveal-gradient)';
+      mainReturnRevealCircle.style.stroke = 'none';
+      mainReturnRevealMask.appendChild(mainReturnRevealCircle);
+      mainReturnRevealDefs.append(mainReturnRevealGradient, mainReturnRevealMask);
+      svg.insertBefore(mainReturnRevealDefs, svg.firstChild);
+
       const topOverlay = make('g', 'top-overlay');
       topOverlay.style.opacity = '0';
       svg.appendChild(topOverlay);
@@ -1369,6 +1403,7 @@ let atlasPortalState = null;
 let blackPreviewActive = false;
 let blackPortalMatch = null;
 let atlasActivationTimer = 0;
+let blackReturnOverlayProgress = 0;
 
       const EXPLAINER_SCRIPT = `What Makes a Person Mature?
 
@@ -1913,6 +1948,10 @@ const commitReturnPortal = state => {
   portalTransitioning = true;
   atlasPointerActive = false;
   atlasPortalState = state;
+  blackReturnOverlayProgress = Math.max(
+    blackReturnOverlayProgress,
+    clamp(Number(state?.returnDwellProgress) || 0, 0, 1)
+  );
   syncBlackFromAtlas(state);
   compositionMode = 'black';
   const frame = portalPreviewFrame;
@@ -1930,6 +1969,7 @@ const commitReturnPortal = state => {
   setTimeout(() => {
     frame?.classList.remove('is-committing');
     portalTransitioning = false;
+    blackReturnOverlayProgress = 0;
   }, 300);
   return true;
 };
@@ -1963,6 +2003,10 @@ const updatePortalPreview = () => {
   const state = atlasPortalState;
   const rawAmount = Number(state?.returnAmount);
   const amount = Number.isFinite(rawAmount) ? clamp(rawAmount, 0, 1) : 0;
+  const rawDwell = Number(state?.returnDwellProgress);
+  blackReturnOverlayProgress = Number.isFinite(rawDwell)
+    ? clamp(rawDwell, 0, 1)
+    : 0;
   if (amount > 0.001) {
     syncBlackFromAtlas(state);
   } else if (blackPortalMatch) {
@@ -1995,6 +2039,7 @@ window.addEventListener('message', event => {
   }
   if (data.type === 'stone-atlas-cancel') {
     atlasPointerActive = false;
+    blackReturnOverlayProgress = 0;
     if (compositionMode === 'atlas' && portalPreviewFrame) {
       portalPreviewFrame.style.opacity = '1';
     }
@@ -3238,9 +3283,28 @@ const insulationRevealAnchor = () => {
         const speed = Math.hypot(velocityYaw, velocityPitch);
         const mainDistance = distanceTo(snaps[0]);
         const motionFactor = dragging ? 0 : clamp(1 - speed / 0.00135, 0, 1);
-        const mainOpacity = (explainer.active || compositionMode === 'atlas' || portalTransitioning)
+        const returnRevealActive =
+          blackReturnOverlayProgress > 0 &&
+          (compositionMode === 'atlas' || portalTransitioning);
+        const returnReveal = returnRevealActive
+          ? clamp(blackReturnOverlayProgress, 0, 1)
+          : 0;
+        const standardMainOpacity = (explainer.active || compositionMode === 'atlas' || portalTransitioning)
           ? 0
           : clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor;
+        const mainOpacity = returnRevealActive
+          ? smoothstep(clamp(returnReveal * 1.15, 0, 1))
+          : standardMainOpacity;
+
+        if (returnRevealActive) {
+          mainReturnRevealCircle.setAttribute('r', String(150 * smoothstep(returnReveal)));
+          outerRing.setAttribute('mask', 'url(#main-return-reveal-mask)');
+          mainOverlay.setAttribute('mask', 'url(#main-return-reveal-mask)');
+        } else {
+          mainReturnRevealCircle.setAttribute('r', '0');
+          outerRing.removeAttribute('mask');
+          mainOverlay.removeAttribute('mask');
+        }
 
         const maxRadius = Math.max(...points.map(point => Math.hypot(point[0], point[1])));
         const outerRadius = maxRadius;
