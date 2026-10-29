@@ -1,0 +1,55 @@
+name: One-shot repair top reader scrolling
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-fix-top-reader-scroll.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair isolated top reader scroll surface
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old="""    #first-principles-panel {
+      position: absolute;
+      left: 50%;
+      top: 81dvh;
+      bottom: max(14px, env(safe-area-inset-bottom));"""
+          new="""    #first-principles-panel {
+      position: fixed;
+      left: 50%;
+      top: 81dvh;
+      bottom: max(14px, env(safe-area-inset-bottom));"""
+          assert s.count(old)==1
+          s=s.replace(old,new,1)
+          old="""      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;"""
+          new="""      min-height: 0;
+      overflow-y: scroll;
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;"""
+          assert s.count(old)==1
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          s=p.read_text()
+          assert '#first-principles-panel {\n      position: fixed;' in s
+          assert 'overflow-y: scroll;' in s
+          assert 'overscroll-behavior-y: contain;' in s
+      - name: Commit and self-clean
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Restore top-view reader scrolling'
+          git rm .github/workflows/one-shot-fix-top-reader-scroll.yml
+          git commit -m 'Remove one-shot top reader workflow'
+          git push
