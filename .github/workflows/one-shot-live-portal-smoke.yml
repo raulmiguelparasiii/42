@@ -1,0 +1,136 @@
+name: One-shot live portal integration smoke
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-live-portal-smoke.yml'
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find browser
+        id: browser
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          DRIVER="$(command -v chromedriver || command -v google-chrome-driver || true)"
+          test -n "$CHROME"
+          test -n "$DRIVER"
+          echo "chrome=$CHROME" >> "$GITHUB_OUTPUT"
+          echo "driver=$DRIVER" >> "$GITHUB_OUTPUT"
+      - name: Exercise live black to held-white transition
+        env:
+          CHROME: ${{ steps.browser.outputs.chrome }}
+          DRIVER: ${{ steps.browser.outputs.driver }}
+        run: |
+          "$DRIVER" --port=9515 --allowed-origins='*' >/tmp/portal-chromedriver.log 2>&1 &
+          python3 - <<'PY'
+          import json, os, time, urllib.request
+          base='http://127.0.0.1:9515'
+          def req(method,path,payload=None,timeout=90):
+              data=None if payload is None else json.dumps(payload).encode()
+              r=urllib.request.Request(base+path,data=data,method=method,headers={'Content-Type':'application/json'})
+              with urllib.request.urlopen(r,timeout=timeout) as f: return json.loads(f.read().decode())
+          end=time.time()+20
+          while time.time()<end:
+              try:
+                  if req('GET','/status',timeout=3)['value']['ready']: break
+              except Exception: pass
+              time.sleep(.2)
+          else: raise SystemExit('chromedriver not ready')
+          sid=req('POST','/session',{'capabilities':{'alwaysMatch':{
+              'browserName':'chrome','pageLoadStrategy':'none',
+              'goog:chromeOptions':{'binary':os.environ['CHROME'],'args':['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--window-size=414,896','--user-data-dir=/tmp/live-portal-smoke']}
+          }}})['value']['sessionId']
+          def js(script): return req('POST',f'/session/{sid}/execute/sync',{'script':script,'args':[]})['value']
+          try:
+              req('POST',f'/session/{sid}/url',{'url':'https://raulmiguelparasiii.github.io/42/'})
+              end=time.time()+30
+              while time.time()<end:
+                  v=js("return {svg:!!document.getElementById('octahedron'), ready:document.readyState};")
+                  if v['svg']: break
+                  time.sleep(.25)
+              else: raise SystemExit('42 did not boot')
+
+              # Disable pointer-capture bookkeeping only for synthetic event injection.
+              js("const s=document.getElementById('octahedron'); s.setPointerCapture=()=>{}; s.releasePointerCapture=()=>{}; s.hasPointerCapture=()=>false;")
+              # Default pitch +35.264deg -> doorway -35.264deg: deltaY ~= -164.1279 at ROTATE_SPEED .0075.
+              state=js("""
+                const s=document.getElementById('octahedron');
+                const fire=(type,y)=>s.dispatchEvent(new PointerEvent(type,{bubbles:true,pointerId:91,pointerType:'touch',clientX:207,clientY:y,buttons:type==='pointerup'?0:1}));
+                fire('pointerdown',500);
+                fire('pointermove',335.8720777);
+                return {frame:!!document.getElementById('portal-preview'), opacity:document.getElementById('portal-preview')?.style.opacity||''};
+              """)
+              print('after move',json.dumps(state))
+              # Give lazy-loaded Atlas enough time to announce readiness while finger remains down.
+              time.sleep(5)
+              pre=js("""
+                const f=document.getElementById('portal-preview');
+                let inner=null, atlas=null, boot=null;
+                try{inner=f?.contentWindow?.document; atlas=f?.contentWindow?.document?.getElementById('appFrame')?.contentWindow?.STONE_VIEW?.portalState?.()||null; boot=inner?.getElementById('boot')?.textContent||'';}catch(e){boot='ERR:'+e.message}
+                return {exists:!!f, cls:f?.className||'', opacity:f?.style.opacity||'', boot, atlas};
+              """)
+              print('pre release',json.dumps(pre))
+              js("const s=document.getElementById('octahedron'); s.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:91,pointerType:'touch',clientX:207,clientY:335.8720777,buttons:0}));")
+              time.sleep(1)
+              held=js("""
+                const f=document.getElementById('portal-preview');
+                let wrapper=null, inner=null, atlas=null, ui=null, bodyClass=null;
+                try{
+                  wrapper=f?.contentWindow?.document;
+                  inner=wrapper?.getElementById('appFrame')?.contentDocument;
+                  const v=wrapper?.getElementById('appFrame')?.contentWindow?.STONE_VIEW;
+                  atlas=v?.portalState?.()||null;
+                  ui=inner?.getElementById('ui')?getComputedStyle(inner.getElementById('ui')).opacity:null;
+                  bodyClass=inner?.body?.className||'';
+                }catch(e){bodyClass='ERR:'+e.message}
+                return {cls:f?.className||'', opacity:f?.style.opacity||'', aria:f?.getAttribute('aria-hidden'), atlas, ui, bodyClass};
+              """)
+              print('held',json.dumps(held))
+              if not held.get('atlas'):
+                  raise SystemExit('full portal failed: Atlas state unavailable after commit')
+              if not held['atlas'].get('entranceHeld'):
+                  raise SystemExit('full portal failed: entrance is not held')
+              if held.get('ui') not in ('0','0.0'):
+                  raise SystemExit('full portal failed: Atlas UI not hidden: '+json.dumps(held))
+
+              # Wake the held seam through the embedded wrapper's actual capture path.
+              wake=js("""
+                const outer=document.getElementById('portal-preview');
+                const wrapper=outer.contentWindow.document;
+                const innerFrame=wrapper.getElementById('appFrame');
+                const inner=innerFrame.contentDocument;
+                const canvas=inner.querySelector('canvas');
+                canvas.setPointerCapture=()=>{}; canvas.releasePointerCapture=()=>{}; canvas.hasPointerCapture=()=>false;
+                canvas.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:92,pointerType:'touch',clientX:207,clientY:448,buttons:1}));
+                return innerFrame.contentWindow.STONE_VIEW.portalState();
+              """)
+              print('wake',json.dumps(wake))
+              time.sleep(1.1)
+              final=js("""
+                const outer=document.getElementById('portal-preview');
+                const wrapper=outer.contentWindow.document;
+                const innerFrame=wrapper.getElementById('appFrame');
+                const inner=innerFrame.contentDocument;
+                const v=innerFrame.contentWindow.STONE_VIEW;
+                return {state:v.portalState(),ui:inner.getElementById('ui')?getComputedStyle(inner.getElementById('ui')).opacity:null,bodyClass:inner.body.className};
+              """)
+              print('final',json.dumps(final))
+              if final['state'].get('entranceHeld'):
+                  raise SystemExit('full portal failed: wake did not release held state')
+              if final.get('ui') not in ('1','1.0'):
+                  raise SystemExit('full portal failed: Atlas UI did not restore')
+          finally:
+              try:req('DELETE',f'/session/{sid}',timeout=10)
+              except Exception:pass
+          PY
+      - name: Remove one-shot workflow
+        if: always()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/one-shot-live-portal-smoke.yml
+          git commit -m 'Remove one-shot live portal smoke workflow'
+          git push
