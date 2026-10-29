@@ -18,47 +18,48 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text()
-          old = '''      #stone-shell {
-        width: min(108.8vw, 64vh);
-        touch-action: none;
-        --mobile-pan-x: 0px;
-        --mobile-pan-y: 0px;
-        --mobile-scale: 1;
-        --mobile-mode-y: 0px;
-        transform:
-          translate3d(
-            var(--mobile-pan-x),
-            calc(var(--mobile-pan-y) + var(--mobile-mode-y)),
-            0
+          old = (
+              "      #stone-shell {\n"
+              "        width: min(108.8vw, 64vh);\n"
+              "        touch-action: none;\n"
+              "        --mobile-pan-x: 0px;\n"
+              "        --mobile-pan-y: 0px;\n"
+              "        --mobile-scale: 1;\n"
+              "        --mobile-mode-y: 0px;\n"
+              "        transform:\n"
+              "          translate3d(\n"
+              "            var(--mobile-pan-x),\n"
+              "            calc(var(--mobile-pan-y) + var(--mobile-mode-y)),\n"
+              "            0\n"
+              "          )\n"
+              "          scale(var(--mobile-scale));\n"
+              "        transform-origin: center center;\n"
+              "      }\n"
           )
-          scale(var(--mobile-scale));
-        transform-origin: center center;
-      }
-'''
-          new = '''      #stone-shell {
-        position: fixed;
-        left: 50vw;
-        top: 50dvh;
-        width: min(108.8vw, 64vh);
-        touch-action: none;
-        --mobile-pan-x: 0px;
-        --mobile-pan-y: 0px;
-        --mobile-scale: 1;
-        --mobile-mode-y: 0px;
-        transform:
-          translate3d(
-            calc(-50% + var(--mobile-pan-x)),
-            calc(-50% + var(--mobile-pan-y) + var(--mobile-mode-y)),
-            0
+          new = (
+              "      #stone-shell {\n"
+              "        position: fixed;\n"
+              "        left: 50vw;\n"
+              "        top: 50dvh;\n"
+              "        width: min(108.8vw, 64vh);\n"
+              "        touch-action: none;\n"
+              "        --mobile-pan-x: 0px;\n"
+              "        --mobile-pan-y: 0px;\n"
+              "        --mobile-scale: 1;\n"
+              "        --mobile-mode-y: 0px;\n"
+              "        transform:\n"
+              "          translate3d(\n"
+              "            calc(-50% + var(--mobile-pan-x)),\n"
+              "            calc(-50% + var(--mobile-pan-y) + var(--mobile-mode-y)),\n"
+              "            0\n"
+              "          )\n"
+              "          scale(var(--mobile-scale));\n"
+              "        transform-origin: center center;\n"
+              "      }\n"
           )
-          scale(var(--mobile-scale));
-        transform-origin: center center;
-      }
-'''
-          if old not in s:
-              raise SystemExit('Expected mobile Stone block not found; refusing broad edit')
-          s = s.replace(old, new, 1)
-          p.write_text(s)
+          if s.count(old) != 1:
+              raise SystemExit(f'Expected one mobile Stone block, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
           PY
       - name: Commit patch and remove one-shot workflow
         run: |
