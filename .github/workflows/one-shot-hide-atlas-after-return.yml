@@ -1,0 +1,82 @@
+name: One-shot hide Atlas after return
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-hide-atlas-after-return.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Atlas iframe visibility lifecycle
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text()
+
+          replacements = [
+            (
+              """      opacity: 0;\n      pointer-events: none;\n      z-index: 20;\n""",
+              """      opacity: 0;\n      visibility: hidden;\n      pointer-events: none;\n      z-index: 20;\n"""
+            ),
+            (
+              """  frame.classList.add('is-committing');\n  frame.style.opacity = '1';\n  frame.setAttribute('aria-hidden', 'false');\n""",
+              """  frame.classList.add('is-committing');\n  frame.style.visibility = 'visible';\n  frame.style.opacity = '1';\n  frame.setAttribute('aria-hidden', 'false');\n"""
+            ),
+            (
+              """    frame.classList.remove('is-active');\n    frame.classList.add('is-committing');\n    frame.style.opacity = '0';\n    frame.setAttribute('aria-hidden', 'true');\n""",
+              """    frame.classList.remove('is-active');\n    frame.classList.add('is-committing');\n    frame.style.opacity = '0';\n    frame.setAttribute('aria-hidden', 'true');\n"""
+            ),
+            (
+              """    frame?.classList.remove('is-committing');\n    portalTransitioning = false;\n    blackReturnOverlayProgress = 0;\n""",
+              """    if (frame) {\n      frame.classList.remove('is-committing');\n      frame.style.visibility = 'hidden';\n      frame.blur();\n    }\n    portalTransitioning = false;\n    blackReturnOverlayProgress = 0;\n"""
+            ),
+            (
+              """      if (portalPreviewFrame) portalPreviewFrame.style.opacity = '0';\n      return;\n""",
+              """      if (portalPreviewFrame) {\n        portalPreviewFrame.style.opacity = '0';\n        portalPreviewFrame.style.visibility = 'hidden';\n      }\n      return;\n"""
+            ),
+            (
+              """    if (portalPreviewFrame) {\n      portalPreviewFrame.style.opacity = atlasReady\n        ? String(PORTAL_MAX_OPACITY * amount)\n        : '0';\n    }\n""",
+              """    if (portalPreviewFrame) {\n      const previewVisible = atlasReady && amount > 0.001;\n      portalPreviewFrame.style.visibility = previewVisible ? 'visible' : 'hidden';\n      portalPreviewFrame.style.opacity = previewVisible\n        ? String(PORTAL_MAX_OPACITY * amount)\n        : '0';\n    }\n"""
+            ),
+            (
+              """  if (!atlasReady) {\n    blackReturnOverlayProgress = 0;\n    portalPreviewFrame.style.opacity = '0';\n    return;\n  }\n""",
+              """  if (!atlasReady) {\n    blackReturnOverlayProgress = 0;\n    portalPreviewFrame.style.opacity = '0';\n    portalPreviewFrame.style.visibility = 'hidden';\n    return;\n  }\n  portalPreviewFrame.style.visibility = 'visible';\n"""
+            ),
+            (
+              """    if (compositionMode === 'atlas' && portalPreviewFrame) {\n      portalPreviewFrame.style.opacity = '1';\n    }\n""",
+              """    if (compositionMode === 'atlas' && portalPreviewFrame) {\n      portalPreviewFrame.style.visibility = 'visible';\n      portalPreviewFrame.style.opacity = '1';\n    }\n"""
+            )
+          ]
+
+          # The third replacement is intentionally a no-op anchor check: it guarantees
+          # the return block still has the expected shape before the lifecycle patch lands.
+          for old, new in replacements:
+            count = s.count(old)
+            if count != 1:
+              raise SystemExit(f'expected exactly one match, got {count}: {old[:80]!r}')
+            s = s.replace(old, new, 1)
+
+          p.write_text(s)
+          PY
+          git diff --check
+          git diff -- index.html
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Hide Atlas layer after returning to black'
+          git push
+      - name: Remove one-shot workflow
+        if: always()
+        shell: bash
+        run: |
+          git pull --rebase
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/one-shot-hide-atlas-after-return.yml
+          git commit -m 'Remove one-shot Atlas return repair workflow'
+          git push
