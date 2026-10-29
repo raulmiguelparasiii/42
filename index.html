@@ -26,6 +26,7 @@
       border: 0;
       display: block;
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
       z-index: 20;
       background: #f8fafc;
@@ -1963,6 +1964,7 @@ const activateAtlasComposition = () => {
     return;
   }
   frame.classList.add('is-committing');
+  frame.style.visibility = 'visible';
   frame.style.opacity = '1';
   frame.setAttribute('aria-hidden', 'false');
   syncAtlasFromBlack();
@@ -2017,7 +2019,11 @@ const commitReturnPortal = state => {
   releasedAt = performance.now();
   restoreBlackPortalMatch(true);
   setTimeout(() => {
-    frame?.classList.remove('is-committing');
+    if (frame) {
+      frame.classList.remove('is-committing');
+      frame.style.visibility = 'hidden';
+      frame.blur();
+    }
     portalTransitioning = false;
     blackReturnOverlayProgress = 0;
   }, 300);
@@ -2029,7 +2035,10 @@ const updatePortalPreview = () => {
     const distance = portalAngularDistance();
     if (portalArrivalLocked) {
       if (distance > PORTAL_PREVIEW_RADIUS * 1.5) portalArrivalLocked = false;
-      if (portalPreviewFrame) portalPreviewFrame.style.opacity = '0';
+      if (portalPreviewFrame) {
+        portalPreviewFrame.style.opacity = '0';
+        portalPreviewFrame.style.visibility = 'hidden';
+      }
       return;
     }
     if (distance < PORTAL_PRELOAD_RADIUS) ensurePortalPreview();
@@ -2042,7 +2051,9 @@ const updatePortalPreview = () => {
       cancelBlackPortalPreview();
     }
     if (portalPreviewFrame) {
-      portalPreviewFrame.style.opacity = atlasReady
+      const previewVisible = atlasReady && amount > 0.001;
+      portalPreviewFrame.style.visibility = previewVisible ? 'visible' : 'hidden';
+      portalPreviewFrame.style.opacity = previewVisible
         ? String(PORTAL_MAX_OPACITY * amount)
         : '0';
     }
@@ -2053,8 +2064,10 @@ const updatePortalPreview = () => {
   if (!atlasReady) {
     blackReturnOverlayProgress = 0;
     portalPreviewFrame.style.opacity = '0';
+    portalPreviewFrame.style.visibility = 'hidden';
     return;
   }
+  portalPreviewFrame.style.visibility = 'visible';
   const state = atlasPortalState;
   const rawAmount = Number(state?.returnAmount);
   const amount = Number.isFinite(rawAmount) ? clamp(rawAmount, 0, 1) : 0;
@@ -2096,6 +2109,7 @@ window.addEventListener('message', event => {
     atlasPointerActive = false;
     blackReturnOverlayProgress = 0;
     if (compositionMode === 'atlas' && portalPreviewFrame) {
+      portalPreviewFrame.style.visibility = 'visible';
       portalPreviewFrame.style.opacity = '1';
     }
     restoreBlackPortalMatch(false);
