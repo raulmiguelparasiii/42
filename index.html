@@ -18,6 +18,23 @@
       height: 100dvh;
       background: #000;
     }
+    #portal-preview {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+  background: #f8fafc;
+  transition: opacity 80ms linear;
+}
+#portal-preview.is-committing {
+  opacity: 1 !important;
+  transition: opacity 220ms ease;
+}
     #stone-shell {
       position: relative;
       width: min(67.2vw, 67.2vh);
@@ -915,6 +932,10 @@
       const host = location.hostname.toLowerCase();
       const philosopherStone = host === 'thephilosophersstone.com' || host === 'www.thephilosophersstone.com';
       const identity = philosopherStone ? "The Philosopher's Stone" : 'Epistemic Octahedron';
+const portalParams = new URLSearchParams(location.search);
+const portalPreviewMode = portalParams.get('portal-preview') === '1';
+const portalArrival = portalParams.get('portal') === 'from-atlas';
+const ATLAS_URL = 'https://raulmiguelparasiii.github.io/epistemic-octahedron/philosophers-stone-atlas/';
 
       document.title = identity;
       document.querySelector('#app').setAttribute('aria-label', identity);
@@ -1329,6 +1350,16 @@
         { id: 'bottom', yaw: Math.PI / 4, pitch: -Math.PI / 2 }
       ];
 
+      const PORTAL_YAW = Math.PI / 4;
+const PORTAL_PITCH = -MAIN_PITCH;
+const PORTAL_PRELOAD_RADIUS = 8 * Math.PI / 180;
+const PORTAL_PREVIEW_RADIUS = 4 * Math.PI / 180;
+const PORTAL_MAX_OPACITY = 0.52;
+let portalPreviewFrame = null;
+let portalTransitioning = false;
+let portalArrivalLocked = portalArrival;
+let portalEntryHeld = portalPreviewMode || portalArrival;
+
       const EXPLAINER_SCRIPT = `What Makes a Person Mature?
 
 Two people say, “I see no problem.”
@@ -1637,12 +1668,12 @@ The question is whether we let it change how we understand, what we value, and w
         audioFallback: false
       };
 
-      let yaw = snaps[0].yaw;
-      let pitch = snaps[0].pitch;
+      let yaw = portalEntryHeld ? PORTAL_YAW : snaps[0].yaw;
+      let pitch = portalEntryHeld ? PORTAL_PITCH : snaps[0].pitch;
       let velocityYaw = 0;
       let velocityPitch = 0;
       let dragging = false;
-      let snapTarget = snaps[0];
+      let snapTarget = portalEntryHeld ? null : snaps[0];
       let lastX = 0;
       let lastY = 0;
       let lastPointerTime = performance.now();
@@ -1697,6 +1728,55 @@ The question is whether we let it change how we understand, what we value, and w
       const deltaYaw = target => wrap(target - yaw);
       const distanceTo = target => Math.hypot(deltaYaw(target.yaw), target.pitch - pitch);
       const smoothstep = value => value * value * (3 - 2 * value);
+const portalAngularDistance = () => Math.hypot(
+  wrap(PORTAL_YAW - yaw),
+  PORTAL_PITCH - pitch
+);
+const ensurePortalPreview = () => {
+  if (portalPreviewMode || portalPreviewFrame) return portalPreviewFrame;
+  const frame = document.createElement('iframe');
+  frame.id = 'portal-preview';
+  frame.title = '';
+  frame.tabIndex = -1;
+  frame.setAttribute('aria-hidden', 'true');
+  frame.src = ATLAS_URL + '?portal-preview=1';
+  document.body.appendChild(frame);
+  portalPreviewFrame = frame;
+  return frame;
+};
+const updatePortalPreview = () => {
+  if (portalPreviewMode || portalTransitioning) return;
+  const distance = portalAngularDistance();
+  if (portalArrivalLocked) {
+    if (distance > PORTAL_PREVIEW_RADIUS * 1.5) portalArrivalLocked = false;
+    if (portalPreviewFrame) portalPreviewFrame.style.opacity = '0';
+    return;
+  }
+  if (distance < PORTAL_PRELOAD_RADIUS) ensurePortalPreview();
+  const active = dragging && !explainer.active;
+  const amount = active ? clamp(1 - distance / PORTAL_PREVIEW_RADIUS, 0, 1) : 0;
+  const opacity = PORTAL_MAX_OPACITY * smoothstep(amount);
+  if (portalPreviewFrame) portalPreviewFrame.style.opacity = String(opacity);
+};
+const commitPortal = () => {
+  if (
+    portalPreviewMode || portalArrivalLocked || portalTransitioning ||
+    explainer.active || !dragging ||
+    portalAngularDistance() > PORTAL_PREVIEW_RADIUS
+  ) return false;
+  portalTransitioning = true;
+  portalEntryHeld = false;
+  velocityYaw = 0;
+  velocityPitch = 0;
+  snapTarget = null;
+  const frame = ensurePortalPreview();
+  if (frame) {
+    frame.classList.add('is-committing');
+    frame.style.opacity = '1';
+  }
+  setTimeout(() => location.assign(ATLAS_URL + '?portal=from42'), 230);
+  return true;
+};
       const updateFirstPrinciplesScrollHint = () => {
         const panelVisible = firstPrinciplesPanel.classList.contains('is-visible');
         const atTop = firstPrinciplesPanel.scrollTop <= 1;
@@ -3120,7 +3200,13 @@ const insulationRevealAnchor = () => {
       };
 
       const settlePhysics = (now, dt) => {
-        if (dragging) return;
+  if (dragging) return;
+  if (portalEntryHeld && !explainer.active) {
+    velocityYaw = 0;
+    velocityPitch = 0;
+    snapTarget = null;
+    return;
+  }
 
         if (reduceMotion) {
           if (!snapTarget) {
@@ -3229,10 +3315,12 @@ const insulationRevealAnchor = () => {
 
         settlePhysics(now, dt);
         draw();
+        updatePortalPreview();
         requestAnimationFrame(frame);
       };
 
       const beginRotation = event => {
+        portalEntryHeld = false;
         dragging = true;
         snapTarget = null;
         velocityYaw = 0;
@@ -3267,10 +3355,12 @@ const insulationRevealAnchor = () => {
       };
 
       const stopDrag = event => {
-        if (!dragging) return;
+  if (!dragging) return;
+  const portalCommitted = commitPortal();
         dragging = false;
         releasedAt = performance.now();
         if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+        if (portalCommitted) return;
 
         if (explainer.active) {
           const target = explainer.pendingCamera || currentExplainerCamera();
@@ -3447,6 +3537,7 @@ const insulationRevealAnchor = () => {
       explainerLaunch.classList.remove('is-visible');
       firstPrinciplesPanel.classList.remove('is-visible');
       explainerTotal.textContent = formatTime(currentExplainerDuration());
+      if (portalArrival) history.replaceState(null, '', location.pathname);
 
       draw();
       requestAnimationFrame(frame);
