@@ -1908,7 +1908,7 @@ const commitPortal = () => {
 const commitReturnPortal = state => {
   if (
     portalPreviewMode || portalTransitioning || compositionMode !== 'atlas' ||
-    !state || Number(state.distance) > PORTAL_PREVIEW_RADIUS
+    !state?.returnReady
   ) return false;
   portalTransitioning = true;
   atlasPointerActive = false;
@@ -1961,10 +1961,9 @@ const updatePortalPreview = () => {
 
   if (!portalPreviewFrame) return;
   const state = atlasPortalState;
-  const distance = Number(state?.distance);
-  const active = atlasPointerActive && Number.isFinite(distance);
-  const amount = active ? portalAmount(distance) : 0;
-  if (active && distance <= PORTAL_PREVIEW_RADIUS) {
+  const rawAmount = Number(state?.returnAmount);
+  const amount = Number.isFinite(rawAmount) ? clamp(rawAmount, 0, 1) : 0;
+  if (amount > 0.001) {
     syncBlackFromAtlas(state);
   } else if (blackPortalMatch) {
     restoreBlackPortalMatch(false);
@@ -1985,16 +1984,13 @@ window.addEventListener('message', event => {
     if (compositionMode !== 'atlas') return;
     atlasPortalState = data.state || null;
     atlasPointerActive = Boolean(data.pointerActive);
+    if (atlasPortalState?.returnReady) commitReturnPortal(atlasPortalState);
     return;
   }
   if (data.type === 'stone-atlas-release') {
     if (compositionMode !== 'atlas') return;
     atlasPointerActive = false;
     atlasPortalState = data.state || atlasPortalState;
-    if (!commitReturnPortal(atlasPortalState)) {
-      if (portalPreviewFrame) portalPreviewFrame.style.opacity = '1';
-      restoreBlackPortalMatch(false);
-    }
     return;
   }
   if (data.type === 'stone-atlas-cancel') {
@@ -2015,7 +2011,7 @@ window.addEventListener('message', event => {
         );
       };
       const snapOverlayOpacity = target => {
-        if (explainer.active) return 0;
+        if (explainer.active || compositionMode === 'atlas' || portalTransitioning) return 0;
         const speed = Math.hypot(velocityYaw, velocityPitch);
         const motionFactor = dragging ? 0 : clamp(1 - speed / 0.00135, 0, 1);
         return clamp(1 - distanceTo(target) / 0.13, 0, 1) * motionFactor;
@@ -3242,7 +3238,7 @@ const insulationRevealAnchor = () => {
         const speed = Math.hypot(velocityYaw, velocityPitch);
         const mainDistance = distanceTo(snaps[0]);
         const motionFactor = dragging ? 0 : clamp(1 - speed / 0.00135, 0, 1);
-        const mainOpacity = explainer.active
+        const mainOpacity = (explainer.active || compositionMode === 'atlas' || portalTransitioning)
           ? 0
           : clamp(1 - mainDistance / 0.16, 0, 1) * motionFactor;
 
