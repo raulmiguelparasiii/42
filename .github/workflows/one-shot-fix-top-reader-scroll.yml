@@ -10,54 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Repair isolated top reader scroll surface
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text()
-          old="""    #first-principles-panel {
-            position: absolute;
-            left: 50%;
-            top: 81dvh;
-            bottom: max(14px, env(safe-area-inset-bottom));"""
-          new="""    #first-principles-panel {
-            position: fixed;
-            left: 50%;
-            top: 81dvh;
-            bottom: max(14px, env(safe-area-inset-bottom));"""
-          if old not in s:
-              old=old.replace('            ','      ')
-              new=new.replace('            ','      ')
-          assert s.count(old)==1
-          s=s.replace(old,new,1)
-          old="""      overflow-y: auto;
-            overscroll-behavior: contain;
-            -webkit-overflow-scrolling: touch;
-            touch-action: pan-y;"""
-          new="""      min-height: 0;
-            overflow-y: scroll;
-            overscroll-behavior-y: contain;
-            -webkit-overflow-scrolling: touch;
-            touch-action: pan-y;"""
-          if old not in s:
-              old=old.replace('            ','      ')
-              new=new.replace('            ','      ')
-          assert s.count(old)==1
-          s=s.replace(old,new,1)
-          p.write_text(s)
-          assert 'position: fixed;' in s
-          assert 'overflow-y: scroll;' in s
-          assert 'overscroll-behavior-y: contain;' in s
-          PY
-      - name: Commit and self-clean
-        shell: bash
+      - name: Apply reader patch
+        run: python .github/fix_top_reader_scroll.py
+      - name: Commit and clean temporary files
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git commit -m 'Restore top-view reader scrolling'
-          git rm .github/workflows/one-shot-fix-top-reader-scroll.yml
-          git commit -m 'Remove one-shot top reader workflow'
+          git rm .github/workflows/one-shot-fix-top-reader-scroll.yml .github/fix_top_reader_scroll.py
+          git commit -m 'Remove one-shot top reader patch files'
           git push
