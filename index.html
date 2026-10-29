@@ -306,15 +306,16 @@
       border-left: 7px solid #fff;
     }
     #first-principles-panel {
-      position: absolute;
+      position: fixed;
       left: 50%;
       top: 81dvh;
       bottom: max(14px, env(safe-area-inset-bottom));
       transform: translateX(-50%) translateY(6px);
       width: min(820px, calc(100vw - 64px));
       padding: 20px 48px 56px;
-      overflow-y: auto;
-      overscroll-behavior: contain;
+      min-height: 0;
+      overflow-y: scroll;
+      overscroll-behavior-y: contain;
       -webkit-overflow-scrolling: touch;
       touch-action: pan-y;
       color: rgba(255,255,255,.82);
