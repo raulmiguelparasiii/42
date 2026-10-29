@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="42">
+  <link rel="manifest" href="./pwa.webmanifest">
+  <title>Epistemic Octahedron Offline</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#f8fafc;background:#000}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100svh;display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom));background:#000}
+    main{width:min(100%,470px);background:#080808;border:1px solid #262626;border-radius:18px;padding:22px;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+    h1{margin:0 0 8px;font:500 25px/1.15 Georgia,"Times New Roman",serif}
+    p{margin:8px 0;color:#a3a3a3;font-size:14px;line-height:1.5}
+    #status{margin-top:14px;padding:11px 12px;border-radius:12px;background:#111;color:#d4d4d4;font-size:13px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+    button{appearance:none;border:1px solid #404040;border-radius:12px;background:#111;color:#f5f5f5;font:600 14px system-ui;padding:10px 13px}
+    button.primary{background:#f5f5f5;color:#000;border-color:#f5f5f5}
+    button:disabled{opacity:.45}
+    ol{margin:14px 0 0;padding-left:20px;color:#a3a3a3;font-size:13px;line-height:1.55}
+    .small{font-size:12px;color:#737373}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Epistemic Octahedron</h1>
+    <p>This installs the complete offline version: the main 42 experience, its narration audio, and the Philosopher's Stone Atlas reached through the portal.</p>
+    <div id="status">Preparing complete offline copy…</div>
+    <div class="actions">
+      <button id="openBtn" class="primary" type="button" disabled>Open 42</button>
+      <button id="updateBtn" type="button" disabled>Update offline copy</button>
+    </div>
+    <ol id="installSteps">
+      <li>Keep this page open until it says the complete offline copy is ready.</li>
+      <li>In Safari, tap Share.</li>
+      <li>Choose Add to Home Screen.</li>
+      <li>Launch 42 from the new Home Screen icon once while still online.</li>
+      <li>Then test it with Airplane Mode and Wi-Fi off.</li>
+    </ol>
+    <p class="small">The installer maintains two offline scopes on this GitHub Pages origin: /42/ and the Philosopher's Stone Atlas portal.</p>
+  </main>
+
+  <script>
+    (() => {
+      const statusEl = document.getElementById('status');
+      const openBtn = document.getElementById('openBtn');
+      const updateBtn = document.getElementById('updateBtn');
+      const installSteps = document.getElementById('installSteps');
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+      const ATLAS_WORKER = '/epistemic-octahedron/philosophers-stone-atlas/service-worker.js';
+      const ATLAS_SCOPE = '/epistemic-octahedron/philosophers-stone-atlas/';
+
+      const setStatus = text => { statusEl.textContent = text; };
+
+      function waitForController() {
+        if (navigator.serviceWorker.controller) return Promise.resolve();
+        return new Promise(resolve => {
+          const done = () => resolve();
+          navigator.serviceWorker.addEventListener('controllerchange', done, { once: true });
+          setTimeout(done, 3000);
+        });
+      }
+
+      async function waitForActive(registration, timeout = 30000) {
+        if (registration.active && registration.active.state === 'activated') return registration.active;
+        return new Promise((resolve, reject) => {
+          let timer;
+          const seen = new WeakSet();
+          const finish = worker => {
+            clearTimeout(timer);
+            resolve(worker);
+          };
+          const inspect = worker => {
+            if (!worker || seen.has(worker)) return;
+            seen.add(worker);
+            if (worker.state === 'activated') return finish(worker);
+            worker.addEventListener('statechange', () => {
+              if (worker.state === 'activated') finish(worker);
+              if (worker.state === 'redundant') reject(new Error('Offline worker became redundant.'));
+            });
+          };
+          inspect(registration.installing);
+          inspect(registration.waiting);
+          inspect(registration.active);
+          registration.addEventListener('updatefound', () => inspect(registration.installing));
+          timer = setTimeout(() => {
+            if (registration.active && registration.active.state === 'activated') finish(registration.active);
+            else reject(new Error('Offline worker did not activate.'));
+          }, timeout);
+        });
+      }
+
+      async function sendUpdate(registration) {
+        const worker = registration.active || await waitForActive(registration);
+        const channel = new MessageChannel();
+        return new Promise((resolve, reject) => {
+          const timer = setTimeout(() => reject(new Error('Offline update did not complete.')), 45000);
+          channel.port1.onmessage = event => {
+            clearTimeout(timer);
+            const result = event.data || {};
+            if (result.ok) resolve(result);
+            else reject(new Error(result.message || 'Offline update failed.'));
+          };
+          worker.postMessage({ type: 'UPDATE_CACHE' }, [channel.port2]);
+        });
+      }
+
+      async function prepare() {
+        if (!('serviceWorker' in navigator)) throw new Error('Service workers are unavailable in this browser.');
+
+        setStatus('Caching 42 and narration audio…');
+        const mainRegistration = await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
+        await navigator.serviceWorker.ready;
+        await waitForController();
+        await waitForActive(mainRegistration);
+
+        setStatus("Caching the Philosopher's Stone Atlas portal…");
+        const atlasRegistration = await navigator.serviceWorker.register(ATLAS_WORKER, { scope: ATLAS_SCOPE });
+        try { await atlasRegistration.update(); } catch {}
+        await waitForActive(atlasRegistration);
+        await sendUpdate(atlasRegistration);
+
+        openBtn.disabled = false;
+        updateBtn.disabled = false;
+        setStatus('Complete offline copy ready. You can now add this page to the Home Screen.');
+
+        if (standalone) location.replace('./index.html');
+      }
+
+      openBtn.addEventListener('click', () => {
+        location.href = './index.html';
+      });
+
+      updateBtn.addEventListener('click', async () => {
+        updateBtn.disabled = true;
+        openBtn.disabled = true;
+        setStatus('Updating 42 and the Stone Atlas…');
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          const mainRegistration = registrations.find(reg => reg.scope.endsWith('/42/'));
+          const atlasRegistration = registrations.find(reg => reg.scope.includes('/epistemic-octahedron/philosophers-stone-atlas/'));
+          if (!mainRegistration || !atlasRegistration) throw new Error('One of the offline workers is not registered.');
+          await sendUpdate(mainRegistration);
+          await sendUpdate(atlasRegistration);
+          setStatus('Complete offline copy updated.');
+        } catch (error) {
+          setStatus('Could not update the complete offline copy: ' + error.message);
+        } finally {
+          updateBtn.disabled = false;
+          openBtn.disabled = false;
+        }
+      });
+
+      prepare().catch(error => {
+        installSteps.hidden = true;
+        setStatus('Could not prepare the complete offline copy: ' + error.message);
+      });
+    })();
+  </script>
+</body>
+</html>

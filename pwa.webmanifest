@@ -1,0 +1,10 @@
+{
+  "name": "Epistemic Octahedron — Complete",
+  "short_name": "42",
+  "id": "./pwa.html",
+  "start_url": "./pwa.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000"
+}
