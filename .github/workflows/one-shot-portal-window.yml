@@ -1,0 +1,40 @@
+name: One-shot portal window patch
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-portal-window.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply portal window and memory update
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old='const PORTAL_PREVIEW_RADIUS = 4 * Math.PI / 180;'
+          new='const PORTAL_PREVIEW_RADIUS = 5 * Math.PI / 180;'
+          assert s.count(old)==1
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          p=Path('AGENTS.md')
+          s=p.read_text()
+          s=s.replace('inside the final 4°, its Stone is synchronized','inside the final 5°, its Stone is synchronized')
+          s=s.replace('while Atlas chrome stays hidden until the first new Atlas interaction','while only the Atlas control panel stays hidden until the first new Atlas interaction; the plot, background, and labels remain visible')
+          s=s.replace('Once the exact return view is reached, a two-second untouched dwell begins; across that dwell the default black overlay reveals radially outward from the center, and at completion the white composition yields to black while the Stone slides into `/42/`’s native framing.','On the final return approach, a two-second untouched transition smoothly carries the Stone into the exact black main orientation while the default black overlay reveals radially outward; cancellation reverses the orientation transition smoothly, and completion yields to black while the Stone slides into `/42/`’s native framing.')
+          assert 'final 5°' in s
+          p.write_text(s)
+      - name: Commit and clean workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html AGENTS.md
+          git commit -m 'Widen Atlas doorway'
+          git rm .github/workflows/one-shot-portal-window.yml
+          git commit -m 'Remove one-shot portal window workflow'
+          git push
