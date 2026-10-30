@@ -1,0 +1,268 @@
+name: One-shot Stone return diagnostics
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/one-shot-return-diagnostics.yml
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Locate Chromium
+        id: browser
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          DRIVER="$(command -v chromedriver || command -v google-chrome-driver || true)"
+          test -n "$CHROME"
+          test -n "$DRIVER"
+          echo "chrome=$CHROME" >> "$GITHUB_OUTPUT"
+          echo "driver=$DRIVER" >> "$GITHUB_OUTPUT"
+      - name: Measure white-to-black return without modifying production code
+        env:
+          CHROME: ${{ steps.browser.outputs.chrome }}
+          DRIVER: ${{ steps.browser.outputs.driver }}
+        shell: bash
+        run: |
+          "$DRIVER" --port=9515 --allowed-origins='*' >/tmp/return-diag-chromedriver.log 2>&1 &
+          python3 - <<'PY'
+          import json, math, os, time, urllib.request
+
+          BASE='http://127.0.0.1:9515'
+          LIVE='https://raulmiguelparasiii.github.io/42/'
+          MAIN_PITCH=math.asin(1/math.sqrt(3))
+          ROTATE_SPEED=.0075
+
+          def req(method,path,payload=None,timeout=120):
+              data=None if payload is None else json.dumps(payload).encode()
+              r=urllib.request.Request(BASE+path,data=data,method=method,headers={'Content-Type':'application/json'})
+              with urllib.request.urlopen(r,timeout=timeout) as f:
+                  return json.loads(f.read().decode())
+
+          end=time.time()+20
+          while time.time()<end:
+              try:
+                  if req('GET','/status',timeout=3)['value']['ready']: break
+              except Exception: pass
+              time.sleep(.2)
+          else: raise SystemExit('chromedriver not ready')
+
+          def new_session(label,width,height,mobile=False):
+              options={'binary':os.environ['CHROME'],'args':['--headless=new','--no-sandbox','--disable-dev-shm-usage','--ignore-gpu-blocklist',f'--window-size={width},{height}',f'--user-data-dir=/tmp/return-diag-{label}']}
+              if mobile:
+                  options['mobileEmulation']={'deviceMetrics':{'width':width,'height':height,'pixelRatio':3,'touch':True}}
+              caps={'alwaysMatch':{'browserName':'chrome','pageLoadStrategy':'none','goog:chromeOptions':options}}
+              return req('POST','/session',{'capabilities':caps})['value']['sessionId']
+
+          def js(sid,script):
+              return req('POST',f'/session/{sid}/execute/sync',{'script':script,'args':[]})['value']
+
+          def wait_boot(sid):
+              end=time.time()+30
+              while time.time()<end:
+                  try:
+                      if js(sid,"return !!document.getElementById('octahedron')"): return
+                  except Exception: pass
+                  time.sleep(.2)
+              raise RuntimeError('42 did not boot')
+
+          def black_event(sid,kind,x,y,pid=101):
+              return js(sid,f"""
+              const s=document.getElementById('octahedron');
+              s.setPointerCapture=()=>{{}};s.releasePointerCapture=()=>{{}};s.hasPointerCapture=()=>false;
+              s.dispatchEvent(new PointerEvent('{kind}',{{bubbles:true,pointerId:{pid},pointerType:'mouse',clientX:{x:.4f},clientY:{y:.4f},button:0,buttons:{0 if kind=='pointerup' else 1}}}));
+              return true;
+              """)
+
+          def atlas_info(sid):
+              return js(sid,"""
+              const f=document.getElementById('portal-preview');
+              const a=f?.contentWindow?.document?.getElementById('appFrame');
+              const w=a?.contentWindow;
+              const c=w?.document?.querySelector('canvas');
+              const s=w?.STONE_VIEW?.portalState?.();
+              if(!w||!c||!s) return null;
+              const r=c.getBoundingClientRect();
+              return {rect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height},state:s,buttons:[...w.document.querySelectorAll('button')].map(b=>({id:b.id||'',text:(b.textContent||'').trim(),aria:b.getAttribute('aria-label')||''}))};
+              """)
+
+          def atlas_event(sid,kind,x,y,pid=501,button=0,buttons=1):
+              return js(sid,f"""
+              const f=document.getElementById('portal-preview');
+              const a=f?.contentWindow?.document?.getElementById('appFrame');
+              const w=a?.contentWindow; const c=w?.document?.querySelector('canvas');
+              if(!w||!c) return null;
+              c.setPointerCapture=()=>{{}};c.releasePointerCapture=()=>{{}};c.hasPointerCapture=()=>false;
+              c.dispatchEvent(new w.PointerEvent('{kind}',{{bubbles:true,pointerId:{pid},pointerType:'mouse',clientX:{x:.4f},clientY:{y:.4f},button:{button},buttons:{buttons}}}));
+              return w.STONE_VIEW?.portalState?.()||null;
+              """)
+
+          def click_rotate_mode(sid):
+              return js(sid,"""
+              const f=document.getElementById('portal-preview');
+              const a=f?.contentWindow?.document?.getElementById('appFrame');
+              const w=a?.contentWindow;
+              if(!w) return null;
+              const buttons=[...w.document.querySelectorAll('button')];
+              const target=buttons.find(b=>/worldview|rotate/i.test((b.textContent||'')+' '+(b.getAttribute('aria-label')||'')));
+              if(target){target.click();return {clicked:true,id:target.id||'',text:(target.textContent||'').trim(),aria:target.getAttribute('aria-label')||''};}
+              return {clicked:false,buttons:buttons.map(b=>({id:b.id||'',text:(b.textContent||'').trim(),aria:b.getAttribute('aria-label')||''}))};
+              """)
+
+          MEASURE=r"""
+          const f=document.getElementById('portal-preview');
+          const svg=document.getElementById('octahedron');
+          const out={now:performance.now(),requestedOpacity:f?Number(f.style.opacity||0):0,computedOpacity:f?Number(getComputedStyle(f).opacity||0):0,atlas:null,mismatch:null};
+          if(!f||!svg) return out;
+          let a,w,c,s,g;
+          try{
+            a=f.contentWindow.document.getElementById('appFrame');w=a.contentWindow;c=w.document.querySelector('canvas');s=w.STONE_VIEW.portalState();g=w.STONE_VIEW.getState();
+          }catch(e){return out;}
+          if(!a||!w||!c||!s||!g) return out;
+          const ar=a.getBoundingClientRect(),fr=f.getBoundingClientRect(),cr=c.getBoundingClientRect();
+          const canvas={left:fr.left+ar.left+cr.left,top:fr.top+ar.top+cr.top,width:cr.width,height:cr.height};
+          out.atlas={returnDistance:s.returnDistance,returnAmount:s.returnAmount,returnArmed:s.returnArmed,returnReady:s.returnReady,returnDwellProgress:s.returnDwellProgress,angularSpeed:s.angularSpeed,projectionBlend:s.projectionBlend,pose:s.pose,metrics:s.metrics,orientation:g.orientation};
+          const axes=[...svg.querySelectorAll('line.axis')].slice(0,3),ctm=svg.getScreenCTM();
+          if(axes.length!==3||!ctm) return out;
+          const pt=(x,y)=>{const p=svg.createSVGPoint();p.x=+x;p.y=+y;const q=p.matrixTransform(ctm);return [q.x,q.y];};
+          const black=[];for(const l of axes){black.push(pt(l.getAttribute('x1'),l.getAttribute('y1')));black.push(pt(l.getAttribute('x2'),l.getAttribute('y2')));}
+          const q=g.orientation;if(!Array.isArray(q)||q.length!==4)return out;
+          const qr=v=>{const [x,y,z]=v,[qx,qy,qz,qw]=q;const tx=2*(qy*z-qz*y),ty=2*(qz*x-qx*z),tz=2*(qx*y-qy*x);return [x+qw*tx+(qy*tz-qz*ty),y+qw*ty+(qz*tx-qx*tz),z+qw*tz+(qx*ty-qy*tx)];};
+          const verts=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+          const fov=45+(1.15-45)*(+s.projectionBlend||0),tan=Math.tan(fov*Math.PI/360),aspect=canvas.width/Math.max(canvas.height,1e-9),scale=+s.metrics.unitScale;
+          if(!(scale>0)||!(tan>0))return out;
+          const dist=canvas.height/(2*scale*tan);
+          const white=verts.map(v=>{const r=qr(v),zc=Math.max(dist-r[2],1e-6),nx=r[0]/(zc*tan*aspect),ny=r[1]/(zc*tan);return [canvas.left+(nx+1)*canvas.width*.5,canvas.top+(1-ny)*canvas.height*.5];});
+          const e=black.map((p,i)=>Math.hypot(p[0]-white[i][0],p[1]-white[i][1]));
+          out.mismatch={rms:Math.sqrt(e.reduce((z,x)=>z+x*x,0)/e.length),max:Math.max(...e)};
+          return out;
+          """
+
+          def measure(sid): return js(sid,MEASURE)
+
+          def stats(samples,path):
+              vals=[]
+              for s in samples:
+                  v=s
+                  for p in path.split('.'):
+                      if not isinstance(v,dict):v=None;break
+                      v=v.get(p)
+                  if isinstance(v,(int,float)) and math.isfinite(v):vals.append(float(v))
+              if not vals:return None
+              return {'n':len(vals),'mean':sum(vals)/len(vals),'min':min(vals),'max':max(vals)}
+
+          def run(label,width,height,mobile):
+              sid=new_session(label,width,height,mobile)
+              rep={'label':label,'viewport':[width,height],'mobileEmulation':mobile}
+              try:
+                  req('POST',f'/session/{sid}/url',{'url':LIVE+'?return-diag='+label})
+                  wait_boot(sid)
+                  x=width/2;y0=height*.55
+                  black_event(sid,'pointerdown',x,y0)
+                  # Enter preload region, wait until Atlas is fully live, then commit exact seam.
+                  ypre=y0+((-MAIN_PITCH+math.radians(7.0))-MAIN_PITCH)/ROTATE_SPEED
+                  for i in range(1,25):
+                      black_event(sid,'pointermove',x,y0+(ypre-y0)*i/24);time.sleep(.012)
+                  end=time.time()+12
+                  while time.time()<end:
+                      inf=atlas_info(sid)
+                      if inf and inf.get('state'):break
+                      time.sleep(.05)
+                  if not inf or not inf.get('state'):raise RuntimeError('Atlas not ready')
+                  yportal=y0+(-2*MAIN_PITCH)/ROTATE_SPEED
+                  for i in range(1,15):
+                      black_event(sid,'pointermove',x,ypre+(yportal-ypre)*i/14);time.sleep(.012)
+                  black_event(sid,'pointerup',x,yportal)
+                  time.sleep(.38)
+                  rep['held']=measure(sid)
+
+                  # Wake held seam, immediately release, and allow the 900ms native entrance to finish.
+                  inf=atlas_info(sid);r=inf['rect'];cx=(r['left']+r['right'])/2;cy=(r['top']+r['bottom'])/2
+                  atlas_event(sid,'pointerdown',cx,cy,301,0,1);time.sleep(.025);atlas_event(sid,'pointerup',cx,cy,301,0,0)
+                  time.sleep(1.15)
+                  rep['rotateMode']=click_rotate_mode(sid)
+                  time.sleep(.08)
+                  inf=atlas_info(sid);rep['buttons']=inf.get('buttons',[])
+                  r=inf['rect'];cx=(r['left']+r['right'])/2;cy=(r['top']+r['bottom'])/2
+
+                  # Use real elapsed time between native rotation events so momentum is produced normally.
+                  pid=501
+                  st=atlas_event(sid,'pointerdown',cx,cy,pid,0,1)
+                  speeds=[]
+                  orientation=[]
+                  px,py=cx,cy
+                  direction=-1 if cx>r['width']*.55 else 1
+                  for i in range(1,9):
+                      px=max(r['left']+18,min(r['right']-18,cx+direction*18*i))
+                      py=max(r['top']+18,min(r['bottom']-18,cy+5*i))
+                      time.sleep(.018)
+                      st=atlas_event(sid,'pointermove',px,py,pid,0,1)
+                      if st:speeds.append(st.get('angularSpeed'))
+                  before_release=measure(sid)
+                  time.sleep(.012)
+                  atlas_event(sid,'pointerup',px,py,pid,0,0)
+                  time.sleep(.03)
+                  after_release=measure(sid)
+                  rep['throw']={'speeds':speeds,'before':before_release.get('atlas'),'after':after_release.get('atlas')}
+                  armed=bool((after_release.get('atlas') or {}).get('returnArmed'))
+                  rep['armed']=armed
+                  if not armed:return rep
+
+                  samples=[]
+                  start=time.perf_counter();end=time.time()+9
+                  while time.time()<end:
+                      s=measure(sid);s['elapsedMs']=(time.perf_counter()-start)*1000;samples.append(s)
+                      a=s.get('atlas') or {}
+                      if a.get('returnReady'):
+                          time.sleep(.35)
+                          samples.append(measure(sid))
+                          break
+                      time.sleep(.025)
+
+                  predwell=[s for s in samples if (s.get('atlas') or {}).get('returnArmed') and ((s.get('atlas') or {}).get('returnDwellProgress') or 0)<=0]
+                  dwell=[s for s in samples if ((s.get('atlas') or {}).get('returnDwellProgress') or 0)>0]
+                  visible=[s for s in samples if ((s.get('atlas') or {}).get('returnAmount') or 0)>.001]
+                  amounts=[float((s.get('atlas') or {}).get('returnAmount') or 0) for s in predwell]
+                  reversals=sum(1 for a,b in zip(amounts,amounts[1:]) if b<a-.002)
+                  first_visible=next((s['elapsedMs'] for s in samples if ((s.get('atlas') or {}).get('returnAmount') or 0)>.001),None)
+                  first_dwell=next((s['elapsedMs'] for s in samples if ((s.get('atlas') or {}).get('returnDwellProgress') or 0)>0),None)
+                  lags=[abs(float(s.get('requestedOpacity',0))-float(s.get('computedOpacity',0))) for s in visible]
+                  rep['return']={
+                    'sampleCount':len(samples),'preDwellCount':len(predwell),'dwellCount':len(dwell),'visibleCount':len(visible),
+                    'firstBlackGeometryVisibleMs':first_visible,'firstDwellMs':first_dwell,
+                    'blackVisibleBeforeDwellMs':None if first_visible is None or first_dwell is None else first_dwell-first_visible,
+                    'preDwellReturnAmountReversals':reversals,
+                    'returnAmount':stats(samples,'atlas.returnAmount'),'projectionBlend':stats(samples,'atlas.projectionBlend'),
+                    'visibleRmsPx':stats(visible,'mismatch.rms'),'visibleMaxPx':stats(visible,'mismatch.max'),
+                    'preDwellRmsPx':stats(predwell,'mismatch.rms'),'preDwellMaxPx':stats(predwell,'mismatch.max'),
+                    'dwellRmsPx':stats(dwell,'mismatch.rms'),'dwellMaxPx':stats(dwell,'mismatch.max'),
+                    'opacityLagAbs':None if not lags else {'mean':sum(lags)/len(lags),'max':max(lags)},
+                    'completed':any((s.get('atlas') or {}).get('returnReady') for s in samples)
+                  }
+                  return rep
+              finally:
+                  try:req('DELETE',f'/session/{sid}',timeout=15)
+                  except Exception:pass
+
+          reports=[]
+          for case in [('desktop',1440,900,False),('mobile414',414,896,True)]:
+              try:reports.append(run(*case))
+              except Exception as e:reports.append({'label':case[0],'error':repr(e)})
+          print('RETURN_DIAG_REPORT='+json.dumps(reports,sort_keys=True))
+          PY
+      - name: Remove one-shot workflow
+        if: always()
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --ff-only
+          git rm -f .github/workflows/one-shot-return-diagnostics.yml
+          git commit -m 'Remove one-shot return diagnostics workflow'
+          git push
