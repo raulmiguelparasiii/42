@@ -1,0 +1,103 @@
+name: One-shot trusted return validation
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-return-pointer-validation.yml'
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate return with browser pointer actions
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable)"
+          DRIVER="$(command -v chromedriver)"
+          "$DRIVER" --port=9515 --allowed-origins='*' >/tmp/return-pointer-driver.log 2>&1 &
+          CHROME="$CHROME" python3 - <<'PY'
+          import json,math,os,time,urllib.request
+          B='http://127.0.0.1:9515';LIVE='https://raulmiguelparasiii.github.io/42/';MP=math.asin(1/math.sqrt(3));RS=.0075
+          def req(m,p,d=None,t=90):
+              body=None if d is None else json.dumps(d).encode();r=urllib.request.Request(B+p,data=body,method=m,headers={'Content-Type':'application/json'})
+              with urllib.request.urlopen(r,timeout=t) as f:return json.loads(f.read().decode())
+          for _ in range(100):
+              try:
+                  if req('GET','/status',t=2)['value']['ready']:break
+              except:pass
+              time.sleep(.1)
+          def js(s,x):return req('POST',f'/session/{s}/execute/sync',{'script':x,'args':[]})['value']
+          def session(label,w,h,mob):
+              o={'binary':os.environ['CHROME'],'args':['--headless=new','--no-sandbox','--disable-dev-shm-usage',f'--window-size={w},{h}',f'--user-data-dir=/tmp/return-pointer-{label}']}
+              if mob:o['mobileEmulation']={'deviceMetrics':{'width':w,'height':h,'pixelRatio':3,'touch':True}}
+              return req('POST','/session',{'capabilities':{'alwaysMatch':{'browserName':'chrome','pageLoadStrategy':'none','goog:chromeOptions':o}}})['value']['sessionId']
+          def black(s,k,x,y,p,pt):return js(s,f"const e=document.getElementById('octahedron');e.setPointerCapture=()=>{{}};e.releasePointerCapture=()=>{{}};e.hasPointerCapture=()=>false;e.dispatchEvent(new PointerEvent('{k}',{{bubbles:true,pointerId:{p},pointerType:'{pt}',clientX:{x},clientY:{y},button:0,buttons:{0 if k=='pointerup' else 1}}}));return true;")
+          def actions(s,seq,pointer='touch'):
+              payload={'actions':[{'type':'pointer','id':'trusted-pointer','parameters':{'pointerType':pointer},'actions':seq}]}
+              return req('POST',f'/session/{s}/actions',payload)
+          def tap(s,x,y,pointer):
+              return actions(s,[{'type':'pointerMove','duration':0,'origin':'viewport','x':round(x),'y':round(y)},{'type':'pointerDown','button':0},{'type':'pause','duration':35},{'type':'pointerUp','button':0}],pointer)
+          INFO=r"""
+          const f=document.getElementById('portal-preview'),svg=document.getElementById('octahedron');const o={frame:!!f,visibility:f?getComputedStyle(f).visibility:'hidden',requested:f?+f.style.opacity:0,computed:f?+getComputedStyle(f).opacity:0,state:null,center:null,e:null};if(!f)return o;let a,w,c,s,g;try{a=f.contentWindow.document.getElementById('appFrame');w=a?.contentWindow;c=w?.document?.querySelector('canvas');s=w?.STONE_VIEW?.portalState?.();g=w?.STONE_VIEW?.getState?.();}catch(e){return o}if(!a||!w||!c||!s||!g)return o;const fr=f.getBoundingClientRect(),ar=a.getBoundingClientRect(),cr=c.getBoundingClientRect();o.state=s;o.center={x:fr.left+ar.left+s.metrics.centerX,y:fr.top+ar.top+s.metrics.centerY};if(!svg)return o;const C={l:fr.left+ar.left+cr.left,t:fr.top+ar.top+cr.top,w:cr.width,h:cr.height},ax=[...svg.querySelectorAll('line.axis')].slice(0,3),ctm=svg.getScreenCTM();if(ax.length!==3||!ctm)return o;const P=(x,y)=>{const p=svg.createSVGPoint();p.x=+x;p.y=+y;const q=p.matrixTransform(ctm);return[q.x,q.y]},b=[];for(const l of ax){b.push(P(l.getAttribute('x1'),l.getAttribute('y1')));b.push(P(l.getAttribute('x2'),l.getAttribute('y2')))}const q=g.orientation,Q=v=>{const[x,y,z]=v,[qx,qy,qz,qw]=q,tx=2*(qy*z-qz*y),ty=2*(qz*x-qx*z),tz=2*(qx*y-qy*x);return[x+qw*tx+(qy*tz-qz*ty),y+qw*ty+(qz*tx-qx*tz),z+qw*tz+(qx*ty-qy*tx)]},V=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]],F=45+(1.15-45)*(+s.projectionBlend||0),tn=Math.tan(F*Math.PI/360),asp=C.w/C.h,sc=+s.metrics.unitScale;if(!(sc>0)||!(tn>0))return o;const D=C.h/(2*sc*tn),wh=V.map(v=>{const r=Q(v),z=Math.max(D-r[2],1e-6),nx=r[0]/(z*tn*asp),ny=r[1]/(z*tn);return[C.l+(nx+1)*C.w/2,C.t+(1-ny)*C.h/2]}),er=b.map((p,i)=>Math.hypot(p[0]-wh[i][0],p[1]-wh[i][1]));o.e={rms:Math.sqrt(er.reduce((z,x)=>z+x*x,0)/6),max:Math.max(...er)};return o;
+          """
+          def info(s):return js(s,INFO)
+          def enter(s,W,H,mob):
+              pt='touch' if mob else 'mouse';x=W/2;y=H*.56;p=901;black(s,'pointerdown',x,y,p,pt);yp=y+((-MP+math.radians(7))-MP)/RS
+              for i in range(1,25):black(s,'pointermove',x,y+(yp-y)*i/24,p,pt);time.sleep(.015)
+              for _ in range(300):
+                  if info(s).get('state'):break
+                  time.sleep(.02)
+              ye=y+(-2*MP)/RS
+              for i in range(1,15):black(s,'pointermove',x,yp+(ye-yp)*i/14,p,pt);time.sleep(.015)
+              black(s,'pointerup',x,ye,p,pt);time.sleep(.4)
+          def run(label,W,H,mob):
+              s=session(label,W,H,mob)
+              try:
+                  req('POST',f'/session/{s}/url',{'url':LIVE+'?trusted-return='+label})
+                  for _ in range(200):
+                      if js(s,"return !!document.getElementById('octahedron')"):break
+                      time.sleep(.1)
+                  enter(s,W,H,mob);I=info(s);pointer='touch' if mob else 'mouse';tap(s,I['center']['x'],I['center']['y'],pointer);time.sleep(1.15)
+                  clicked=js(s,"const f=document.getElementById('portal-preview'),a=f.contentWindow.document.getElementById('appFrame'),w=a.contentWindow,b=w.document.getElementById('rotateModeBtn');if(!b)return false;b.click();return b.classList.contains('active');")
+                  time.sleep(.08);I=info(s);cx=I['center']['x'];cy=I['center']['y'];dx=min(135,W*.32);dy=min(55,H*.08)
+                  armed=False;after=None
+                  for attempt in range(3):
+                      direction=1 if attempt%2==0 else -1;tx=max(20,min(W-20,cx+direction*dx));ty=max(20,min(H-20,cy+dy))
+                      seq=[{'type':'pointerMove','duration':0,'origin':'viewport','x':round(cx),'y':round(cy)},{'type':'pointerDown','button':0},{'type':'pause','duration':20},{'type':'pointerMove','duration':35,'origin':'viewport','x':round((cx+tx)/2),'y':round((cy+ty)/2)},{'type':'pointerMove','duration':18,'origin':'viewport','x':round(tx),'y':round(ty)},{'type':'pointerUp','button':0}]
+                      actions(s,seq,pointer);time.sleep(.05);after=info(s);armed=bool((after.get('state')or{}).get('returnArmed'))
+                      if armed:break
+                  report={'label':label,'rotateModeActive':clicked,'armed':armed,'afterThrow':after.get('state') if after else None}
+                  if not armed:return report
+                  start=time.perf_counter();xs=[]
+                  for _ in range(350):
+                      z=info(s);z['ms']=(time.perf_counter()-start)*1000;xs.append(z);st=z.get('state')or{}
+                      if st.get('returnReady') or z.get('visibility')=='hidden':
+                          time.sleep(.35);xs.append(info(s));break
+                      time.sleep(.025)
+                  pre=[z for z in xs if (z.get('state')or{}).get('returnArmed') and ((z.get('state')or{}).get('returnDwellProgress')or 0)<=0]
+                  dwell=[z for z in xs if ((z.get('state')or{}).get('returnDwellProgress')or 0)>0]
+                  def stats(vals):return None if not vals else {'n':len(vals),'mean':sum(vals)/len(vals),'min':min(vals),'max':max(vals)}
+                  preop=[z['requested'] for z in pre];dr=[z['e']['rms'] for z in dwell if isinstance(z.get('e'),dict)];dm=[z['e']['max'] for z in dwell if isinstance(z.get('e'),dict)];lag=[abs(z['requested']-z['computed']) for z in dwell]
+                  firstd=next((z['ms'] for z in xs if ((z.get('state')or{}).get('returnDwellProgress')or 0)>0),None)
+                  report['return']={'preDwellSamples':len(pre),'dwellSamples':len(dwell),'preDwellOpacity':stats(preop),'firstDwellMs':firstd,'dwellRms':stats(dr),'dwellMax':stats(dm),'dwellOpacityLag':stats(lag),'completed':any((z.get('state')or{}).get('returnReady') for z in xs) or any(z.get('visibility')=='hidden' for z in xs)}
+                  return report
+              finally:
+                  try:req('DELETE',f'/session/{s}')
+                  except:pass
+          out=[]
+          for c in [('desktop',1440,900,False),('mobile414',414,896,True)]:
+              try:out.append(run(*c))
+              except Exception as e:out.append({'label':c[0],'error':repr(e)})
+          print('TRUSTED_RETURN='+json.dumps(out,sort_keys=True))
+          PY
+      - name: Remove validation workflow
+        if: always()
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --ff-only
+          git rm -f .github/workflows/one-shot-return-pointer-validation.yml
+          git commit -m 'Remove one-shot trusted return validation workflow'
+          git push
