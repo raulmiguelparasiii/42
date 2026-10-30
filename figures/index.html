@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
+  <title>42 Figures</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+    }
+    body {
+      min-height: 100dvh;
+      overflow: hidden;
+    }
+    #app {
+      width: 100%;
+      height: 100dvh;
+      display: grid;
+      place-items: center;
+      background: #fff;
+    }
+    #stone-shell {
+      width: min(67.2vw, 67.2vh);
+      aspect-ratio: 1;
+    }
+    #octahedron {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+      touch-action: none;
+      user-select: none;
+      cursor: grab;
+    }
+    #octahedron:active { cursor: grabbing; }
+    #octahedron line,
+    #octahedron circle,
+    #octahedron path,
+    #octahedron polygon {
+      vector-effect: non-scaling-stroke;
+    }
+    #octahedron .edge,
+    #octahedron .axis {
+      stroke: #000;
+      fill: none;
+      stroke-linecap: round;
+    }
+    #octahedron .edge { stroke-width: 1.15; }
+    #octahedron .axis {
+      stroke-width: 0.9;
+      opacity: 0.28;
+    }
+    #figure-layer { pointer-events: none; }
+  </style>
+</head>
+<body>
+  <main id="app">
+    <div id="stone-shell">
+      <svg
+        id="octahedron"
+        viewBox="-120 -120 240 240"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="Interactive orthographic wireframe octahedron"
+      >
+        <g id="axis-layer"></g>
+        <g id="edge-layer"></g>
+        <g id="figure-layer"></g>
+      </svg>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const NS = 'http://www.w3.org/2000/svg';
+      const svg = document.querySelector('#octahedron');
+      const axisLayer = document.querySelector('#axis-layer');
+      const edgeLayer = document.querySelector('#edge-layer');
+      const figureLayer = document.querySelector('#figure-layer');
+
+      // Canonical model coordinates inherited from /42/:
+      // +x Empathy, -x Practicality; +y Maturity, -y Collapse;
+      // +z Wisdom, -z Knowledge.
+      const vertices = Object.freeze([
+        [ 1, 0, 0], [-1, 0, 0],
+        [ 0, 1, 0], [ 0,-1, 0],
+        [ 0, 0, 1], [ 0, 0,-1]
+      ]);
+      const axes = Object.freeze([[0, 1], [2, 3], [4, 5]]);
+      const opposite = new Set(axes.map(pair => pair[0] + '-' + pair[1]));
+      const edges = [];
+
+      for (let a = 0; a < vertices.length; a++) {
+        for (let b = a + 1; b < vertices.length; b++) {
+          if (!opposite.has(a + '-' + b)) edges.push([a, b]);
+        }
+      }
+
+      const make = (name, className) => {
+        const node = document.createElementNS(NS, name);
+        if (className) node.setAttribute('class', className);
+        return node;
+      };
+
+      const axisLines = axes.map(() => {
+        const line = make('line', 'axis');
+        axisLayer.appendChild(line);
+        return line;
+      });
+
+      const edgeLines = edges.map(() => {
+        const line = make('line', 'edge');
+        edgeLayer.appendChild(line);
+        return line;
+      });
+
+      const QUARTER_TURN = Math.PI / 2;
+      const BASE_YAW = Math.PI / 4;
+      const pitchBands = Object.freeze([
+        { id: 'top', pitch:  Math.PI / 2 },
+        { id: 'upper', pitch:  Math.PI / 4 },
+        { id: 'side', pitch: 0 },
+        { id: 'lower', pitch: -Math.PI / 4 },
+        { id: 'bottom', pitch: -Math.PI / 2 }
+      ]);
+      const snaps = Object.freeze(
+        pitchBands.flatMap(band =>
+          Array.from({ length: 4 }, (_, turn) => ({
+            id: band.id + '-' + turn,
+            band: band.id,
+            turn,
+            yaw: BASE_YAW + turn * QUARTER_TURN,
+            pitch: band.pitch
+          }))
+        )
+      );
+
+      const initialSnap = snaps.find(item => item.id === 'upper-0');
+      let yaw = initialSnap.yaw;
+      let pitch = initialSnap.pitch;
+      let velocityYaw = 0;
+      let velocityPitch = 0;
+      let dragging = false;
+      let activePointerId = null;
+      let snapTarget = initialSnap;
+      let lastX = 0;
+      let lastY = 0;
+      let lastPointerTime = performance.now();
+      let lastFrameTime = performance.now();
+      let releasedAt = 0;
+
+      // These are intentionally the same interaction constants used by /42/.
+      const ROTATE_SPEED = 0.0075;
+      const MOMENTUM_DAMPING = 0.003;
+      const SNAP_SPEED = 0.00058;
+      const SPRING = 0.00012;
+      const SPRING_DAMPING = 0.012;
+      const PITCH_LIMIT = Math.PI / 2;
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const wrap = angle => Math.atan2(Math.sin(angle), Math.cos(angle));
+      const deltaYaw = target => wrap(target - yaw);
+      const distanceTo = target => Math.hypot(deltaYaw(target.yaw), target.pitch - pitch);
+
+      const nearestSnap = () => {
+        let best = snaps[0];
+        let bestDistance = distanceTo(best);
+        for (let i = 1; i < snaps.length; i++) {
+          const distance = distanceTo(snaps[i]);
+          if (distance < bestDistance) {
+            best = snaps[i];
+            bestDistance = distance;
+          }
+        }
+        return best;
+      };
+
+      const rotate = ([x, y, z]) => {
+        const cy = Math.cos(yaw);
+        const sy = Math.sin(yaw);
+        const cp = Math.cos(pitch);
+        const sp = Math.sin(pitch);
+        const x1 = x * cy + z * sy;
+        const z1 = -x * sy + z * cy;
+        return [x1, y * cp - z1 * sp, y * sp + z1 * cp];
+      };
+
+      // Orthographic projection. There is deliberately no perspective divide.
+      const project = ([x, y, z]) => {
+        const scale = 86;
+        return [x * scale, -y * scale, z];
+      };
+
+      const draw = () => {
+        const points = vertices.map(vertex => project(rotate(vertex)));
+
+        axes.forEach(([a, b], index) => {
+          const first = points[a];
+          const second = points[b];
+          const line = axisLines[index];
+          line.setAttribute('x1', first[0]);
+          line.setAttribute('y1', first[1]);
+          line.setAttribute('x2', second[0]);
+          line.setAttribute('y2', second[1]);
+        });
+
+        edges.forEach(([a, b], index) => {
+          const first = points[a];
+          const second = points[b];
+          const line = edgeLines[index];
+          line.setAttribute('x1', first[0]);
+          line.setAttribute('y1', first[1]);
+          line.setAttribute('x2', second[0]);
+          line.setAttribute('y2', second[1]);
+          line.style.opacity = String(0.48 + 0.42 * ((first[2] + second[2] + 2) / 4));
+        });
+      };
+
+      const settlePhysics = (now, dt) => {
+        if (dragging) return;
+
+        if (reduceMotion) {
+          const target = snapTarget || nearestSnap();
+          yaw += deltaYaw(target.yaw);
+          pitch = target.pitch;
+          velocityYaw = 0;
+          velocityPitch = 0;
+          snapTarget = target;
+          return;
+        }
+
+        if (snapTarget) {
+          const yawError = deltaYaw(snapTarget.yaw);
+          const pitchError = snapTarget.pitch - pitch;
+
+          velocityYaw += yawError * SPRING * dt;
+          velocityPitch += pitchError * SPRING * dt;
+
+          const damping = Math.exp(-SPRING_DAMPING * dt);
+          velocityYaw *= damping;
+          velocityPitch *= damping;
+
+          yaw += velocityYaw * dt;
+          pitch += velocityPitch * dt;
+
+          if (
+            Math.abs(yawError) < 0.00035 &&
+            Math.abs(pitchError) < 0.00035 &&
+            Math.hypot(velocityYaw, velocityPitch) < 0.000025
+          ) {
+            yaw += deltaYaw(snapTarget.yaw);
+            pitch = snapTarget.pitch;
+            velocityYaw = 0;
+            velocityPitch = 0;
+          }
+          return;
+        }
+
+        yaw += velocityYaw * dt;
+        pitch += velocityPitch * dt;
+
+        if (pitch > PITCH_LIMIT) {
+          pitch = PITCH_LIMIT;
+          velocityPitch *= -0.16;
+        } else if (pitch < -PITCH_LIMIT) {
+          pitch = -PITCH_LIMIT;
+          velocityPitch *= -0.16;
+        }
+
+        const damping = Math.exp(-MOMENTUM_DAMPING * dt);
+        velocityYaw *= damping;
+        velocityPitch *= damping;
+
+        if (
+          now - releasedAt > 110 &&
+          Math.hypot(velocityYaw, velocityPitch) < SNAP_SPEED
+        ) {
+          snapTarget = nearestSnap();
+        }
+      };
+
+      const frame = now => {
+        const dt = Math.min(now - lastFrameTime, 32);
+        lastFrameTime = now;
+        settlePhysics(now, dt);
+        draw();
+        requestAnimationFrame(frame);
+      };
+
+      const beginRotation = event => {
+        if (dragging) return;
+        dragging = true;
+        activePointerId = event.pointerId;
+        snapTarget = null;
+        velocityYaw = 0;
+        velocityPitch = 0;
+        lastX = event.clientX;
+        lastY = event.clientY;
+        lastPointerTime = performance.now();
+        svg.setPointerCapture(event.pointerId);
+      };
+
+      const moveRotation = event => {
+        if (!dragging || event.pointerId !== activePointerId) return;
+
+        const now = performance.now();
+        const dt = Math.max(now - lastPointerTime, 1);
+        const yawDelta = (event.clientX - lastX) * ROTATE_SPEED;
+        const pitchDelta = (event.clientY - lastY) * ROTATE_SPEED;
+
+        yaw += yawDelta;
+        const nextPitch = clamp(pitch + pitchDelta, -PITCH_LIMIT, PITCH_LIMIT);
+        const appliedPitchDelta = nextPitch - pitch;
+        pitch = nextPitch;
+
+        const sampledYawVelocity = yawDelta / dt;
+        const sampledPitchVelocity = appliedPitchDelta / dt;
+        velocityYaw = velocityYaw * 0.38 + sampledYawVelocity * 0.62;
+        velocityPitch = velocityPitch * 0.38 + sampledPitchVelocity * 0.62;
+
+        lastX = event.clientX;
+        lastY = event.clientY;
+        lastPointerTime = now;
+      };
+
+      const stopRotation = event => {
+        if (!dragging || event.pointerId !== activePointerId) return;
+        dragging = false;
+        activePointerId = null;
+        releasedAt = performance.now();
+        if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+
+        if (reduceMotion) {
+          velocityYaw = 0;
+          velocityPitch = 0;
+          snapTarget = nearestSnap();
+        }
+      };
+
+      svg.addEventListener('pointerdown', beginRotation);
+      svg.addEventListener('pointermove', moveRotation);
+      svg.addEventListener('pointerup', stopRotation);
+      svg.addEventListener('pointercancel', stopRotation);
+
+      // Deliberately small programmatic surface for future paper-figure work.
+      // Nothing here adds visible controls or overlays by default.
+      window.FIGURES = Object.freeze({
+        projection: 'orthographic',
+        geometry: Object.freeze({ vertices, axes, edges: Object.freeze(edges.map(pair => Object.freeze([...pair]))) }),
+        snaps,
+        figureLayer,
+        getState: () => ({ yaw, pitch, yawDeg: yaw * 180 / Math.PI, pitchDeg: pitch * 180 / Math.PI, snapTarget: snapTarget?.id || null }),
+        setAngles: (yawDeg, pitchDeg, settle = false) => {
+          yaw = Number(yawDeg) * Math.PI / 180;
+          pitch = clamp(Number(pitchDeg) * Math.PI / 180, -PITCH_LIMIT, PITCH_LIMIT);
+          velocityYaw = 0;
+          velocityPitch = 0;
+          snapTarget = settle ? nearestSnap() : null;
+          draw();
+        },
+        snapTo: id => {
+          const target = snaps.find(item => item.id === id);
+          if (!target) return false;
+          velocityYaw = 0;
+          velocityPitch = 0;
+          snapTarget = target;
+          return true;
+        },
+        clearFigureLayer: () => figureLayer.replaceChildren()
+      });
+
+      draw();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
