@@ -8,16 +8,8 @@
   <title>42 Figures</title>
   <style>
     * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      background: #fff;
-    }
-    body {
-      min-height: 100dvh;
-      overflow: hidden;
-    }
+    html, body { margin: 0; width: 100%; height: 100%; background: #fff; }
+    body { min-height: 100dvh; overflow: hidden; }
     #app {
       width: 100%;
       height: 100dvh;
@@ -42,9 +34,7 @@
     #octahedron line,
     #octahedron circle,
     #octahedron path,
-    #octahedron polygon {
-      vector-effect: non-scaling-stroke;
-    }
+    #octahedron polygon { vector-effect: non-scaling-stroke; }
     #octahedron .edge,
     #octahedron .axis {
       stroke: #000;
@@ -52,10 +42,7 @@
       stroke-linecap: round;
     }
     #octahedron .edge { stroke-width: 1.15; }
-    #octahedron .axis {
-      stroke-width: 0.9;
-      opacity: 0.28;
-    }
+    #octahedron .axis { stroke-width: 0.9; opacity: 0.28; }
     #figure-layer { pointer-events: none; }
   </style>
 </head>
@@ -123,21 +110,32 @@
       });
 
       const QUARTER_TURN = Math.PI / 2;
+      const EIGHTH_TURN = Math.PI / 4;
       const BASE_YAW = Math.PI / 4;
+      const MAIN_PITCH = Math.asin(1 / Math.sqrt(3));
+
+      const quarterYaws = Object.freeze(
+        Array.from({ length: 4 }, (_, turn) => BASE_YAW + turn * QUARTER_TURN)
+      );
+      const eighthYaws = Object.freeze(
+        Array.from({ length: 8 }, (_, turn) => turn * EIGHTH_TURN)
+      );
+
       const pitchBands = Object.freeze([
-        { id: 'top', pitch:  Math.PI / 2 },
-        { id: 'upper', pitch:  Math.PI / 4 },
-        { id: 'side', pitch: 0 },
-        { id: 'lower', pitch: -Math.PI / 4 },
-        { id: 'bottom', pitch: -Math.PI / 2 }
+        { id: 'top', pitch: Math.PI / 2, yaws: eighthYaws },
+        { id: 'upper', pitch: MAIN_PITCH, yaws: quarterYaws },
+        { id: 'side', pitch: 0, yaws: quarterYaws },
+        { id: 'lower', pitch: -MAIN_PITCH, yaws: quarterYaws },
+        { id: 'bottom', pitch: -Math.PI / 2, yaws: eighthYaws }
       ]);
+
       const snaps = Object.freeze(
         pitchBands.flatMap(band =>
-          Array.from({ length: 4 }, (_, turn) => ({
+          band.yaws.map((snapYaw, turn) => ({
             id: band.id + '-' + turn,
             band: band.id,
             turn,
-            yaw: BASE_YAW + turn * QUARTER_TURN,
+            yaw: snapYaw,
             pitch: band.pitch
           }))
         )
@@ -157,7 +155,6 @@
       let lastFrameTime = performance.now();
       let releasedAt = 0;
 
-      // These are intentionally the same interaction constants used by /42/.
       const ROTATE_SPEED = 0.0075;
       const MOMENTUM_DAMPING = 0.003;
       const SNAP_SPEED = 0.00058;
@@ -185,16 +182,14 @@
       };
 
       const rotate = ([x, y, z]) => {
-        const cy = Math.cos(yaw);
-        const sy = Math.sin(yaw);
-        const cp = Math.cos(pitch);
-        const sp = Math.sin(pitch);
+        const cy = Math.cos(yaw), sy = Math.sin(yaw);
+        const cp = Math.cos(pitch), sp = Math.sin(pitch);
         const x1 = x * cy + z * sy;
         const z1 = -x * sy + z * cy;
         return [x1, y * cp - z1 * sp, y * sp + z1 * cp];
       };
 
-      // Orthographic projection. There is deliberately no perspective divide.
+      // Orthographic projection: no perspective divide.
       const project = ([x, y, z]) => {
         const scale = 86;
         return [x * scale, -y * scale, z];
@@ -351,14 +346,25 @@
       svg.addEventListener('pointerup', stopRotation);
       svg.addEventListener('pointercancel', stopRotation);
 
-      // Deliberately small programmatic surface for future paper-figure work.
-      // Nothing here adds visible controls or overlays by default.
+      // Small programmatic surface for future paper-figure work.
+      // It adds no visible controls or overlays by default.
       window.FIGURES = Object.freeze({
         projection: 'orthographic',
-        geometry: Object.freeze({ vertices, axes, edges: Object.freeze(edges.map(pair => Object.freeze([...pair]))) }),
+        mainPitch: MAIN_PITCH,
+        geometry: Object.freeze({
+          vertices,
+          axes,
+          edges: Object.freeze(edges.map(pair => Object.freeze([...pair])))
+        }),
         snaps,
         figureLayer,
-        getState: () => ({ yaw, pitch, yawDeg: yaw * 180 / Math.PI, pitchDeg: pitch * 180 / Math.PI, snapTarget: snapTarget?.id || null }),
+        getState: () => ({
+          yaw,
+          pitch,
+          yawDeg: yaw * 180 / Math.PI,
+          pitchDeg: pitch * 180 / Math.PI,
+          snapTarget: snapTarget?.id || null
+        }),
         setAngles: (yawDeg, pitchDeg, settle = false) => {
           yaw = Number(yawDeg) * Math.PI / 180;
           pitch = clamp(Number(pitchDeg) * Math.PI / 180, -PITCH_LIMIT, PITCH_LIMIT);
