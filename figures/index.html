@@ -20,6 +20,8 @@
     #stone-shell {
       width: min(67.2vw, 67.2vh);
       aspect-ratio: 1;
+      transform: scale(var(--figure-scale, 1));
+      transform-origin: center;
     }
     #octahedron {
       width: 100%;
@@ -69,13 +71,11 @@
 
       const NS = 'http://www.w3.org/2000/svg';
       const svg = document.querySelector('#octahedron');
+      const stoneShell = document.querySelector('#stone-shell');
       const axisLayer = document.querySelector('#axis-layer');
       const edgeLayer = document.querySelector('#edge-layer');
       const figureLayer = document.querySelector('#figure-layer');
 
-      // Canonical model coordinates inherited from /42/:
-      // +x Empathy, -x Practicality; +y Maturity, -y Collapse;
-      // +z Wisdom, -z Knowledge.
       const vertices = Object.freeze([
         [ 1, 0, 0], [-1, 0, 0],
         [ 0, 1, 0], [ 0,-1, 0],
@@ -102,7 +102,6 @@
         axisLayer.appendChild(line);
         return line;
       });
-
       const edgeLines = edges.map(() => {
         const line = make('line', 'edge');
         edgeLayer.appendChild(line);
@@ -114,13 +113,73 @@
       const BASE_YAW = Math.PI / 4;
       const MAIN_PITCH = Math.asin(1 / Math.sqrt(3));
 
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const vecDot = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+      const vecCross = (a, b) => [
+        a[1]*b[2] - a[2]*b[1],
+        a[2]*b[0] - a[0]*b[2],
+        a[0]*b[1] - a[1]*b[0]
+      ];
+      const vecLength = v => Math.hypot(v[0], v[1], v[2]);
+      const vecScale = (v, scalar) => [v[0]*scalar, v[1]*scalar, v[2]*scalar];
+
+      const quatNormalize = q => {
+        const length = Math.hypot(q[0], q[1], q[2], q[3]) || 1;
+        return [q[0]/length, q[1]/length, q[2]/length, q[3]/length];
+      };
+      const quatConjugate = q => [-q[0], -q[1], -q[2], q[3]];
+      const quatMultiply = (a, b) => [
+        a[3]*b[0] + a[0]*b[3] + a[1]*b[2] - a[2]*b[1],
+        a[3]*b[1] - a[0]*b[2] + a[1]*b[3] + a[2]*b[0],
+        a[3]*b[2] + a[0]*b[1] - a[1]*b[0] + a[2]*b[3],
+        a[3]*b[3] - a[0]*b[0] - a[1]*b[1] - a[2]*b[2]
+      ];
+      const quatFromAxisAngle = (axis, angle) => {
+        const length = vecLength(axis);
+        if (length < 1e-10 || Math.abs(angle) < 1e-10) return [0, 0, 0, 1];
+        const half = angle * 0.5;
+        const scale = Math.sin(half) / length;
+        return [axis[0]*scale, axis[1]*scale, axis[2]*scale, Math.cos(half)];
+      };
+      const quatFromYawPitch = (yaw, pitch) => {
+        const qx = quatFromAxisAngle([1, 0, 0], pitch);
+        const qy = quatFromAxisAngle([0, 1, 0], yaw);
+        return quatNormalize(quatMultiply(qx, qy));
+      };
+      const quatRotate = (q, v) => {
+        const [x, y, z, w] = q;
+        const tx = 2 * (y*v[2] - z*v[1]);
+        const ty = 2 * (z*v[0] - x*v[2]);
+        const tz = 2 * (x*v[1] - y*v[0]);
+        return [
+          v[0] + w*tx + (y*tz - z*ty),
+          v[1] + w*ty + (z*tx - x*tz),
+          v[2] + w*tz + (x*ty - y*tx)
+        ];
+      };
+      const quatAngularDistance = (a, b) => {
+        const dot = Math.abs(a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3]);
+        return 2 * Math.acos(clamp(dot, -1, 1));
+      };
+      const quatErrorVector = (target, current) => {
+        let error = quatNormalize(quatMultiply(target, quatConjugate(current)));
+        if (error[3] < 0) error = error.map(value => -value);
+        const xyzLength = Math.hypot(error[0], error[1], error[2]);
+        if (xyzLength < 1e-10) return [0, 0, 0];
+        const angle = 2 * Math.atan2(xyzLength, clamp(error[3], -1, 1));
+        return [
+          error[0] / xyzLength * angle,
+          error[1] / xyzLength * angle,
+          error[2] / xyzLength * angle
+        ];
+      };
+
       const quarterYaws = Object.freeze(
         Array.from({ length: 4 }, (_, turn) => BASE_YAW + turn * QUARTER_TURN)
       );
       const eighthYaws = Object.freeze(
         Array.from({ length: 8 }, (_, turn) => turn * EIGHTH_TURN)
       );
-
       const pitchBands = Object.freeze([
         { id: 'top', pitch: Math.PI / 2, yaws: eighthYaws },
         { id: 'upper', pitch: MAIN_PITCH, yaws: quarterYaws },
@@ -128,51 +187,47 @@
         { id: 'lower', pitch: -MAIN_PITCH, yaws: quarterYaws },
         { id: 'bottom', pitch: -Math.PI / 2, yaws: eighthYaws }
       ]);
-
       const snaps = Object.freeze(
         pitchBands.flatMap(band =>
-          band.yaws.map((snapYaw, turn) => ({
+          band.yaws.map((yaw, turn) => Object.freeze({
             id: band.id + '-' + turn,
             band: band.id,
             turn,
-            yaw: snapYaw,
-            pitch: band.pitch
+            yaw,
+            pitch: band.pitch,
+            orientation: Object.freeze(quatFromYawPitch(yaw, band.pitch))
           }))
         )
       );
 
       const initialSnap = snaps.find(item => item.id === 'upper-0');
-      let yaw = initialSnap.yaw;
-      let pitch = initialSnap.pitch;
-      let velocityYaw = 0;
-      let velocityPitch = 0;
+      let orientation = [...initialSnap.orientation];
+      let angularVelocity = [0, 0, 0];
       let dragging = false;
       let activePointerId = null;
-      let snapTarget = initialSnap;
-      let lastX = 0;
-      let lastY = 0;
+      let lastTrackPoint = null;
       let lastPointerTime = performance.now();
       let lastFrameTime = performance.now();
       let releasedAt = 0;
+      let snapTarget = initialSnap;
+      let figureScale = 1;
 
-      const ROTATE_SPEED = 0.0075;
+      const activeTouchPointers = new Map();
+      let pinchGesture = null;
+
       const MOMENTUM_DAMPING = 0.003;
       const SNAP_SPEED = 0.00058;
       const SPRING = 0.00012;
       const SPRING_DAMPING = 0.012;
-      const PITCH_LIMIT = Math.PI / 2;
+      const MIN_SCALE = 0.6;
+      const MAX_SCALE = 1.6;
       const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-      const wrap = angle => Math.atan2(Math.sin(angle), Math.cos(angle));
-      const deltaYaw = target => wrap(target - yaw);
-      const distanceTo = target => Math.hypot(deltaYaw(target.yaw), target.pitch - pitch);
 
       const nearestSnap = () => {
         let best = snaps[0];
-        let bestDistance = distanceTo(best);
+        let bestDistance = quatAngularDistance(orientation, best.orientation);
         for (let i = 1; i < snaps.length; i++) {
-          const distance = distanceTo(snaps[i]);
+          const distance = quatAngularDistance(orientation, snaps[i].orientation);
           if (distance < bestDistance) {
             best = snaps[i];
             bestDistance = distance;
@@ -181,23 +236,13 @@
         return best;
       };
 
-      const rotate = ([x, y, z]) => {
-        const cy = Math.cos(yaw), sy = Math.sin(yaw);
-        const cp = Math.cos(pitch), sp = Math.sin(pitch);
-        const x1 = x * cy + z * sy;
-        const z1 = -x * sy + z * cy;
-        return [x1, y * cp - z1 * sp, y * sp + z1 * cp];
-      };
-
-      // Orthographic projection: no perspective divide.
       const project = ([x, y, z]) => {
         const scale = 86;
         return [x * scale, -y * scale, z];
       };
 
       const draw = () => {
-        const points = vertices.map(vertex => project(rotate(vertex)));
-
+        const points = vertices.map(vertex => project(quatRotate(orientation, vertex)));
         axes.forEach(([a, b], index) => {
           const first = points[a];
           const second = points[b];
@@ -207,7 +252,6 @@
           line.setAttribute('x2', second[0]);
           line.setAttribute('y2', second[1]);
         });
-
         edges.forEach(([a, b], index) => {
           const first = points[a];
           const second = points[b];
@@ -220,64 +264,74 @@
         });
       };
 
+      // Virtual trackball in current screen space. The point on the visible object
+      // that is grabbed determines the rotation axis, so dragging the upper and
+      // lower halves in the same direction can produce opposite roll.
+      const trackballPoint = (clientX, clientY) => {
+        const rect = svg.getBoundingClientRect();
+        const centerX = rect.left + rect.width * 0.5;
+        const centerY = rect.top + rect.height * 0.5;
+        const radius = Math.max(1, Math.min(rect.width, rect.height) * 86 / 240);
+        let x = (clientX - centerX) / radius;
+        let y = -(clientY - centerY) / radius;
+        const distanceSquared = x*x + y*y;
+        let z;
+        if (distanceSquared <= 1) {
+          z = Math.sqrt(1 - distanceSquared);
+        } else {
+          const inverseLength = 1 / Math.sqrt(distanceSquared);
+          x *= inverseLength;
+          y *= inverseLength;
+          z = 0;
+        }
+        return [x, y, z];
+      };
+
+      const applyAngularStep = dt => {
+        const speed = vecLength(angularVelocity);
+        if (speed < 1e-10) return;
+        const delta = quatFromAxisAngle(angularVelocity, speed * dt);
+        orientation = quatNormalize(quatMultiply(delta, orientation));
+      };
+
       const settlePhysics = (now, dt) => {
-        if (dragging) return;
+        if (dragging || pinchGesture) return;
 
         if (reduceMotion) {
           const target = snapTarget || nearestSnap();
-          yaw += deltaYaw(target.yaw);
-          pitch = target.pitch;
-          velocityYaw = 0;
-          velocityPitch = 0;
+          orientation = [...target.orientation];
+          angularVelocity = [0, 0, 0];
           snapTarget = target;
           return;
         }
 
         if (snapTarget) {
-          const yawError = deltaYaw(snapTarget.yaw);
-          const pitchError = snapTarget.pitch - pitch;
-
-          velocityYaw += yawError * SPRING * dt;
-          velocityPitch += pitchError * SPRING * dt;
-
+          const error = quatErrorVector(snapTarget.orientation, orientation);
+          angularVelocity = [
+            angularVelocity[0] + error[0] * SPRING * dt,
+            angularVelocity[1] + error[1] * SPRING * dt,
+            angularVelocity[2] + error[2] * SPRING * dt
+          ];
           const damping = Math.exp(-SPRING_DAMPING * dt);
-          velocityYaw *= damping;
-          velocityPitch *= damping;
-
-          yaw += velocityYaw * dt;
-          pitch += velocityPitch * dt;
+          angularVelocity = vecScale(angularVelocity, damping);
+          applyAngularStep(dt);
 
           if (
-            Math.abs(yawError) < 0.00035 &&
-            Math.abs(pitchError) < 0.00035 &&
-            Math.hypot(velocityYaw, velocityPitch) < 0.000025
+            vecLength(error) < 0.00035 &&
+            vecLength(angularVelocity) < 0.000025
           ) {
-            yaw += deltaYaw(snapTarget.yaw);
-            pitch = snapTarget.pitch;
-            velocityYaw = 0;
-            velocityPitch = 0;
+            orientation = [...snapTarget.orientation];
+            angularVelocity = [0, 0, 0];
           }
           return;
         }
 
-        yaw += velocityYaw * dt;
-        pitch += velocityPitch * dt;
-
-        if (pitch > PITCH_LIMIT) {
-          pitch = PITCH_LIMIT;
-          velocityPitch *= -0.16;
-        } else if (pitch < -PITCH_LIMIT) {
-          pitch = -PITCH_LIMIT;
-          velocityPitch *= -0.16;
-        }
-
-        const damping = Math.exp(-MOMENTUM_DAMPING * dt);
-        velocityYaw *= damping;
-        velocityPitch *= damping;
+        applyAngularStep(dt);
+        angularVelocity = vecScale(angularVelocity, Math.exp(-MOMENTUM_DAMPING * dt));
 
         if (
           now - releasedAt > 110 &&
-          Math.hypot(velocityYaw, velocityPitch) < SNAP_SPEED
+          vecLength(angularVelocity) < SNAP_SPEED
         ) {
           snapTarget = nearestSnap();
         }
@@ -291,65 +345,156 @@
         requestAnimationFrame(frame);
       };
 
-      const beginRotation = event => {
-        if (dragging) return;
+      const beginRotationAt = (pointerId, clientX, clientY) => {
         dragging = true;
-        activePointerId = event.pointerId;
+        activePointerId = pointerId;
         snapTarget = null;
-        velocityYaw = 0;
-        velocityPitch = 0;
-        lastX = event.clientX;
-        lastY = event.clientY;
+        angularVelocity = [0, 0, 0];
+        lastTrackPoint = trackballPoint(clientX, clientY);
         lastPointerTime = performance.now();
-        svg.setPointerCapture(event.pointerId);
       };
 
       const moveRotation = event => {
-        if (!dragging || event.pointerId !== activePointerId) return;
-
+        if (!dragging || event.pointerId !== activePointerId || pinchGesture) return;
         const now = performance.now();
         const dt = Math.max(now - lastPointerTime, 1);
-        const yawDelta = (event.clientX - lastX) * ROTATE_SPEED;
-        const pitchDelta = (event.clientY - lastY) * ROTATE_SPEED;
+        const currentTrackPoint = trackballPoint(event.clientX, event.clientY);
+        const cross = vecCross(lastTrackPoint, currentTrackPoint);
+        const crossLength = vecLength(cross);
+        const dot = clamp(vecDot(lastTrackPoint, currentTrackPoint), -1, 1);
 
-        yaw += yawDelta;
-        const nextPitch = clamp(pitch + pitchDelta, -PITCH_LIMIT, PITCH_LIMIT);
-        const appliedPitchDelta = nextPitch - pitch;
-        pitch = nextPitch;
+        if (crossLength > 1e-8) {
+          const angle = Math.atan2(crossLength, dot);
+          const axis = vecScale(cross, 1 / crossLength);
+          const delta = quatFromAxisAngle(axis, angle);
+          orientation = quatNormalize(quatMultiply(delta, orientation));
 
-        const sampledYawVelocity = yawDelta / dt;
-        const sampledPitchVelocity = appliedPitchDelta / dt;
-        velocityYaw = velocityYaw * 0.38 + sampledYawVelocity * 0.62;
-        velocityPitch = velocityPitch * 0.38 + sampledPitchVelocity * 0.62;
+          const sampledVelocity = vecScale(axis, angle / dt);
+          angularVelocity = [
+            angularVelocity[0] * 0.38 + sampledVelocity[0] * 0.62,
+            angularVelocity[1] * 0.38 + sampledVelocity[1] * 0.62,
+            angularVelocity[2] * 0.38 + sampledVelocity[2] * 0.62
+          ];
+        }
 
-        lastX = event.clientX;
-        lastY = event.clientY;
+        lastTrackPoint = currentTrackPoint;
         lastPointerTime = now;
       };
 
-      const stopRotation = event => {
-        if (!dragging || event.pointerId !== activePointerId) return;
+      const stopRotation = pointerId => {
+        if (!dragging || pointerId !== activePointerId) return;
         dragging = false;
         activePointerId = null;
+        lastTrackPoint = null;
         releasedAt = performance.now();
-        if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
-
         if (reduceMotion) {
-          velocityYaw = 0;
-          velocityPitch = 0;
+          angularVelocity = [0, 0, 0];
           snapTarget = nearestSnap();
         }
       };
 
-      svg.addEventListener('pointerdown', beginRotation);
-      svg.addEventListener('pointermove', moveRotation);
-      svg.addEventListener('pointerup', stopRotation);
-      svg.addEventListener('pointercancel', stopRotation);
+      const pinchMetrics = () => {
+        const points = [...activeTouchPointers.values()].slice(0, 2);
+        if (points.length < 2) return null;
+        const dx = points[1].x - points[0].x;
+        const dy = points[1].y - points[0].y;
+        return { distance: Math.max(1, Math.hypot(dx, dy)) };
+      };
 
-      // Small programmatic surface for future paper-figure work.
-      // It adds no visible controls or overlays by default.
+      const beginPinch = () => {
+        const metrics = pinchMetrics();
+        if (!metrics) return;
+        dragging = false;
+        activePointerId = null;
+        lastTrackPoint = null;
+        angularVelocity = [0, 0, 0];
+        snapTarget = null;
+        pinchGesture = {
+          startDistance: metrics.distance,
+          startScale: figureScale
+        };
+      };
+
+      const updatePinch = () => {
+        if (!pinchGesture) return;
+        const metrics = pinchMetrics();
+        if (!metrics) return;
+        figureScale = clamp(
+          pinchGesture.startScale * metrics.distance / pinchGesture.startDistance,
+          MIN_SCALE,
+          MAX_SCALE
+        );
+        stoneShell.style.setProperty('--figure-scale', String(figureScale));
+      };
+
+      svg.addEventListener('pointerdown', event => {
+        if (event.pointerType === 'touch') {
+          activeTouchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (!svg.hasPointerCapture(event.pointerId)) svg.setPointerCapture(event.pointerId);
+          if (activeTouchPointers.size >= 2) {
+            beginPinch();
+            return;
+          }
+        } else if (!svg.hasPointerCapture(event.pointerId)) {
+          svg.setPointerCapture(event.pointerId);
+        }
+
+        if (!pinchGesture) beginRotationAt(event.pointerId, event.clientX, event.clientY);
+      });
+
+      svg.addEventListener('pointermove', event => {
+        if (event.pointerType === 'touch' && activeTouchPointers.has(event.pointerId)) {
+          activeTouchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          if (activeTouchPointers.size >= 2) {
+            if (!pinchGesture) beginPinch();
+            updatePinch();
+            return;
+          }
+        }
+        moveRotation(event);
+      });
+
+      const finishPointer = event => {
+        if (event.pointerType === 'touch') {
+          activeTouchPointers.delete(event.pointerId);
+          if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+
+          if (pinchGesture) {
+            if (activeTouchPointers.size >= 2) {
+              beginPinch();
+              return;
+            }
+            pinchGesture = null;
+            if (activeTouchPointers.size === 1) {
+              const [pointerId, point] = activeTouchPointers.entries().next().value;
+              beginRotationAt(pointerId, point.x, point.y);
+              return;
+            }
+            releasedAt = performance.now();
+            snapTarget = nearestSnap();
+            return;
+          }
+        } else if (svg.hasPointerCapture(event.pointerId)) {
+          svg.releasePointerCapture(event.pointerId);
+        }
+        stopRotation(event.pointerId);
+      };
+
+      svg.addEventListener('pointerup', finishPointer);
+      svg.addEventListener('pointercancel', finishPointer);
+
+      const approximateLegacyAngles = () => {
+        const xAxis = quatRotate(orientation, [1, 0, 0]);
+        const zAxis = quatRotate(orientation, [0, 0, 1]);
+        return {
+          yaw: Math.atan2(zAxis[0], xAxis[0]),
+          pitch: Math.atan2(-zAxis[1], zAxis[2])
+        };
+      };
+
       window.FIGURES = Object.freeze({
         projection: 'orthographic',
+        interaction: 'object-relative-trackball',
         mainPitch: MAIN_PITCH,
         geometry: Object.freeze({
           vertices,
@@ -358,26 +503,45 @@
         }),
         snaps,
         figureLayer,
-        getState: () => ({
-          yaw,
-          pitch,
-          yawDeg: yaw * 180 / Math.PI,
-          pitchDeg: pitch * 180 / Math.PI,
-          snapTarget: snapTarget?.id || null
-        }),
+        getState: () => {
+          const angles = approximateLegacyAngles();
+          return {
+            orientation: [...orientation],
+            yaw: angles.yaw,
+            pitch: angles.pitch,
+            yawDeg: angles.yaw * 180 / Math.PI,
+            pitchDeg: angles.pitch * 180 / Math.PI,
+            scale: figureScale,
+            snapTarget: snapTarget?.id || null
+          };
+        },
         setAngles: (yawDeg, pitchDeg, settle = false) => {
-          yaw = Number(yawDeg) * Math.PI / 180;
-          pitch = clamp(Number(pitchDeg) * Math.PI / 180, -PITCH_LIMIT, PITCH_LIMIT);
-          velocityYaw = 0;
-          velocityPitch = 0;
+          const yaw = Number(yawDeg) * Math.PI / 180;
+          const pitch = Number(pitchDeg) * Math.PI / 180;
+          orientation = quatFromYawPitch(yaw, pitch);
+          angularVelocity = [0, 0, 0];
           snapTarget = settle ? nearestSnap() : null;
           draw();
+        },
+        setOrientation: quaternion => {
+          if (!Array.isArray(quaternion) || quaternion.length !== 4) return false;
+          const values = quaternion.map(Number);
+          if (!values.every(Number.isFinite)) return false;
+          orientation = quatNormalize(values);
+          angularVelocity = [0, 0, 0];
+          snapTarget = null;
+          draw();
+          return true;
+        },
+        setScale: scale => {
+          figureScale = clamp(Number(scale) || 1, MIN_SCALE, MAX_SCALE);
+          stoneShell.style.setProperty('--figure-scale', String(figureScale));
+          return figureScale;
         },
         snapTo: id => {
           const target = snaps.find(item => item.id === id);
           if (!target) return false;
-          velocityYaw = 0;
-          velocityPitch = 0;
+          angularVelocity = [0, 0, 0];
           snapTarget = target;
           return true;
         },
