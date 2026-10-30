@@ -29,22 +29,33 @@ Do not casually rename, swap, mirror, or reinterpret these coordinates. Figure w
 - No two-finger pan/zoom behavior here unless explicitly requested for figure work.
 
 ## Magnetic view grid
-The figure surface has 20 authored snap anchors. Every band has four quarter-turn yaw variants:
-- yaw = 45°, 135°, 225°, 315°
+The figure surface has 28 authored snap anchors.
+
+Top and bottom each have eight rotational snaps, one every 45° around the vertical axis:
+- yaw = 0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°
 - top: pitch +90°
-- upper diagonal: pitch +45°
-- side: pitch 0°
-- lower diagonal: pitch -45°
 - bottom: pitch -90°
 
-IDs are `top-0..3`, `upper-0..3`, `side-0..3`, `lower-0..3`, and `bottom-0..3`.
+The other three bands have four quarter-turn variants at yaw = 45°, 135°, 225°, 315°:
+- upper diagonal: pitch +asin(1/√3) ≈ +35.26438968°
+- side: pitch 0°
+- lower diagonal: pitch -asin(1/√3) ≈ -35.26438968°
 
-The initial view is `upper-0` (yaw 45°, pitch +45°). Do not add the root site's 35.264° face-on `main` anchor here unless the user asks for it.
+The ±35.26438968° diagonal is the exact symmetric face-on angle used by root `/42/`. Do not replace it with ±45°.
+
+IDs are:
+- `top-0..7`
+- `upper-0..3`
+- `side-0..3`
+- `lower-0..3`
+- `bottom-0..7`
+
+The initial view is `upper-0`: yaw 45°, pitch +asin(1/√3) ≈ +35.26438968°.
 
 ## Figure-specific features
 The default page must stay visually bare. Plotting, overlays, labels, annotations, alternate line treatments, explicit angle displays, and perspective rendering should appear only when the user asks for a figure that needs them.
 
-`window.FIGURES` intentionally exposes the current geometry, snap list, orthographic projection identity, current angle state, direct angle setting, snap targeting, and an empty `figureLayer`. Use or extend that surface for requested figure work rather than adding permanent visible controls.
+`window.FIGURES` intentionally exposes the current geometry, snap list, orthographic projection identity, the exact root `/42/` main pitch, current angle state, direct angle setting, snap targeting, and an empty `figureLayer`. Use or extend that surface for requested figure work rather than adding permanent visible controls.
 
 Do not pre-build speculative figure systems. Add only what a requested figure needs, keep it isolated under `figures/`, and preserve the bare default when that requested state is not active.
 
