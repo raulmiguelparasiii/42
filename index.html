@@ -30,7 +30,7 @@
       pointer-events: none;
       z-index: 20;
       background: #f8fafc;
-      transition: opacity 80ms linear;
+      transition: none;
     }
     #portal-preview.is-active {
       pointer-events: auto;
@@ -1827,15 +1827,21 @@ const refreshAtlasOfflineWorker = async () => {
 };
 const startAtlasFrameLoad = frame => {
   if (atlasBootPromise) return atlasBootPromise;
-  atlasBootPromise = (async () => {
-    await refreshAtlasOfflineWorker();
-    if (
-      frame === portalPreviewFrame && frame.isConnected &&
-      !frame.hasAttribute('src')
-    ) {
-      frame.src = ATLAS_URL + '?embedded=1';
+  if (
+    frame === portalPreviewFrame && frame.isConnected &&
+    !frame.hasAttribute('src')
+  ) {
+    frame.src = ATLAS_URL + '?embedded=1';
+  }
+  atlasBootPromise = Promise.resolve();
+  if (ATLAS_ORIGIN === location.origin) {
+    const refresh = () => { refreshAtlasOfflineWorker(); };
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(refresh, { timeout: 1800 });
+    } else {
+      setTimeout(refresh, 0);
     }
-  })();
+  }
   return atlasBootPromise;
 };
 const ensurePortalPreview = () => {
@@ -1917,18 +1923,55 @@ const restoreBlackPortalMatch = (animate = false) => {
   };
   requestAnimationFrame(step);
 };
+const atlasEmbedBridge = () => {
+  if (ATLAS_ORIGIN !== location.origin || !portalPreviewFrame?.contentWindow) return null;
+  try {
+    return portalPreviewFrame.contentWindow.STONE_EMBED || null;
+  } catch {
+    return null;
+  }
+};
+let lastBlackPortalSync = null;
+const portalRectMatches = (a, b) => Boolean(
+  a && b &&
+  Math.abs(a.left - b.left) < 0.25 &&
+  Math.abs(a.top - b.top) < 0.25 &&
+  Math.abs(a.width - b.width) < 0.25 &&
+  Math.abs(a.height - b.height) < 0.25
+);
 const syncAtlasFromBlack = () => {
   if (!atlasReady) return;
+  const rect = stoneShellRect();
+  if (
+    lastBlackPortalSync &&
+    Math.abs(wrap(yaw - lastBlackPortalSync.yaw)) < 0.00001 &&
+    Math.abs(pitch - lastBlackPortalSync.pitch) < 0.00001 &&
+    portalRectMatches(rect, lastBlackPortalSync.rect)
+  ) return;
+  lastBlackPortalSync = { yaw, pitch, rect };
+  const bridge = atlasEmbedBridge();
+  try {
+    if (bridge?.syncFromBlack?.(yaw, pitch, rect)) return;
+  } catch {
+    // Fall through to postMessage if same-origin direct access is unavailable.
+  }
   postAtlasMessage({
     type: 'stone-composition-sync-from-black',
     yaw,
     pitch,
-    rect: stoneShellRect()
+    rect
   });
 };
 const cancelBlackPortalPreview = () => {
   if (!blackPreviewActive) return;
   blackPreviewActive = false;
+  lastBlackPortalSync = null;
+  const bridge = atlasEmbedBridge();
+  try {
+    if (bridge?.cancelBlackPreview?.()) return;
+  } catch {
+    // Fall through to postMessage if same-origin direct access is unavailable.
+  }
   postAtlasMessage({ type: 'stone-composition-cancel-black-preview' });
 };
 const syncBlackFromAtlas = state => {
@@ -2071,13 +2114,19 @@ const updatePortalPreview = () => {
     return;
   }
   portalPreviewFrame.style.visibility = 'visible';
-  const state = atlasPortalState;
-  const rawAmount = Number(state?.returnAmount);
-  const amount = Number.isFinite(rawAmount) ? clamp(rawAmount, 0, 1) : 0;
+  let state = atlasPortalState;
+  const bridge = atlasEmbedBridge();
+  try {
+    state = bridge?.portalState?.() || state;
+  } catch {
+    // Keep the last postMessage state if direct access is unavailable.
+  }
   const rawDwell = Number(state?.returnDwellProgress);
-  blackReturnOverlayProgress = Number.isFinite(rawDwell)
+  const dwellProgress = Number.isFinite(rawDwell)
     ? clamp(rawDwell, 0, 1)
     : 0;
+  blackReturnOverlayProgress = dwellProgress;
+  const amount = dwellProgress > 0 ? smoothstep(dwellProgress) : 0;
   if (amount > 0.001) {
     syncBlackFromAtlas(state);
   } else if (blackPortalMatch) {
@@ -3682,6 +3731,7 @@ const insulationRevealAnchor = () => {
 
       const beginRotation = event => {
         portalEntryHeld = false;
+        if (!explainer.active && compositionMode === 'black') ensurePortalPreview();
         dragging = true;
         snapTarget = null;
         velocityYaw = 0;
@@ -3704,6 +3754,11 @@ const insulationRevealAnchor = () => {
         const nextPitch = clamp(pitch + pitchDelta, -PITCH_LIMIT, PITCH_LIMIT);
         const appliedPitchDelta = nextPitch - pitch;
         pitch = nextPitch;
+
+        if (
+          compositionMode === 'black' && atlasReady && !explainer.active &&
+          portalAngularDistance() <= PORTAL_PREVIEW_RADIUS
+        ) syncAtlasFromBlack();
 
         const sampleYawVelocity = yawDelta / dt;
         const samplePitchVelocity = appliedPitchDelta / dt;
