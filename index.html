@@ -1892,8 +1892,17 @@ const finishBlackPortalRestore = saved => {
   if (!saved) return;
   if (saved.style === null) stoneShell.removeAttribute('style');
   else stoneShell.setAttribute('style', saved.style);
+  const restoredTransition = stoneShell.style.getPropertyValue('transition');
+  const restoredTransitionPriority = stoneShell.style.getPropertyPriority('transition');
+  stoneShell.style.setProperty('transition', 'none', 'important');
   blackPortalMatch = null;
   applyMobileViewport();
+  stoneShell.getBoundingClientRect();
+  if (restoredTransition) {
+    stoneShell.style.setProperty('transition', restoredTransition, restoredTransitionPriority);
+  } else {
+    stoneShell.style.removeProperty('transition');
+  }
 };
 const restoreBlackPortalMatch = (animate = false) => {
   const saved = blackPortalMatch;
