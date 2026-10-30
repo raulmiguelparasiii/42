@@ -1,5 +1,8 @@
 name: Portal synchronization fix once
-on: [push]
+on:
+  push:
+    paths:
+      - '.github/workflows/portal-sync-fix-once.yml'
 permissions:
   contents: write
 jobs:
@@ -12,165 +15,170 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           p = Path('index.html')
           text = p.read_text()
-
           old = '      transition: opacity 80ms linear;'
           if text.count(old) != 1:
               raise SystemExit(f'base opacity transition count {text.count(old)}')
           text = text.replace(old, '      transition: none;', 1)
-
           s = text.index('const startAtlasFrameLoad = frame => {')
           e = text.index('const ensurePortalPreview = () => {', s)
-          text = text[:s] + """const startAtlasFrameLoad = frame => {
-  if (atlasBootPromise) return atlasBootPromise;
-  if (
-    frame === portalPreviewFrame && frame.isConnected &&
-    !frame.hasAttribute('src')
-  ) {
-    frame.src = ATLAS_URL + '?embedded=1';
-  }
-  atlasBootPromise = Promise.resolve();
-  if (ATLAS_ORIGIN === location.origin) {
-    const refresh = () => { refreshAtlasOfflineWorker(); };
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(refresh, { timeout: 1800 });
-    } else {
-      setTimeout(refresh, 0);
-    }
-  }
-  return atlasBootPromise;
-};
-""" + text[e:]
-
+          new = '\n'.join([
+              'const startAtlasFrameLoad = frame => {',
+              '  if (atlasBootPromise) return atlasBootPromise;',
+              '  if (',
+              '    frame === portalPreviewFrame && frame.isConnected &&',
+              "    !frame.hasAttribute('src')",
+              '  ) {',
+              "    frame.src = ATLAS_URL + '?embedded=1';",
+              '  }',
+              '  atlasBootPromise = Promise.resolve();',
+              '  if (ATLAS_ORIGIN === location.origin) {',
+              '    const refresh = () => { refreshAtlasOfflineWorker(); };',
+              "    if ('requestIdleCallback' in window) {",
+              '      requestIdleCallback(refresh, { timeout: 1800 });',
+              '    } else {',
+              '      setTimeout(refresh, 0);',
+              '    }',
+              '  }',
+              '  return atlasBootPromise;',
+              '};',
+              ''
+          ])
+          text = text[:s] + new + text[e:]
           s = text.index('const syncAtlasFromBlack = () => {')
           e = text.index('const syncBlackFromAtlas = state => {', s)
-          text = text[:s] + """const atlasEmbedBridge = () => {
-  if (ATLAS_ORIGIN !== location.origin || !portalPreviewFrame?.contentWindow) return null;
-  try {
-    return portalPreviewFrame.contentWindow.STONE_EMBED || null;
-  } catch {
-    return null;
-  }
-};
-let lastBlackPortalSync = null;
-const portalRectMatches = (a, b) => Boolean(
-  a && b &&
-  Math.abs(a.left - b.left) < 0.25 &&
-  Math.abs(a.top - b.top) < 0.25 &&
-  Math.abs(a.width - b.width) < 0.25 &&
-  Math.abs(a.height - b.height) < 0.25
-);
-const syncAtlasFromBlack = () => {
-  if (!atlasReady) return;
-  const rect = stoneShellRect();
-  if (
-    lastBlackPortalSync &&
-    Math.abs(wrap(yaw - lastBlackPortalSync.yaw)) < 0.00001 &&
-    Math.abs(pitch - lastBlackPortalSync.pitch) < 0.00001 &&
-    portalRectMatches(rect, lastBlackPortalSync.rect)
-  ) return;
-  lastBlackPortalSync = { yaw, pitch, rect };
-  const bridge = atlasEmbedBridge();
-  try {
-    if (bridge?.syncFromBlack?.(yaw, pitch, rect)) return;
-  } catch {
-    // Fall through to postMessage if same-origin direct access is unavailable.
-  }
-  postAtlasMessage({
-    type: 'stone-composition-sync-from-black',
-    yaw,
-    pitch,
-    rect
-  });
-};
-const cancelBlackPortalPreview = () => {
-  if (!blackPreviewActive) return;
-  blackPreviewActive = false;
-  lastBlackPortalSync = null;
-  const bridge = atlasEmbedBridge();
-  try {
-    if (bridge?.cancelBlackPreview?.()) return;
-  } catch {
-    // Fall through to postMessage if same-origin direct access is unavailable.
-  }
-  postAtlasMessage({ type: 'stone-composition-cancel-black-preview' });
-};
-""" + text[e:]
-
-          old = """  const state = atlasPortalState;
-  const rawAmount = Number(state?.returnAmount);
-  const amount = Number.isFinite(rawAmount) ? clamp(rawAmount, 0, 1) : 0;
-  const rawDwell = Number(state?.returnDwellProgress);
-  blackReturnOverlayProgress = Number.isFinite(rawDwell)
-    ? clamp(rawDwell, 0, 1)
-    : 0;
-  if (amount > 0.001) {
-    syncBlackFromAtlas(state);
-  } else if (blackPortalMatch) {
-    restoreBlackPortalMatch(false);
-  }
-  portalPreviewFrame.style.opacity = String(1 - PORTAL_MAX_OPACITY * amount);
-"""
-          new = """  let state = atlasPortalState;
-  const bridge = atlasEmbedBridge();
-  try {
-    state = bridge?.portalState?.() || state;
-  } catch {
-    // Keep the last postMessage state if direct access is unavailable.
-  }
-  const rawDwell = Number(state?.returnDwellProgress);
-  const dwellProgress = Number.isFinite(rawDwell)
-    ? clamp(rawDwell, 0, 1)
-    : 0;
-  blackReturnOverlayProgress = dwellProgress;
-  const amount = dwellProgress > 0 ? smoothstep(dwellProgress) : 0;
-  if (amount > 0.001) {
-    syncBlackFromAtlas(state);
-  } else if (blackPortalMatch) {
-    restoreBlackPortalMatch(false);
-  }
-  portalPreviewFrame.style.opacity = String(1 - PORTAL_MAX_OPACITY * amount);
-"""
+          new = '\n'.join([
+              'const atlasEmbedBridge = () => {',
+              '  if (ATLAS_ORIGIN !== location.origin || !portalPreviewFrame?.contentWindow) return null;',
+              '  try {',
+              '    return portalPreviewFrame.contentWindow.STONE_EMBED || null;',
+              '  } catch {',
+              '    return null;',
+              '  }',
+              '};',
+              'let lastBlackPortalSync = null;',
+              'const portalRectMatches = (a, b) => Boolean(',
+              '  a && b &&',
+              '  Math.abs(a.left - b.left) < 0.25 &&',
+              '  Math.abs(a.top - b.top) < 0.25 &&',
+              '  Math.abs(a.width - b.width) < 0.25 &&',
+              '  Math.abs(a.height - b.height) < 0.25',
+              ');',
+              'const syncAtlasFromBlack = () => {',
+              '  if (!atlasReady) return;',
+              '  const rect = stoneShellRect();',
+              '  if (',
+              '    lastBlackPortalSync &&',
+              '    Math.abs(wrap(yaw - lastBlackPortalSync.yaw)) < 0.00001 &&',
+              '    Math.abs(pitch - lastBlackPortalSync.pitch) < 0.00001 &&',
+              '    portalRectMatches(rect, lastBlackPortalSync.rect)',
+              '  ) return;',
+              '  lastBlackPortalSync = { yaw, pitch, rect };',
+              '  const bridge = atlasEmbedBridge();',
+              '  try {',
+              '    if (bridge?.syncFromBlack?.(yaw, pitch, rect)) return;',
+              '  } catch {',
+              '    // Fall through to postMessage if same-origin direct access is unavailable.',
+              '  }',
+              '  postAtlasMessage({',
+              "    type: 'stone-composition-sync-from-black',",
+              '    yaw,',
+              '    pitch,',
+              '    rect',
+              '  });',
+              '};',
+              'const cancelBlackPortalPreview = () => {',
+              '  if (!blackPreviewActive) return;',
+              '  blackPreviewActive = false;',
+              '  lastBlackPortalSync = null;',
+              '  const bridge = atlasEmbedBridge();',
+              '  try {',
+              '    if (bridge?.cancelBlackPreview?.()) return;',
+              '  } catch {',
+              '    // Fall through to postMessage if same-origin direct access is unavailable.',
+              '  }',
+              "  postAtlasMessage({ type: 'stone-composition-cancel-black-preview' });",
+              '};',
+              ''
+          ])
+          text = text[:s] + new + text[e:]
+          old = '\n'.join([
+              '  const state = atlasPortalState;',
+              '  const rawAmount = Number(state?.returnAmount);',
+              '  const amount = Number.isFinite(rawAmount) ? clamp(rawAmount, 0, 1) : 0;',
+              '  const rawDwell = Number(state?.returnDwellProgress);',
+              '  blackReturnOverlayProgress = Number.isFinite(rawDwell)',
+              '    ? clamp(rawDwell, 0, 1)',
+              '    : 0;',
+              '  if (amount > 0.001) {',
+              '    syncBlackFromAtlas(state);',
+              '  } else if (blackPortalMatch) {',
+              '    restoreBlackPortalMatch(false);',
+              '  }',
+              '  portalPreviewFrame.style.opacity = String(1 - PORTAL_MAX_OPACITY * amount);',
+              ''
+          ])
+          new = '\n'.join([
+              '  let state = atlasPortalState;',
+              '  const bridge = atlasEmbedBridge();',
+              '  try {',
+              '    state = bridge?.portalState?.() || state;',
+              '  } catch {',
+              '    // Keep the last postMessage state if direct access is unavailable.',
+              '  }',
+              '  const rawDwell = Number(state?.returnDwellProgress);',
+              '  const dwellProgress = Number.isFinite(rawDwell)',
+              '    ? clamp(rawDwell, 0, 1)',
+              '    : 0;',
+              '  blackReturnOverlayProgress = dwellProgress;',
+              '  const amount = dwellProgress > 0 ? smoothstep(dwellProgress) : 0;',
+              '  if (amount > 0.001) {',
+              '    syncBlackFromAtlas(state);',
+              '  } else if (blackPortalMatch) {',
+              '    restoreBlackPortalMatch(false);',
+              '  }',
+              '  portalPreviewFrame.style.opacity = String(1 - PORTAL_MAX_OPACITY * amount);',
+              ''
+          ])
           if text.count(old) != 1:
               raise SystemExit(f'return visibility block count {text.count(old)}')
           text = text.replace(old, new, 1)
-
-          old = """      const beginRotation = event => {
-        portalEntryHeld = false;
-        dragging = true;
-"""
-          new = """      const beginRotation = event => {
-        portalEntryHeld = false;
-        if (!explainer.active && compositionMode === 'black') ensurePortalPreview();
-        dragging = true;
-"""
+          old = '\n'.join([
+              '      const beginRotation = event => {',
+              '        portalEntryHeld = false;',
+              '        dragging = true;'
+          ])
+          new = '\n'.join([
+              '      const beginRotation = event => {',
+              '        portalEntryHeld = false;',
+              "        if (!explainer.active && compositionMode === 'black') ensurePortalPreview();",
+              '        dragging = true;'
+          ])
           if text.count(old) != 1:
               raise SystemExit(f'beginRotation anchor count {text.count(old)}')
           text = text.replace(old, new, 1)
-
-          old = """        const appliedPitchDelta = nextPitch - pitch;
-        pitch = nextPitch;
-
-        const sampleYawVelocity = yawDelta / dt;
-"""
-          new = """        const appliedPitchDelta = nextPitch - pitch;
-        pitch = nextPitch;
-
-        if (
-          compositionMode === 'black' && atlasReady && !explainer.active &&
-          portalAngularDistance() <= PORTAL_PREVIEW_RADIUS
-        ) syncAtlasFromBlack();
-
-        const sampleYawVelocity = yawDelta / dt;
-"""
+          old = '\n'.join([
+              '        const appliedPitchDelta = nextPitch - pitch;',
+              '        pitch = nextPitch;',
+              '',
+              '        const sampleYawVelocity = yawDelta / dt;'
+          ])
+          new = '\n'.join([
+              '        const appliedPitchDelta = nextPitch - pitch;',
+              '        pitch = nextPitch;',
+              '',
+              '        if (',
+              "          compositionMode === 'black' && atlasReady && !explainer.active &&",
+              '          portalAngularDistance() <= PORTAL_PREVIEW_RADIUS',
+              '        ) syncAtlasFromBlack();',
+              '',
+              '        const sampleYawVelocity = yawDelta / dt;'
+          ])
           if text.count(old) != 1:
               raise SystemExit(f'moveRotation anchor count {text.count(old)}')
           text = text.replace(old, new, 1)
-
           p.write_text(text)
-
           agents = Path('AGENTS.md')
           lines = agents.read_text().splitlines()
           prefix = '- A hidden black→white composition doorway to the Philosopher’s Stone Atlas uses the exact vertically mirrored orientation'
@@ -181,7 +189,6 @@ const cancelBlackPortalPreview = () => {
           agents.write_text('\n'.join(lines) + '\n')
           PY
           grep -F 'transition: none;' index.html | head -1
-          grep -F 'window.STONE_EMBED' ../epistemic-octahedron-does-not-exist 2>/dev/null || true
           grep -F 'const atlasEmbedBridge' index.html
           grep -F 'const amount = dwellProgress > 0 ? smoothstep(dwellProgress) : 0;' index.html
           grep -F "if (!explainer.active && compositionMode === 'black') ensurePortalPreview();" index.html
