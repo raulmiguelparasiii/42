@@ -17,16 +17,18 @@ Canonical model coordinates:
 
 Do not casually rename, swap, mirror, or reinterpret these coordinates. Figure work may hide labels, but the underlying coordinate meaning stays stable.
 
-## Default rendering
+## Default rendering and interaction
 - `index.html` is a standalone SVG renderer.
 - White background, black structure.
 - Orthographic projection only in the default state. There is no perspective divide.
 - The structure is exactly centered in the viewport on desktop and mobile.
 - The outer edges retain the subtle depth-opacity cue from `/42/`; internal axes are black but lighter.
-- One-finger touch drag and desktop LMB/pointer drag rotate the structure directly.
-- Released drag preserves momentum, then magnetically settles with the same spring/damping feel used by `/42/`.
+- Orientation is a full quaternion, not a yaw/pitch-only state.
+- One-finger touch drag and desktop LMB/pointer drag use an object-relative virtual trackball. The point grabbed on the currently visible projection determines the rotation axis. This must preserve the physical grab expectation: in a top view, a left swipe from the visible lower half rolls the structure clockwise, while the same left swipe from the visible upper half rolls it counter-clockwise.
+- Do not replace trackball drag with fixed screen-space `dx → yaw` / `dy → pitch`; that breaks orientation-relative grabbing once another face or edge is in front.
+- Released trackball drag preserves 3D angular momentum, then magnetically settles to the nearest authored quaternion snap with the same lightly underdamped feel as `/42/`.
+- Two-finger pinch scales the figure from 0.6× to 1.6× for inspection. If a two-finger gesture drops back to one finger, that remaining finger resumes trackball rotation from its current location without a jump.
 - No idle rotation.
-- No two-finger pan/zoom behavior here unless explicitly requested for figure work.
 
 ## Magnetic view grid
 The figure surface has 28 authored snap anchors.
@@ -55,13 +57,14 @@ The initial view is `upper-0`: yaw 45°, pitch +asin(1/√3) ≈ +35.26438968°.
 ## Figure-specific features
 The default page must stay visually bare. Plotting, overlays, labels, annotations, alternate line treatments, explicit angle displays, and perspective rendering should appear only when the user asks for a figure that needs them.
 
-`window.FIGURES` intentionally exposes the current geometry, snap list, orthographic projection identity, the exact root `/42/` main pitch, current angle state, direct angle setting, snap targeting, and an empty `figureLayer`. Use or extend that surface for requested figure work rather than adding permanent visible controls.
+`window.FIGURES` exposes the current geometry, snap list, orthographic projection identity, exact root `/42/` main pitch, full quaternion orientation, approximate legacy yaw/pitch readout, direct angle/orientation setting, scale control, snap targeting, and an empty `figureLayer`. Use or extend that surface for requested figure work rather than adding permanent visible controls.
 
 Do not pre-build speculative figure systems. Add only what a requested figure needs, keep it isolated under `figures/`, and preserve the bare default when that requested state is not active.
 
 ## Editing protocol
 1. Read this file and the complete affected implementation file before editing.
 2. Preserve the exact geometry and coordinate semantics unless the user's request is explicitly about changing them.
-3. Prefer small additions to the existing SVG renderer over libraries, frameworks, build steps, or duplicated renderers.
-4. Keep paper-figure experiments inside `figures/` unless the user explicitly asks to change root `/42/`.
-5. Keep this file compressed and current. Rewrite stale statements instead of appending a changelog.
+3. Preserve the object-relative trackball interaction unless the user's request is explicitly about changing it.
+4. Prefer small additions to the existing SVG renderer over libraries, frameworks, build steps, or duplicated renderers.
+5. Keep paper-figure experiments inside `figures/` unless the user explicitly asks to change root `/42/`.
+6. Keep this file compressed and current. Rewrite stale statements instead of appending a changelog.
