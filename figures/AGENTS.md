@@ -27,8 +27,8 @@ Do not rename, swap, mirror, or reinterpret these coordinates without an explici
 - One-finger touch and desktop LMB use object-relative virtual-trackball rotation. Preserve the physical grab invariant: in top view, a left swipe from the visible lower half rolls clockwise; the same left swipe from the visible upper half rolls counter-clockwise.
 - Two-finger touch remains a rotation gesture. The centroid steers the same trackball while pinch distance may also scale the figure from 0.6× to 1.6×. Never turn two-finger touch into zoom-only behavior.
 - Active drag is tracked at the window level so leaving the SVG does not abruptly kill the gesture.
-- A released throw keeps its angular momentum as a free spin instead of auto-stopping. A tap on the white stage or the octahedron stops the free spin; the structure then yields to the nearest authored magnetic snap. Touches on the control sheet do not stop the spin.
-- Very slow releases may go directly to the nearest magnetic snap instead of entering free spin.
+- Released motion preserves angular momentum, decays naturally, and then the nearest authored magnetic snap captures it once motion is slow enough.
+- Leaving the visible octahedron during an active drag does not kill the gesture; release behavior remains the same wherever the pointer/finger ends.
 - There are 28 snaps. Top and bottom each have yaw 0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°. Upper/side/lower use yaw 45°, 135°, 225°, 315°. Upper/lower pitch is exactly ±asin(1/√3) ≈ ±35.26438968°, matching root `/42/`, never ±45°.
 
 ## Figure controls and defaults
