@@ -25,7 +25,7 @@ Do not rename, swap, mirror, or reinterpret these coordinates without an explici
 - With Stance off, rendering is orthographic.
 - With Stance on, rendering switches automatically to a perspective projection. Surface visibility uses camera-relative face tests, hidden shell edges are suppressed, and rear/occluded pole markers and labels disappear automatically while their toggle state is preserved.
 - One-finger touch and desktop LMB use object-relative virtual-trackball rotation. Preserve the physical grab invariant: in top view, a left swipe from the visible lower half rolls clockwise; the same left swipe from the visible upper half rolls counter-clockwise.
-- Two-finger touch remains a rotation gesture. The centroid steers the same trackball while pinch distance may also scale the figure from 0.6× to 1.6×. Never turn two-finger touch into zoom-only behavior.
+- Two-finger touch follows the white Atlas's combined gesture: moving the finger-pair center steers the figure in screen yaw/pitch, twisting the pair rolls the figure around the viewing axis, and pinching simultaneously scales it from 0.6× to 1.6×. These motions use Figures' own quaternion math and share its angular momentum and magnetic snapping. When one finger remains, it resumes the native trackball without resetting momentum.
 - Active drag is tracked at the window level so leaving the SVG does not abruptly kill the gesture.
 - Released motion preserves angular momentum, decays naturally, and then the nearest authored magnetic snap captures it once motion is slow enough.
 - Leaving the visible octahedron during an active drag does not kill the gesture; release behavior remains the same wherever the pointer/finger ends.
@@ -56,11 +56,11 @@ Signed poles:
 Each signed pole has its own half-relation visibility and point marker. Its label cycles off → short → full. A relation master visibility toggle still governs its two signed halves as a group.
 
 ## Label interaction
-- Labels start beside their anchor and are non-selectable on iPhone/iOS. Native text selection and touch callouts must not compete with label interaction on the figure stage.
+- Labels start beside their anchor and are non-selectable on iPhone/iOS. Native text selection and touch callouts must not compete with label interaction on the figure stage. Label lettering and hit boxes remain visually the same size at every pinch scale: the text is enlarged to its former 1.6× zoomed-in size, and each label group counter-scales around its anchor as the figure zooms.
 - The label text itself does not receive pointer events. A deliberately generous transparent hit rectangle surrounds it.
 - Pressing a visible label enters an armed hold state. A visible outline/progress indicator fills over about 850 ms. Small finger movement is tolerated within a generous wiggle threshold so slight drift does not hand the gesture to octahedron rotation.
 - Once the hold completes, dragging pins the label to that screen-space position. The label keeps the initial grab offset so it does not jump under the finger.
-- Moving decisively beyond the wiggle threshold before the hold completes cancels label arming and hands the gesture to ordinary octahedron rotation.
+- Moving decisively beyond the wiggle threshold before the hold completes cancels label arming and hands the gesture to ordinary octahedron rotation. A second touch also cancels label arming/dragging and starts the combined two-finger gesture, whether that touch lands on a label or elsewhere on the stage.
 - A pinned label gets a thin gray leader line back to its moving anchor.
 - Every draggable label has an independent Reset action that returns it to its default beside-anchor position.
 - When Stance occludes a pole/anchor, the corresponding marker, label, and leader are hidden automatically. Pinned screen coordinates remain stored and reappear when the anchor becomes visible again.
