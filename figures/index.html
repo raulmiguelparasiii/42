@@ -23,7 +23,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
 .null{fill:#fff;stroke:#000;stroke-width:.9}
 .lead{stroke:#999;stroke-width:.7;pointer-events:none}
 .label-group{pointer-events:none}
-.lab{fill:#000;stroke:#fff;stroke-width:2.8;paint-order:stroke fill;stroke-linejoin:round;text-anchor:middle;dominant-baseline:middle;font:500 5.6px Georgia,serif;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.lab{fill:#000;stroke:#fff;stroke-width:2.8;paint-order:stroke fill;stroke-linejoin:round;text-anchor:middle;dominant-baseline:middle;font:500 8.96px Georgia,serif;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .hit{fill:transparent;pointer-events:all;cursor:grab;touch-action:none}
 .hold{fill:none;stroke:#777;stroke-width:.85;stroke-linejoin:round;pointer-events:none;opacity:0;stroke-dasharray:100;stroke-dashoffset:100}
 .label-group.arming .hold{opacity:.78;stroke-dashoffset:0;transition:stroke-dashoffset 850ms linear}
@@ -68,7 +68,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
       <div class="card"><div class="head"><div class="title">Relations</div><div class="acts"><button class="b" id="gray">All gray</button><button class="b black" id="black">All black</button></div></div><div class="rows" id="rc"></div></div>
       <div class="card"><div class="title">Signed poles</div><div class="rows" id="pc"></div></div>
       <div class="card"><div class="title">Other</div><div class="rows" id="oc"></div></div>
-      <div class="note">One finger or mouse rotates. Two fingers keep steering rotation while pinch distance also scales. Hold a visible label until its outline completes, then drag it to pin it; Reset returns it beside its anchor.</div>
+      <div class="note">One finger or mouse rotates. Two fingers steer by moving together, roll by twisting, and zoom by pinching. Labels stay at their zoomed-in text size. Hold a visible label until its outline completes, then drag it to pin it; Reset returns it beside its anchor.</div>
     </div>
   </section>
 </main>
@@ -106,11 +106,11 @@ const halt=(settle=true)=>{av=[0,0,0];target=settle?nearest():null;rel=performan
 
 const labs={},leads={},reset={},labelPos={};
 let labelGesture=null;
-const HOLD_MS=850,WIGGLE=28,HIT_PAD=11;
+const HOLD_MS=850,WIGGLE=28,HIT_PAD=17.6;
 const labelText=k=>RS[k]?(rs[k].lab==='off'?'':RS[k].n):(is[k].lab==='off'?'':is[k].lab==='short'?IS[k].s:IS[k].n);
 const c2s=(x,y)=>{const p=svg.createSVGPoint();p.x=x;p.y=y;const m=svg.getScreenCTM();if(!m)return[0,0];const r=p.matrixTransform(m.inverse());return[r.x,r.y]};
 const clearLabelGesture=()=>{if(!labelGesture)return;clearTimeout(labelGesture.timer);labs[labelGesture.k]?.g.classList.remove('arming','armed');labelGesture=null};
-const armLabel=(k,e)=>{if(!labelText(k))return;e.preventDefault();e.stopPropagation();halt(false);const N=labs[k];clearLabelGesture();const g={k,id:e.pointerId,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,active:false,offset:[0,0],timer:null};labelGesture=g;try{svg.setPointerCapture(e.pointerId)}catch{};N.g.classList.remove('arming','armed');void N.g.getBoundingClientRect();N.g.classList.add('arming');g.timer=setTimeout(()=>{if(labelGesture!==g)return;g.active=true;N.g.classList.remove('arming');N.g.classList.add('armed');const p=c2s(g.lastX,g.lastY),z=labelPos[k]||p;g.offset=[z[0]-p[0],z[1]-p[1]];const st=is[k]||rs[k];st.pin=1;st.x=z[0];st.y=z[1];upReset(k);draw()},HOLD_MS)};
+const armLabel=(k,e)=>{if(!labelText(k))return;e.preventDefault();e.stopPropagation();if(e.pointerType==='touch'){tp.set(e.pointerId,{x:e.clientX,y:e.clientY});if(tp.size>1){clearLabelGesture();try{svg.setPointerCapture(e.pointerId)}catch{};startPinch();return}}halt(false);const N=labs[k];clearLabelGesture();const g={k,id:e.pointerId,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,active:false,offset:[0,0],timer:null};labelGesture=g;try{svg.setPointerCapture(e.pointerId)}catch{};N.g.classList.remove('arming','armed');void N.g.getBoundingClientRect();N.g.classList.add('arming');g.timer=setTimeout(()=>{if(labelGesture!==g)return;g.active=true;N.g.classList.remove('arming');N.g.classList.add('armed');const p=c2s(g.lastX,g.lastY),z=labelPos[k]||p;g.offset=[z[0]-p[0],z[1]-p[1]];const st=is[k]||rs[k];st.pin=1;st.x=z[0];st.y=z[1];upReset(k);draw()},HOLD_MS)};
 function makeLab(k){const g=mk('g','label-group'),h=mk('rect','hit'),ring=mk('rect','hold'),t=mk('text','lab');ring.setAttribute('pathLength','100');g.append(h,ring,t);GL.append(g);labs[k]={g,h,ring,t};h.onpointerdown=e=>armLabel(k,e)}
 [...Object.keys(RS),...Object.keys(IS)].forEach(k=>{makeLab(k);const z=mk('line','lead');LL.append(z);leads[k]=z});
 
@@ -125,7 +125,7 @@ function syncColors(){[...rc.children].forEach((row,i)=>{const k=Object.keys(RS)
 q('#black').onclick=()=>{for(const k in rs)rs[k].c='black';syncColors();draw()};q('#gray').onclick=()=>{for(const k in rs)rs[k].c='gray';syncColors();draw()};
 
 const relAnchor=(k,p)=>{const s=RS[k],a=p[s.nv],b=p[s.pv];return[(a[0]+b[0])/2,(a[1]+b[1])/2]},labAnchor=(k,p)=>RS[k]?relAnchor(k,p):[p[IS[k].v][0],p[IS[k].v][1]],defPos=(k,p)=>{if(RS[k]){const a=relAnchor(k,p),d=norm([p[RS[k].pv][0],p[RS[k].pv][1],0]),t=norm([d[1],-d[0],0]);return[a[0]+t[0]*11,a[1]+t[1]*11]}const x=p[IS[k].v];if(k==='absence')return[12,10];const d=norm([x[0],x[1],0]),s=len(d)?d:[1,0,0];return[x[0]+s[0]*11,x[1]+s[1]*11]};
-function drawLab(k,p,anchorVisible){const N=labs[k],txt=labelText(k),st=is[k]||rs[k],visible=!!txt&&anchorVisible;N.g.style.display=visible?'':'none';leads[k].style.display='none';if(!visible)return;N.t.textContent=txt;const z=st.pin?[st.x,st.y]:defPos(k,p);labelPos[k]=z;N.t.setAttribute('x',z[0]);N.t.setAttribute('y',z[1]);try{const b=N.t.getBBox(),x=b.x-HIT_PAD,y=b.y-HIT_PAD,w=b.width+HIT_PAD*2,h=b.height+HIT_PAD*2;for(const r of[N.h,N.ring]){r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',w);r.setAttribute('height',h);r.setAttribute('rx',Math.min(6,h/2));r.setAttribute('ry',Math.min(6,h/2))}}catch{}if(st.pin){const a=labAnchor(k,p),l=leads[k];l.style.display='';l.setAttribute('x1',a[0]);l.setAttribute('y1',a[1]);l.setAttribute('x2',z[0]);l.setAttribute('y2',z[1])}}
+function drawLab(k,p,anchorVisible){const N=labs[k],txt=labelText(k),st=is[k]||rs[k],visible=!!txt&&anchorVisible;N.g.style.display=visible?'':'none';leads[k].style.display='none';if(!visible)return;N.t.textContent=txt;const z=st.pin?[st.x,st.y]:defPos(k,p);labelPos[k]=z;N.g.setAttribute('transform','translate('+z[0]+' '+z[1]+') scale('+(1/scale)+') translate('+(-z[0])+' '+(-z[1])+')');N.t.setAttribute('x',z[0]);N.t.setAttribute('y',z[1]);try{const b=N.t.getBBox(),x=b.x-HIT_PAD,y=b.y-HIT_PAD,w=b.width+HIT_PAD*2,h=b.height+HIT_PAD*2;for(const r of[N.h,N.ring]){r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',w);r.setAttribute('height',h);r.setAttribute('rx',Math.min(6,h/2));r.setAttribute('ry',Math.min(6,h/2))}}catch{}if(st.pin){const a=labAnchor(k,p),l=leads[k];l.style.display='';l.setAttribute('x1',a[0]);l.setAttribute('y1',a[1]);l.setAttribute('x2',z[0]);l.setAttribute('y2',z[1])}}
 
 function draw(){
   const rv=vs.map(v=>qr(o,v)),p=rv.map(proj),camera=[0,0,PERSPECTIVE_DISTANCE];
@@ -143,23 +143,44 @@ const tr=(x,y)=>{const r=svg.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.to
 const step=dt=>{const s=len(av);if(s)o=qn(qm(qa(av,s*dt),o))};
 const phys=(now,dt)=>{if(drag||pinch||labelGesture)return;if(RM&&target){o=[...target.o];av=[0,0,0];target=null;return}if(target){const e=qe(target.o,o);av=add(av,sc(e,SP*dt));av=sc(av,Math.exp(-SD*dt));step(dt);if(len(e)<.00035&&len(av)<.000025){o=[...target.o];av=[0,0,0];target=null}return}step(dt);av=sc(av,Math.exp(-D*dt));if(now-rel>110&&len(av)<SS)target=nearest()};
 const frame=now=>{const dt=Math.min(now-lf,32);lf=now;phys(now,dt);draw();requestAnimationFrame(frame)};
-const begin=(id,x,y)=>{drag=1;pid=id;target=null;av=[0,0,0];last=tr(x,y);lt=performance.now()};
+const begin=(id,x,y,keepMomentum=false)=>{drag=1;pid=id;target=null;if(!keepMomentum)av=[0,0,0];last=tr(x,y);lt=performance.now()};
 const rot=(cur,now)=>{const dt=Math.max(now-lt,1),c=cross(last,cur),n=len(c),d=cl(dot(last,cur),-1,1);if(n){const a=Math.atan2(n,d),ax=sc(c,1/n);o=qn(qm(qa(ax,a),o));const v=sc(ax,a/dt);av=add(sc(av,.38),sc(v,.62))}last=cur;lt=now};
 const releaseMotion=()=>{drag=0;pid=null;last=null;rel=performance.now();if(RM){av=[0,0,0];target=nearest()}};
 const stop=id=>{if(!drag||id!==pid)return;releaseMotion()};
-const metrics=()=>{const a=[...tp.values()].slice(0,2);if(a.length<2)return null;const dx=a[1].x-a[0].x,dy=a[1].y-a[0].y;return{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2,d:Math.max(1,Math.hypot(dx,dy))}};
-const startPinch=()=>{const m=metrics();if(!m)return;drag=0;pid=null;av=[0,0,0];target=null;pinch={d:m.d,s:scale,last:tr(m.x,m.y),t:performance.now()}};
-const movePinch=()=>{const m=metrics();if(!m)return;scale=cl(pinch.s*m.d/pinch.d,.6,1.6);shell.style.setProperty('--s',scale);const now=performance.now(),c=tr(m.x,m.y);last=pinch.last;lt=pinch.t;rot(c,now);pinch.last=c;pinch.t=now};
+const metrics=()=>{const a=[...tp.values()].slice(0,2);if(a.length<2)return null;const dx=a[1].x-a[0].x,dy=a[1].y-a[0].y;return{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2,d:Math.max(1,Math.hypot(dx,dy)),a:Math.atan2(dy,dx)}};
+// White Atlas's two-touch similarity gesture, expressed using Figures' own quaternions.
+const startPinch=()=>{const m=metrics();if(!m)return;drag=0;pid=null;av=[0,0,0];target=null;pinch={...m,t:performance.now()}};
+const movePinch=()=>{
+  const m=metrics();if(!m||!pinch)return;
+  const now=performance.now(),dt=Math.max(now-pinch.t,1);
+  const dx=m.x-pinch.x,dy=m.y-pinch.y;
+  const roll=Math.atan2(Math.sin(m.a-pinch.a),Math.cos(m.a-pinch.a));
+  // Apply screen yaw/pitch and finger-pair roll together. The camera looks along -Z.
+  const turn=qm(qa([0,0,-1],roll),qm(qa([0,1,0],dx*.0065),qa([1,0,0],dy*.0065)));
+  const axis=[turn[0],turn[1],turn[2]],n=len(axis);
+  if(n>1e-10){
+    o=qn(qm(turn,o));
+    const angle=2*Math.atan2(n,turn[3]);
+    av=add(sc(av,.38),sc(axis,.62*angle/(n*dt)));
+  }
+  // Match Atlas's logarithmic pinch sensitivity and dead zone, within Figures' scale limits.
+  const logScale=Math.log(m.d/pinch.d);
+  if(Math.abs(logScale)>.006){
+    scale=cl(scale*Math.exp(Math.sign(logScale)*(Math.abs(logScale)-.006)*.9),.6,1.6);
+    shell.style.setProperty('--s',scale);
+  }
+  pinch={...m,t:now};
+};
 
-svg.onpointerdown=e=>{if(labelGesture)return;e.preventDefault();if(e.pointerType==='touch'){tp.set(e.pointerId,{x:e.clientX,y:e.clientY});try{svg.setPointerCapture(e.pointerId)}catch{};if(tp.size>1){startPinch();return}}else try{svg.setPointerCapture(e.pointerId)}catch{};if(!pinch)begin(e.pointerId,e.clientX,e.clientY)};
+svg.onpointerdown=e=>{if(labelGesture){if(e.pointerType!=='touch')return;clearLabelGesture()}e.preventDefault();if(e.pointerType==='touch'){tp.set(e.pointerId,{x:e.clientX,y:e.clientY});try{svg.setPointerCapture(e.pointerId)}catch{};if(tp.size>1){startPinch();return}}else try{svg.setPointerCapture(e.pointerId)}catch{};if(!pinch)begin(e.pointerId,e.clientX,e.clientY)};
 function onMove(e){
-  if(labelGesture&&e.pointerId===labelGesture.id){e.preventDefault();const g=labelGesture;g.lastX=e.clientX;g.lastY=e.clientY;if(!g.active){const d=Math.hypot(e.clientX-g.startX,e.clientY-g.startY);if(d>WIGGLE){const id=g.id,sx=g.startX,sy=g.startY;clearLabelGesture();begin(id,sx,sy);rot(tr(e.clientX,e.clientY),performance.now())}return}const p=c2s(e.clientX,e.clientY),s=is[g.k]||rs[g.k];s.pin=1;s.x=p[0]+g.offset[0];s.y=p[1]+g.offset[1];draw();return}
+  if(labelGesture&&e.pointerId===labelGesture.id){e.preventDefault();if(e.pointerType==='touch')tp.set(e.pointerId,{x:e.clientX,y:e.clientY});const g=labelGesture;g.lastX=e.clientX;g.lastY=e.clientY;if(!g.active){const d=Math.hypot(e.clientX-g.startX,e.clientY-g.startY);if(d>WIGGLE){const id=g.id,sx=g.startX,sy=g.startY;clearLabelGesture();begin(id,sx,sy);rot(tr(e.clientX,e.clientY),performance.now())}return}const p=c2s(e.clientX,e.clientY),s=is[g.k]||rs[g.k];s.pin=1;s.x=p[0]+g.offset[0];s.y=p[1]+g.offset[1];draw();return}
   if(e.pointerType==='touch'&&tp.has(e.pointerId)){tp.set(e.pointerId,{x:e.clientX,y:e.clientY});if(tp.size>1){e.preventDefault();if(!pinch)startPinch();movePinch();return}}
   if(drag&&e.pointerId===pid&&!pinch){e.preventDefault();rot(tr(e.clientX,e.clientY),performance.now())}
 }
 function finish(e){
-  if(labelGesture&&e.pointerId===labelGesture.id){e.preventDefault();clearLabelGesture();try{if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId)}catch{};return}
-  if(e.pointerType==='touch'){tp.delete(e.pointerId);try{if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId)}catch{};if(pinch){if(tp.size>1){startPinch();return}pinch=null;if(tp.size===1){const[id,p]=tp.entries().next().value;begin(id,p.x,p.y);return}rel=performance.now();if(RM){av=[0,0,0];target=nearest()}return}}
+  if(labelGesture&&e.pointerId===labelGesture.id){e.preventDefault();tp.delete(e.pointerId);clearLabelGesture();try{if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId)}catch{};return}
+  if(e.pointerType==='touch'){tp.delete(e.pointerId);try{if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId)}catch{};if(pinch){if(tp.size>1){startPinch();return}pinch=null;if(tp.size===1){const[id,p]=tp.entries().next().value;begin(id,p.x,p.y,true);return}releaseMotion();return}}
   else try{if(svg.hasPointerCapture(e.pointerId))svg.releasePointerCapture(e.pointerId)}catch{}
   stop(e.pointerId)
 }
