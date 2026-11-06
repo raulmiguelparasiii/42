@@ -45,18 +45,18 @@ Relations:
 - Relation labels cycle off → `purposive axis` → `purposive relation` → `x-axis` → off for Purpose; off → `accountability axis` → `accountability relation` → `y-axis` → off for Accountability; and off → `meaning axis` → `meaning relation` → `z-axis` → off for Meaning. Each label connects to a distinct noncentral point on its own signed relation rather than sharing the origin. They can be dragged, pinned in screen space, and reset. Relation rows wrap their long label controls onto a second row on mobile.
 
 Signed poles:
-- Practicality = `P` / `Practicality`
-- Empathy = `E` / `Empathy`
-- Insulation = `Ins` / `Insulation`
-- Answerability = `Ans` / `Answerability`
-- Knowledge = `K` / `Knowledge`
-- Wisdom = `W` / `Wisdom`
-- Absence = `∅` / `Absence`
+- Practicality cycles off → P → Practicality → real-world constraint → Practicality / (real-world constraint), with the last option rendered as two lines.
+- Empathy cycles off → E → Empathy → affected welfare → Empathy / (affected welfare), with the last option rendered as two lines.
+- Insulation cycles off → Ins → Insulation → Insulation / (from reality) [two lines] → collapse → epistemic collapse → negative integration.
+- Answerability cycles off → Ans → Answerability → Answerability / (to reality) [two lines] → maturity → epistemic freedom → positive integration.
+- Knowledge cycles off → K → Knowledge → informational grounding → Knowledge / (informational grounding) [two lines].
+- Wisdom cycles off → W → Wisdom → contextual interpretation → Wisdom / (contextual interpretation) [two lines].
+- Absence remains unchanged, cycling off → ∅ → Absence.
 
-Each signed pole has its own half-relation visibility and point marker. Its label cycles off → short → full. A relation master visibility toggle still governs its two signed halves as a group.
+The underlying state retains the original `off`, `short`, and `full` values; extra states use their label text (with embedded newline for two-line modes). This preserves previously exported figure presets, including Figure 1. Each signed pole keeps its own half-relation visibility and point marker, and relation master visibility still governs the half-lines. Long label buttons wrap on desktop and occupy a separate row on mobile.
 
 ## Label interaction
-- Labels start beside their anchor and are non-selectable on iPhone/iOS. Native text selection and touch callouts must not compete with label interaction on the figure stage. Label lettering and hit boxes remain visually the same size at every pinch scale: the text is enlarged to its former 1.6× zoomed-in size, and each label group counter-scales around its anchor as the figure zooms. The default placement uses each label's measured text box, current zoom, and projected pole/axis direction so even long names clear their target on all sides.
+- Labels start beside their anchor and are non-selectable on iPhone/iOS. Native text selection and touch callouts must not compete with label interaction on the figure stage. Label lettering and hit boxes remain visually the same size at every pinch scale: the text is enlarged to its former 1.6× zoomed-in size, and each label group counter-scales around its anchor as the figure zooms. The default placement uses each label's measured text box, current zoom, and projected pole/axis direction so even long names clear their target on all sides. Two-line signed-pole labels render as centered SVG tspans with measured combined bounding boxes; label hit areas, offsets, clipped leader lines, dragging, and pinning use that combined box.
 - The label text itself does not receive pointer events. A deliberately generous transparent hit rectangle surrounds it.
 - Pressing a visible label enters an armed hold state. A visible outline/progress indicator fills over about 850 ms. Small finger movement is tolerated within a generous wiggle threshold so slight drift does not hand the gesture to octahedron rotation.
 - Once the hold completes, dragging pins the label to that screen-space position. The label keeps the initial grab offset so it does not jump under the finger.
