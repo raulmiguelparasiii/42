@@ -48,6 +48,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
 .rows{display:grid;gap:6px}
 .row{display:grid;grid-template-columns:minmax(145px,1fr) repeat(4,auto);gap:6px;align-items:center;min-height:33px}
 .row.relation-row .label-cycle{min-width:120px;max-width:170px;white-space:normal;line-height:1.25;overflow-wrap:break-word}
+.row.pole-row .label-cycle{min-width:128px;max-width:220px;white-space:normal;line-height:1.25;overflow-wrap:anywhere}
 .name{font-size:13px}.name small{font-size:11px;color:#777}
 .b{border:1px solid #ccc;background:#fff;color:#111;border-radius:999px;padding:6px 9px;min-width:64px;font-size:12px;cursor:pointer}
 .b.on,.b.black{background:#000;color:#fff;border-color:#000}.b:disabled{opacity:.3}
@@ -62,6 +63,12 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
   .relation-row .color-switch{grid-column:3;grid-row:1}
   .relation-row .reset-switch{grid-column:4;grid-row:1}
   .row.relation-row .label-cycle{grid-column:1/-1;grid-row:2;width:100%;max-width:none;min-width:0}
+  .row.pole-row{grid-template-columns:minmax(90px,1fr) repeat(2,auto)}
+  .pole-row .name{grid-column:1;grid-row:1}
+  .pole-row .line-switch{grid-column:2;grid-row:1}
+  .pole-row .reset-switch{grid-column:3;grid-row:1}
+  .pole-row > span{display:none}
+  .row.pole-row .label-cycle{grid-column:1/-1;grid-row:2;width:100%;max-width:none;min-width:0}
   .b{min-width:54px;padding:6px;font-size:11px}
   .name{font-size:12px}
 }
@@ -105,7 +112,15 @@ document.addEventListener('contextmenu',e=>{if(stage.contains(e.target))e.preven
 
 const V={E:0,P:1,A:2,I:3,W:4,K:5,N:6},vs=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1],[0,0,0]];
 const RS={purpose:{n:'Purpose',a:'x',labels:['purposive axis','purposive relation','x-axis'],neg:'practicality',pos:'empathy',nv:V.P,pv:V.E},accountability:{n:'Accountability',a:'y',labels:['accountability axis','accountability relation','y-axis'],neg:'insulation',pos:'answerability',nv:V.I,pv:V.A},meaning:{n:'Meaning',a:'z',labels:['meaning axis','meaning relation','z-axis'],neg:'knowledge',pos:'wisdom',nv:V.K,pv:V.W}};
-const IS={practicality:{n:'Practicality',s:'P',v:V.P,r:'purpose',sg:'-x'},empathy:{n:'Empathy',s:'E',v:V.E,r:'purpose',sg:'+x'},insulation:{n:'Insulation',s:'Ins',v:V.I,r:'accountability',sg:'-y'},answerability:{n:'Answerability',s:'Ans',v:V.A,r:'accountability',sg:'+y'},knowledge:{n:'Knowledge',s:'K',v:V.K,r:'meaning',sg:'-z'},wisdom:{n:'Wisdom',s:'W',v:V.W,r:'meaning',sg:'+z'},absence:{n:'Absence',s:'∅',v:V.N,r:null,sg:'null'}};
+const IS={
+  practicality:{n:'Practicality',s:'P',v:V.P,r:'purpose',sg:'-x',labels:['real-world constraint','Practicality\n(real-world constraint)']},
+  empathy:{n:'Empathy',s:'E',v:V.E,r:'purpose',sg:'+x',labels:['affected welfare','Empathy\n(affected welfare)']},
+  insulation:{n:'Insulation',s:'Ins',v:V.I,r:'accountability',sg:'-y',labels:['Insulation\n(from reality)','collapse','epistemic collapse','negative integration']},
+  answerability:{n:'Answerability',s:'Ans',v:V.A,r:'accountability',sg:'+y',labels:['Answerability\n(to reality)','maturity','epistemic freedom','positive integration']},
+  knowledge:{n:'Knowledge',s:'K',v:V.K,r:'meaning',sg:'-z',labels:['informational grounding','Knowledge\n(informational grounding)']},
+  wisdom:{n:'Wisdom',s:'W',v:V.W,r:'meaning',sg:'+z',labels:['contextual interpretation','Wisdom\n(contextual interpretation)']},
+  absence:{n:'Absence',s:'∅',v:V.N,r:null,sg:'null'}
+};
 const rs={purpose:{on:1,c:'black',lab:'off',pin:0,x:0,y:0},accountability:{on:1,c:'black',lab:'off',pin:0,x:0,y:0},meaning:{on:1,c:'black',lab:'off',pin:0,x:0,y:0}},is={};
 for(const k in IS)is[k]={on:1,lab:k==='absence'?'off':'short',pin:0,x:0,y:0};
 let stance=1;
@@ -132,7 +147,12 @@ const halt=(settle=true)=>{av=[0,0,0];target=settle?nearest():null;rel=performan
 const labs={},leads={},reset={},labelPos={};
 let labelGesture=null;
 const HOLD_MS=850,WIGGLE=28,HIT_PAD=17.6;
-const labelText=k=>RS[k]?(rs[k].lab==='off'?'':rs[k].lab):(is[k].lab==='off'?'':is[k].lab==='short'?IS[k].s:IS[k].n);
+const labelText=k=>RS[k]?(rs[k].lab==='off'?'':rs[k].lab):(is[k].lab==='off'?'':is[k].lab==='short'?IS[k].s:is[k].lab==='full'?IS[k].n:is[k].lab);
+const poleLabelModes=k=>['off','short','full',...IS[k].labels];
+const poleLabelButtonText=k=>{
+  const mode=is[k].lab;
+  return 'Label: '+(mode==='short'?IS[k].s:mode==='full'?'full':mode.replace(/\n/g,' / '));
+};
 const c2s=(x,y)=>{const p=svg.createSVGPoint();p.x=x;p.y=y;const m=svg.getScreenCTM();if(!m)return[0,0];const r=p.matrixTransform(m.inverse());return[r.x,r.y]};
 const clearLabelGesture=()=>{if(!labelGesture)return;clearTimeout(labelGesture.timer);labs[labelGesture.k]?.g.classList.remove('arming','armed');labelGesture=null};
 const armLabel=(k,e)=>{if(!labelText(k))return;e.preventDefault();e.stopPropagation();if(e.pointerType==='touch'){tp.set(e.pointerId,{x:e.clientX,y:e.clientY});if(tp.size>1){clearLabelGesture();try{svg.setPointerCapture(e.pointerId)}catch{};startPinch();return}}halt(false);const N=labs[k];clearLabelGesture();const g={k,id:e.pointerId,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,active:false,offset:[0,0],timer:null};labelGesture=g;try{svg.setPointerCapture(e.pointerId)}catch{};N.g.classList.remove('arming','armed');void N.g.getBoundingClientRect();N.g.classList.add('arming');g.timer=setTimeout(()=>{if(labelGesture!==g)return;g.active=true;N.g.classList.remove('arming');N.g.classList.add('armed');const p=c2s(g.lastX,g.lastY),z=labelPos[k]||p;g.offset=[z[0]-p[0],z[1]-p[1]];const st=is[k]||rs[k];st.pin=1;st.x=z[0];st.y=z[1];upReset(k);draw()},HOLD_MS)};
@@ -141,7 +161,7 @@ function makeLab(k){const g=mk('g','label-group'),h=mk('rect','hit'),ring=mk('re
 
 const btn=(t,c='b')=>{const b=document.createElement('button');b.className=c;b.textContent=t;return b},upReset=k=>{if(reset[k])reset[k].disabled=!(is[k]?.pin||rs[k]?.pin)},resetLab=k=>{const s=is[k]||rs[k];s.pin=0;upReset(k);draw()};
 const rc=q('#rc');for(const k in RS){const sp=RS[k],row=document.createElement('div');row.className='row relation-row';const n=document.createElement('div');n.className='name';n.innerHTML=`${sp.n} <small>(${sp.a})</small>`;const a=btn('Line on','b on'),b=btn('Label: off','b label-cycle'),c=btn('Black','b black'),d=btn('Reset');a.classList.add('line-switch');c.classList.add('color-switch');d.classList.add('reset-switch');d.disabled=1;reset[k]=d;a.onclick=()=>{rs[k].on=!rs[k].on;a.classList.toggle('on',rs[k].on);a.textContent=rs[k].on?'Line on':'Line off';draw()};b.onclick=()=>{const modes=['off',...sp.labels],i=modes.indexOf(rs[k].lab);rs[k].lab=modes[(i+1)%modes.length];b.textContent='Label: '+rs[k].lab;draw()};c.onclick=()=>{rs[k].c=rs[k].c==='black'?'gray':'black';syncColors();draw()};d.onclick=()=>resetLab(k);row.append(n,a,b,c,d);rc.append(row)}
-const pc=q('#pc');for(const k of ['practicality','empathy','insulation','answerability','knowledge','wisdom']){const sp=IS[k],st=is[k],row=document.createElement('div');row.className='row';const n=document.createElement('div');n.className='name';n.innerHTML=`${sp.n} <small>(${sp.sg})</small>`;const a=btn('Line on','b on'),b=btn('Label: '+sp.s),z=document.createElement('span'),d=btn('Reset');d.disabled=1;reset[k]=d;a.onclick=()=>{st.on=!st.on;a.classList.toggle('on',st.on);a.textContent=st.on?'Line on':'Line off';draw()};b.onclick=()=>{st.lab=st.lab==='off'?'short':st.lab==='short'?'full':'off';b.textContent=st.lab==='off'?'Label: off':st.lab==='short'?'Label: '+sp.s:'Label: full';draw()};d.onclick=()=>resetLab(k);row.append(n,a,b,z,d);pc.append(row)}
+const pc=q('#pc');for(const k of ['practicality','empathy','insulation','answerability','knowledge','wisdom']){const sp=IS[k],st=is[k],row=document.createElement('div');row.className='row pole-row';const n=document.createElement('div');n.className='name';n.innerHTML=`${sp.n} <small>(${sp.sg})</small>`;const a=btn('Line on','b on'),b=btn(poleLabelButtonText(k),'b label-cycle'),z=document.createElement('span'),d=btn('Reset');a.classList.add('line-switch');d.classList.add('reset-switch');d.disabled=1;reset[k]=d;a.onclick=()=>{st.on=!st.on;a.classList.toggle('on',st.on);a.textContent=st.on?'Line on':'Line off';draw()};b.onclick=()=>{const modes=poleLabelModes(k),i=modes.indexOf(st.lab);st.lab=modes[(i+1)%modes.length];b.textContent=poleLabelButtonText(k);draw()};d.onclick=()=>resetLab(k);row.append(n,a,b,z,d);pc.append(row)}
 const oc=q('#oc');
 {const k='absence',st=is[k],row=document.createElement('div');row.className='row';const n=document.createElement('div');n.className='name';n.innerHTML='Absence <small>(null)</small>';const a=btn('Point on','b on'),b=btn('Label: off'),z=document.createElement('span'),d=btn('Reset');d.disabled=1;reset[k]=d;a.onclick=()=>{st.on=!st.on;a.classList.toggle('on',st.on);a.textContent=st.on?'Point on':'Point off';draw()};b.onclick=()=>{st.lab=st.lab==='off'?'short':st.lab==='short'?'full':'off';b.textContent=st.lab==='off'?'Label: off':st.lab==='short'?'Label: ∅':'Label: full';draw()};d.onclick=()=>resetLab(k);row.append(n,a,b,z,d);oc.append(row)}
 let stanceButton;
@@ -159,12 +179,26 @@ const relAnchor=(k,p)=>{
 const labAnchor=(k,p)=>RS[k]?relAnchor(k,p):[p[IS[k].v][0],p[IS[k].v][1]];
 const labelBounds=(N,txt)=>{
   if(N.value===txt&&N.bounds)return N.bounds;
-  N.t.textContent=txt;N.t.setAttribute('x','0');N.t.setAttribute('y','0');
+  const lines=txt.split('\n');
+  N.t.removeAttribute('transform');
+  N.t.setAttribute('x','0');N.t.setAttribute('y','0');
+  if(lines.length===1){
+    N.t.textContent=txt;
+  }else{
+    N.t.replaceChildren();
+    for(let i=0;i<lines.length;i++){
+      const part=mk('tspan');
+      part.setAttribute('x','0');
+      part.setAttribute('y',String(i*11.4));
+      part.textContent=lines[i];
+      N.t.append(part);
+    }
+  }
   let b;
   try{b=N.t.getBBox()}catch{}
   if(!b||b.width<=0||b.height<=0){
-    const w=Math.max(5,txt.length*5);
-    b={x:-w/2,y:-5,width:w,height:10};
+    const w=Math.max(5,...lines.map(line=>line.length*5));
+    b={x:-w/2,y:-5,width:w,height:10+(lines.length-1)*11.4};
   }
   N.value=txt;
   return N.bounds={width:b.width,height:b.height,cx:b.x+b.width/2,cy:b.y+b.height/2};
@@ -206,7 +240,7 @@ function drawLab(k,p,anchorVisible){
   const b=labelBounds(N,txt),z=st.pin?[st.x,st.y]:labelOffset(k,p,b);
   labelPos[k]=z;
   N.g.setAttribute('transform','translate('+z[0]+' '+z[1]+') scale('+(1/scale)+') translate('+(-z[0])+' '+(-z[1])+')');
-  N.t.setAttribute('x',z[0]-b.cx);N.t.setAttribute('y',z[1]-b.cy);
+  N.t.setAttribute('transform','translate('+(z[0]-b.cx)+' '+(z[1]-b.cy)+')');
   const x=z[0]-b.width/2-HIT_PAD,y=z[1]-b.height/2-HIT_PAD,w=b.width+HIT_PAD*2,h=b.height+HIT_PAD*2;
   for(const r of[N.h,N.ring]){r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',w);r.setAttribute('height',h);r.setAttribute('rx',Math.min(6,h/2));r.setAttribute('ry',Math.min(6,h/2));}
   if(st.pin||RS[k])drawLeader(k,labAnchor(k,p),z,b);
@@ -329,7 +363,7 @@ const loadFigureState=snapshot=>{
   [...pc.children].forEach((row,i)=>{
     const k=signed[i],state=is[k],button=row.children[1],label=row.children[2];
     button.textContent=state.on?'Line on':'Line off';button.classList.toggle('on',!!state.on);
-    label.textContent=state.lab==='off'?'Label: off':state.lab==='short'?'Label: '+IS[k].s:'Label: full';
+    label.textContent=poleLabelButtonText(k);
     upReset(k);
   });
   const absenceRow=oc.children[0],absence=is.absence;
