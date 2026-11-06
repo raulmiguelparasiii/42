@@ -39,6 +39,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
 .acts{display:flex;gap:6px}
 .rows{display:grid;gap:6px}
 .row{display:grid;grid-template-columns:minmax(145px,1fr) repeat(4,auto);gap:6px;align-items:center;min-height:33px}
+.row.relation-row .label-cycle{min-width:120px;max-width:170px;white-space:normal;line-height:1.25;overflow-wrap:break-word}
 .name{font-size:13px}.name small{font-size:11px;color:#777}
 .b{border:1px solid #ccc;background:#fff;color:#111;border-radius:999px;padding:6px 9px;min-width:64px;font-size:12px;cursor:pointer}
 .b.on,.b.black{background:#000;color:#fff;border-color:#000}.b:disabled{opacity:.3}
@@ -47,6 +48,12 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
   #shell{width:min(67.2vw,67.2vh)}
   #controls{margin-top:-34px;padding-left:10px;padding-right:10px}
   .row{grid-template-columns:minmax(100px,1fr) repeat(4,auto);gap:4px}
+  .row.relation-row{grid-template-columns:minmax(90px,1fr) repeat(3,auto)}
+  .relation-row .name{grid-column:1;grid-row:1}
+  .relation-row .line-switch{grid-column:2;grid-row:1}
+  .relation-row .color-switch{grid-column:3;grid-row:1}
+  .relation-row .reset-switch{grid-column:4;grid-row:1}
+  .row.relation-row .label-cycle{grid-column:1/-1;grid-row:2;width:100%;max-width:none;min-width:0}
   .b{min-width:54px;padding:6px;font-size:11px}
   .name{font-size:12px}
 }
@@ -79,7 +86,7 @@ document.addEventListener('selectstart',e=>e.preventDefault());
 document.addEventListener('contextmenu',e=>{if(stage.contains(e.target))e.preventDefault()});
 
 const V={E:0,P:1,A:2,I:3,W:4,K:5,N:6},vs=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1],[0,0,0]];
-const RS={purpose:{n:'Purpose',a:'x',neg:'practicality',pos:'empathy',nv:V.P,pv:V.E},accountability:{n:'Accountability',a:'y',neg:'insulation',pos:'answerability',nv:V.I,pv:V.A},meaning:{n:'Meaning',a:'z',neg:'knowledge',pos:'wisdom',nv:V.K,pv:V.W}};
+const RS={purpose:{n:'Purpose',a:'x',labels:['purposive axis','purposive relation','x-axis'],neg:'practicality',pos:'empathy',nv:V.P,pv:V.E},accountability:{n:'Accountability',a:'y',labels:['accountability axis','accountability relation','y-axis'],neg:'insulation',pos:'answerability',nv:V.I,pv:V.A},meaning:{n:'Meaning',a:'z',labels:['meaning axis','meaning relation','z-axis'],neg:'knowledge',pos:'wisdom',nv:V.K,pv:V.W}};
 const IS={practicality:{n:'Practicality',s:'P',v:V.P,r:'purpose',sg:'-x'},empathy:{n:'Empathy',s:'E',v:V.E,r:'purpose',sg:'+x'},insulation:{n:'Insulation',s:'Ins',v:V.I,r:'accountability',sg:'-y'},answerability:{n:'Answerability',s:'Ans',v:V.A,r:'accountability',sg:'+y'},knowledge:{n:'Knowledge',s:'K',v:V.K,r:'meaning',sg:'-z'},wisdom:{n:'Wisdom',s:'W',v:V.W,r:'meaning',sg:'+z'},absence:{n:'Absence',s:'∅',v:V.N,r:null,sg:'null'}};
 const rs={purpose:{on:1,c:'black',lab:'off',pin:0,x:0,y:0},accountability:{on:1,c:'black',lab:'off',pin:0,x:0,y:0},meaning:{on:1,c:'black',lab:'off',pin:0,x:0,y:0}},is={};
 for(const k in IS)is[k]={on:1,lab:k==='absence'?'off':'short',pin:0,x:0,y:0};
@@ -107,15 +114,15 @@ const halt=(settle=true)=>{av=[0,0,0];target=settle?nearest():null;rel=performan
 const labs={},leads={},reset={},labelPos={};
 let labelGesture=null;
 const HOLD_MS=850,WIGGLE=28,HIT_PAD=17.6;
-const labelText=k=>RS[k]?(rs[k].lab==='off'?'':RS[k].n):(is[k].lab==='off'?'':is[k].lab==='short'?IS[k].s:IS[k].n);
+const labelText=k=>RS[k]?(rs[k].lab==='off'?'':rs[k].lab):(is[k].lab==='off'?'':is[k].lab==='short'?IS[k].s:IS[k].n);
 const c2s=(x,y)=>{const p=svg.createSVGPoint();p.x=x;p.y=y;const m=svg.getScreenCTM();if(!m)return[0,0];const r=p.matrixTransform(m.inverse());return[r.x,r.y]};
 const clearLabelGesture=()=>{if(!labelGesture)return;clearTimeout(labelGesture.timer);labs[labelGesture.k]?.g.classList.remove('arming','armed');labelGesture=null};
 const armLabel=(k,e)=>{if(!labelText(k))return;e.preventDefault();e.stopPropagation();if(e.pointerType==='touch'){tp.set(e.pointerId,{x:e.clientX,y:e.clientY});if(tp.size>1){clearLabelGesture();try{svg.setPointerCapture(e.pointerId)}catch{};startPinch();return}}halt(false);const N=labs[k];clearLabelGesture();const g={k,id:e.pointerId,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,active:false,offset:[0,0],timer:null};labelGesture=g;try{svg.setPointerCapture(e.pointerId)}catch{};N.g.classList.remove('arming','armed');void N.g.getBoundingClientRect();N.g.classList.add('arming');g.timer=setTimeout(()=>{if(labelGesture!==g)return;g.active=true;N.g.classList.remove('arming');N.g.classList.add('armed');const p=c2s(g.lastX,g.lastY),z=labelPos[k]||p;g.offset=[z[0]-p[0],z[1]-p[1]];const st=is[k]||rs[k];st.pin=1;st.x=z[0];st.y=z[1];upReset(k);draw()},HOLD_MS)};
-function makeLab(k){const g=mk('g','label-group'),h=mk('rect','hit'),ring=mk('rect','hold'),t=mk('text','lab');ring.setAttribute('pathLength','100');g.append(h,ring,t);GL.append(g);labs[k]={g,h,ring,t};h.onpointerdown=e=>armLabel(k,e)}
+function makeLab(k){const g=mk('g','label-group'),h=mk('rect','hit'),ring=mk('rect','hold'),t=mk('text','lab');ring.setAttribute('pathLength','100');g.append(h,ring,t);GL.append(g);labs[k]={g,h,ring,t,value:null,bounds:null};h.onpointerdown=e=>armLabel(k,e)}
 [...Object.keys(RS),...Object.keys(IS)].forEach(k=>{makeLab(k);const z=mk('line','lead');LL.append(z);leads[k]=z});
 
 const btn=(t,c='b')=>{const b=document.createElement('button');b.className=c;b.textContent=t;return b},upReset=k=>{if(reset[k])reset[k].disabled=!(is[k]?.pin||rs[k]?.pin)},resetLab=k=>{const s=is[k]||rs[k];s.pin=0;upReset(k);draw()};
-const rc=q('#rc');for(const k in RS){const sp=RS[k],row=document.createElement('div');row.className='row';const n=document.createElement('div');n.className='name';n.innerHTML=`${sp.n} <small>(${sp.a})</small>`;const a=btn('Line on','b on'),b=btn('Label off'),c=btn('Black','b black'),d=btn('Reset');d.disabled=1;reset[k]=d;a.onclick=()=>{rs[k].on=!rs[k].on;a.classList.toggle('on',rs[k].on);a.textContent=rs[k].on?'Line on':'Line off';draw()};b.onclick=()=>{rs[k].lab=rs[k].lab==='off'?'full':'off';b.textContent=rs[k].lab==='off'?'Label off':'Label on';draw()};c.onclick=()=>{rs[k].c=rs[k].c==='black'?'gray':'black';syncColors();draw()};d.onclick=()=>resetLab(k);row.append(n,a,b,c,d);rc.append(row)}
+const rc=q('#rc');for(const k in RS){const sp=RS[k],row=document.createElement('div');row.className='row relation-row';const n=document.createElement('div');n.className='name';n.innerHTML=`${sp.n} <small>(${sp.a})</small>`;const a=btn('Line on','b on'),b=btn('Label: off','b label-cycle'),c=btn('Black','b black'),d=btn('Reset');a.classList.add('line-switch');c.classList.add('color-switch');d.classList.add('reset-switch');d.disabled=1;reset[k]=d;a.onclick=()=>{rs[k].on=!rs[k].on;a.classList.toggle('on',rs[k].on);a.textContent=rs[k].on?'Line on':'Line off';draw()};b.onclick=()=>{const modes=['off',...sp.labels],i=modes.indexOf(rs[k].lab);rs[k].lab=modes[(i+1)%modes.length];b.textContent='Label: '+rs[k].lab;draw()};c.onclick=()=>{rs[k].c=rs[k].c==='black'?'gray':'black';syncColors();draw()};d.onclick=()=>resetLab(k);row.append(n,a,b,c,d);rc.append(row)}
 const pc=q('#pc');for(const k of ['practicality','empathy','insulation','answerability','knowledge','wisdom']){const sp=IS[k],st=is[k],row=document.createElement('div');row.className='row';const n=document.createElement('div');n.className='name';n.innerHTML=`${sp.n} <small>(${sp.sg})</small>`;const a=btn('Line on','b on'),b=btn('Label: '+sp.s),z=document.createElement('span'),d=btn('Reset');d.disabled=1;reset[k]=d;a.onclick=()=>{st.on=!st.on;a.classList.toggle('on',st.on);a.textContent=st.on?'Line on':'Line off';draw()};b.onclick=()=>{st.lab=st.lab==='off'?'short':st.lab==='short'?'full':'off';b.textContent=st.lab==='off'?'Label: off':st.lab==='short'?'Label: '+sp.s:'Label: full';draw()};d.onclick=()=>resetLab(k);row.append(n,a,b,z,d);pc.append(row)}
 const oc=q('#oc');
 {const k='absence',st=is[k],row=document.createElement('div');row.className='row';const n=document.createElement('div');n.className='name';n.innerHTML='Absence <small>(null)</small>';const a=btn('Point on','b on'),b=btn('Label: off'),z=document.createElement('span'),d=btn('Reset');d.disabled=1;reset[k]=d;a.onclick=()=>{st.on=!st.on;a.classList.toggle('on',st.on);a.textContent=st.on?'Point on':'Point off';draw()};b.onclick=()=>{st.lab=st.lab==='off'?'short':st.lab==='short'?'full':'off';b.textContent=st.lab==='off'?'Label: off':st.lab==='short'?'Label: ∅':'Label: full';draw()};d.onclick=()=>resetLab(k);row.append(n,a,b,z,d);oc.append(row)}
@@ -124,8 +131,68 @@ let stanceButton;
 function syncColors(){[...rc.children].forEach((row,i)=>{const k=Object.keys(RS)[i],b=row.children[3];b.textContent=rs[k].c==='black'?'Black':'Gray';b.classList.toggle('black',rs[k].c==='black')})}
 q('#black').onclick=()=>{for(const k in rs)rs[k].c='black';syncColors();draw()};q('#gray').onclick=()=>{for(const k in rs)rs[k].c='gray';syncColors();draw()};
 
-const relAnchor=(k,p)=>{const s=RS[k],a=p[s.nv],b=p[s.pv];return[(a[0]+b[0])/2,(a[1]+b[1])/2]},labAnchor=(k,p)=>RS[k]?relAnchor(k,p):[p[IS[k].v][0],p[IS[k].v][1]],defPos=(k,p)=>{if(RS[k]){const a=relAnchor(k,p),d=norm([p[RS[k].pv][0],p[RS[k].pv][1],0]),t=norm([d[1],-d[0],0]);return[a[0]+t[0]*11,a[1]+t[1]*11]}const x=p[IS[k].v];if(k==='absence')return[12,10];const d=norm([x[0],x[1],0]),s=len(d)?d:[1,0,0];return[x[0]+s[0]*11,x[1]+s[1]*11]};
-function drawLab(k,p,anchorVisible){const N=labs[k],txt=labelText(k),st=is[k]||rs[k],visible=!!txt&&anchorVisible;N.g.style.display=visible?'':'none';leads[k].style.display='none';if(!visible)return;N.t.textContent=txt;const z=st.pin?[st.x,st.y]:defPos(k,p);labelPos[k]=z;N.g.setAttribute('transform','translate('+z[0]+' '+z[1]+') scale('+(1/scale)+') translate('+(-z[0])+' '+(-z[1])+')');N.t.setAttribute('x',z[0]);N.t.setAttribute('y',z[1]);try{const b=N.t.getBBox(),x=b.x-HIT_PAD,y=b.y-HIT_PAD,w=b.width+HIT_PAD*2,h=b.height+HIT_PAD*2;for(const r of[N.h,N.ring]){r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',w);r.setAttribute('height',h);r.setAttribute('rx',Math.min(6,h/2));r.setAttribute('ry',Math.min(6,h/2))}}catch{}if(st.pin){const a=labAnchor(k,p),l=leads[k];l.style.display='';l.setAttribute('x1',a[0]);l.setAttribute('y1',a[1]);l.setAttribute('x2',z[0]);l.setAttribute('y2',z[1])}}
+
+const relAnchor=(k,p)=>{
+  // Distinct points on the actual rendered half-axes, away from their common origin.
+  const sp=RS[k],endpoint=k==='meaning'?p[sp.nv]:p[sp.pv];
+  const fraction=k==='accountability'?.73:.63;
+  return[endpoint[0]*fraction,endpoint[1]*fraction];
+};
+const labAnchor=(k,p)=>RS[k]?relAnchor(k,p):[p[IS[k].v][0],p[IS[k].v][1]];
+const labelBounds=(N,txt)=>{
+  if(N.value===txt&&N.bounds)return N.bounds;
+  N.t.textContent=txt;N.t.setAttribute('x','0');N.t.setAttribute('y','0');
+  let b;
+  try{b=N.t.getBBox()}catch{}
+  if(!b||b.width<=0||b.height<=0){
+    const w=Math.max(5,txt.length*5);
+    b={x:-w/2,y:-5,width:w,height:10};
+  }
+  N.value=txt;
+  return N.bounds={width:b.width,height:b.height,cx:b.x+b.width/2,cy:b.y+b.height/2};
+};
+const labelNormal=(k,p)=>{
+  if(RS[k]){
+    const sp=RS[k],neg=p[sp.nv],pos=p[sp.pv];
+    const d=norm([pos[1]-neg[1],neg[0]-pos[0],0]);
+    if(len(d)>0.001)return[d[0],d[1]];
+    return k==='purpose'?[0,-1]:k==='meaning'?[1,0]:[-1,0];
+  }
+  if(k==='absence')return[2/Math.sqrt(5),1/Math.sqrt(5)];
+  const x=p[IS[k].v],d=norm([x[0],x[1],0]);
+  if(len(d)>0.001)return[d[0],d[1]];
+  const fallback={practicality:[-1,0],empathy:[1,0],insulation:[0,1],answerability:[0,-1],knowledge:[-1,-1],wisdom:[1,1]};
+  const f=fallback[k]||[1,0],n=Math.hypot(...f);
+  return[f[0]/n,f[1]/n];
+};
+const labelOffset=(k,p,b)=>{
+  const a=labAnchor(k,p),d=labelNormal(k,p);
+  const dx=Math.abs(d[0]),dy=Math.abs(d[1]);
+  const boxRadius=Math.min(dx>1e-8?b.width/(2*scale*dx):Infinity,dy>1e-8?b.height/(2*scale*dy):Infinity);
+  const clearance=RS[k]?14/scale:(k==='absence'?7/scale:2.25+5/scale);
+  return[a[0]+d[0]*(boxRadius+clearance),a[1]+d[1]*(boxRadius+clearance)];
+};
+const drawLeader=(k,a,z,b)=>{
+  const l=leads[k],dx=a[0]-z[0],dy=a[1]-z[1];
+  // Clip to the measured text box, enlarged by a small visual gap.
+  const pad=5/scale,hx=b.width/(2*scale)+pad,hy=b.height/(2*scale)+pad;
+  const t=Math.min(Math.abs(dx)>1e-8?hx/Math.abs(dx):Infinity,Math.abs(dy)>1e-8?hy/Math.abs(dy):Infinity);
+  if(!Number.isFinite(t)||t>=1){l.style.display='none';return;}
+  l.style.display='';
+  l.setAttribute('x1',a[0]);l.setAttribute('y1',a[1]);
+  l.setAttribute('x2',z[0]+dx*t);l.setAttribute('y2',z[1]+dy*t);
+};
+function drawLab(k,p,anchorVisible){
+  const N=labs[k],txt=labelText(k),st=is[k]||rs[k],visible=!!txt&&anchorVisible;
+  N.g.style.display=visible?'':'none';leads[k].style.display='none';if(!visible)return;
+  const b=labelBounds(N,txt),z=st.pin?[st.x,st.y]:labelOffset(k,p,b);
+  labelPos[k]=z;
+  N.g.setAttribute('transform','translate('+z[0]+' '+z[1]+') scale('+(1/scale)+') translate('+(-z[0])+' '+(-z[1])+')');
+  N.t.setAttribute('x',z[0]-b.cx);N.t.setAttribute('y',z[1]-b.cy);
+  const x=z[0]-b.width/2-HIT_PAD,y=z[1]-b.height/2-HIT_PAD,w=b.width+HIT_PAD*2,h=b.height+HIT_PAD*2;
+  for(const r of[N.h,N.ring]){r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',w);r.setAttribute('height',h);r.setAttribute('rx',Math.min(6,h/2));r.setAttribute('ry',Math.min(6,h/2));}
+  if(st.pin||RS[k])drawLeader(k,labAnchor(k,p),z,b);
+}
 
 function draw(){
   const rv=vs.map(v=>qr(o,v)),p=rv.map(proj),camera=[0,0,PERSPECTIVE_DISTANCE];
