@@ -91,7 +91,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
         <button class="b black" type="button" id="figure-state-copy">Copy current state</button>
       </div>
       <textarea id="figure-state-text" readonly spellcheck="false" rows="8" aria-label="Live figure state for copying"></textarea>
-      <div class="note" id="figure-state-status" aria-live="polite">Live state. Choose a figure, arrange it, and copy its current settings to send here. The selector labels the export; it does not save or restore other figures.</div>
+      <div class="note" id="figure-state-status" aria-live="polite">Default view opens first. Figure 1 loads its saved composition; other figure numbers start from Default view and can be arranged and copied.</div>
     </div>
     <div class="note">One finger or mouse rotates. Two fingers steer by moving together, roll by twisting, and zoom by pinching. Labels stay at their zoomed-in text size. Hold a visible label until its outline completes, then drag it to pin it; Reset returns it beside its anchor.</div>
     </div>
@@ -285,10 +285,64 @@ window.FIGURES=Object.freeze({
   clearFigureLayer:()=>XL.replaceChildren()
 });
 const figureNumber=q('#figure-number'),figureStateText=q('#figure-state-text'),figureStateStatus=q('#figure-state-status'),figureStateCopy=q('#figure-state-copy');
+const defaultFigureState=structuredClone(window.FIGURES.getState());
+const savedFigure1=Object.freeze({
+  format:'42-figures-state-v1',
+  figure:'Figure 1',
+  orientation:[-0.6532814824381883,0.27059805007309856,-0.2705980500730985,0.6532814824381884],
+  snapTarget:'bottom-1',
+  scale:1.3723686050883095,
+  relations:{
+    purpose:{on:1,c:'black',lab:'purposive axis',pin:1,x:96.00865876917553,y:-2.1329909658589585},
+    accountability:{on:true,c:'black',lab:'off',pin:0,x:0,y:0},
+    meaning:{on:1,c:'black',lab:'meaning axis',pin:1,x:-97.73400748018933,y:-2.9956647253194113}
+  },
+  items:{
+    practicality:{on:1,lab:'full',pin:0,x:0,y:0},
+    empathy:{on:1,lab:'full',pin:0,x:0,y:0},
+    insulation:{on:false,lab:'off',pin:0,x:0,y:0},
+    answerability:{on:false,lab:'off',pin:0,x:0,y:0},
+    knowledge:{on:1,lab:'full',pin:0,x:0,y:0},
+    wisdom:{on:1,lab:'full',pin:0,x:0,y:0},
+    absence:{on:false,lab:'off',pin:0,x:0,y:0}
+  },
+  stance:false
+});
+const defaultOption=document.createElement('option');
+defaultOption.value='default';defaultOption.textContent='Default view';figureNumber.append(defaultOption);
 for(let i=1;i<=24;i++){const option=document.createElement('option');option.value=String(i);option.textContent='Figure '+i;figureNumber.append(option)}
+figureNumber.value='default';
+const loadFigureState=snapshot=>{
+  clearLabelGesture();tp.clear();drag=0;pid=null;last=null;pinch=null;av=[0,0,0];rel=performance.now();
+  o=[...snapshot.orientation];target=snaps.find(s=>s.id===snapshot.snapTarget)||null;
+  scale=snapshot.scale;shell.style.setProperty('--s',scale);stance=!!snapshot.stance;
+  for(const k in RS)Object.assign(rs[k],snapshot.relations[k]);
+  for(const k in IS)Object.assign(is[k],snapshot.items[k]);
+  [...rc.children].forEach((row,i)=>{
+    const k=Object.keys(RS)[i],state=rs[k],button=row.children[1],label=row.children[2];
+    button.textContent=state.on?'Line on':'Line off';button.classList.toggle('on',!!state.on);
+    label.textContent='Label: '+state.lab;
+    upReset(k);
+  });
+  syncColors();
+  const signed=['practicality','empathy','insulation','answerability','knowledge','wisdom'];
+  [...pc.children].forEach((row,i)=>{
+    const k=signed[i],state=is[k],button=row.children[1],label=row.children[2];
+    button.textContent=state.on?'Line on':'Line off';button.classList.toggle('on',!!state.on);
+    label.textContent=state.lab==='off'?'Label: off':state.lab==='short'?'Label: '+IS[k].s:'Label: full';
+    upReset(k);
+  });
+  const absenceRow=oc.children[0],absence=is.absence;
+  absenceRow.children[1].textContent=absence.on?'Point on':'Point off';
+  absenceRow.children[1].classList.toggle('on',!!absence.on);
+  absenceRow.children[2].textContent=absence.lab==='off'?'Label: off':absence.lab==='short'?'Label: ∅':'Label: full';
+  upReset('absence');
+  stanceButton.textContent=stance?'Surface on':'Surface off';stanceButton.classList.toggle('on',stance);
+  draw();
+};
 const currentFigureExport=()=>JSON.stringify({
   format:'42-figures-state-v1',
-  figure:'Figure '+figureNumber.value,
+  figure:figureNumber.value==='default'?'Default view':'Figure '+figureNumber.value,
   ...window.FIGURES.getState()
 },null,2);
 let exportLastTick=0;
@@ -298,7 +352,16 @@ function updateFigureExport(now,force=false){
   const next=currentFigureExport();
   if(figureStateText.value!==next)figureStateText.value=next;
 }
-figureNumber.addEventListener('change',()=>{updateFigureExport(performance.now(),true);figureStateStatus.textContent='Live state for Figure '+figureNumber.value+'. The selector labels the export; it does not save or restore another pose.'});
+figureNumber.addEventListener('change',()=>{
+  const selected=figureNumber.value;
+  loadFigureState(selected==='1'?savedFigure1:defaultFigureState);
+  updateFigureExport(performance.now(),true);
+  figureStateStatus.textContent=selected==='1'
+    ?'Loaded saved Figure 1. You may adjust it and copy the current state.'
+    :selected==='default'
+      ?'Restored Default view.'
+      :'Figure '+selected+' starts from Default view. Arrange it and copy its state to save it in a later update.';
+});
 figureStateCopy.addEventListener('click',async()=>{
   const snapshot=currentFigureExport();
   figureStateText.value=snapshot;
