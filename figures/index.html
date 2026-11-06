@@ -32,6 +32,14 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
 #sheet-handle{position:absolute;top:0;left:50%;transform:translateX(-50%);width:112px;height:42px;display:grid;place-items:start center;padding-top:12px;touch-action:pan-y;cursor:ns-resize;-webkit-tap-highlight-color:transparent}
 #sheet-handle::before{content:"";width:46px;height:5px;border-radius:999px;background:#999;display:block}
 #control-body{width:min(1040px,100%);margin:auto;display:grid;gap:12px}
+.figure-state-bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.figure-state-bar label{font-size:13px;color:#444}
+#figure-number{border:1px solid #ccc;border-radius:8px;background:#fff;color:#111;padding:7px 10px;font:13px Arial,sans-serif;min-width:112px}
+#figure-state-copy{margin-left:auto}
+#figure-state-text{display:block;width:100%;min-height:144px;max-height:320px;resize:vertical;border:1px solid #ddd;border-radius:10px;padding:10px;background:#fafafa;color:#222;font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;overflow:auto;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+#figure-state-status{text-align:left}
+@media(max-width:720px){#figure-state-copy{margin-left:0}}
+
 .card{border-top:1px solid #ddd;padding-top:9px;display:grid;gap:7px}
 .card:first-child{border:0;padding-top:0}
 .head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
@@ -75,7 +83,17 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
       <div class="card"><div class="head"><div class="title">Relations</div><div class="acts"><button class="b" id="gray">All gray</button><button class="b black" id="black">All black</button></div></div><div class="rows" id="rc"></div></div>
       <div class="card"><div class="title">Signed poles</div><div class="rows" id="pc"></div></div>
       <div class="card"><div class="title">Other</div><div class="rows" id="oc"></div></div>
-      <div class="note">One finger or mouse rotates. Two fingers steer by moving together, roll by twisting, and zoom by pinching. Labels stay at their zoomed-in text size. Hold a visible label until its outline completes, then drag it to pin it; Reset returns it beside its anchor.</div>
+      <div class="card" id="figure-state-card">
+      <div class="title">Figure state</div>
+      <div class="figure-state-bar">
+        <label for="figure-number">Selected figure</label>
+        <select id="figure-number" aria-label="Selected figure"></select>
+        <button class="b black" type="button" id="figure-state-copy">Copy current state</button>
+      </div>
+      <textarea id="figure-state-text" readonly spellcheck="false" rows="8" aria-label="Live figure state for copying"></textarea>
+      <div class="note" id="figure-state-status" aria-live="polite">Live state. Choose a figure, arrange it, and copy its current settings to send here. The selector labels the export; it does not save or restore other figures.</div>
+    </div>
+    <div class="note">One finger or mouse rotates. Two fingers steer by moving together, roll by twisting, and zoom by pinching. Labels stay at their zoomed-in text size. Hold a visible label until its outline completes, then drag it to pin it; Reset returns it beside its anchor.</div>
     </div>
   </section>
 </main>
@@ -209,7 +227,7 @@ function draw(){
 const tr=(x,y)=>{const r=svg.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R=Math.max(1,Math.min(r.width,r.height)*86/240);let X=(x-cx)/R,Y=-(y-cy)/R,d=X*X+Y*Y,Z;if(d<=1)Z=Math.sqrt(1-d);else{const z=1/Math.sqrt(d);X*=z;Y*=z;Z=0}return[X,Y,Z]};
 const step=dt=>{const s=len(av);if(s)o=qn(qm(qa(av,s*dt),o))};
 const phys=(now,dt)=>{if(drag||pinch||labelGesture)return;if(RM&&target){o=[...target.o];av=[0,0,0];target=null;return}if(target){const e=qe(target.o,o);av=add(av,sc(e,SP*dt));av=sc(av,Math.exp(-SD*dt));step(dt);if(len(e)<.00035&&len(av)<.000025){o=[...target.o];av=[0,0,0];target=null}return}step(dt);av=sc(av,Math.exp(-D*dt));if(now-rel>110&&len(av)<SS)target=nearest()};
-const frame=now=>{const dt=Math.min(now-lf,32);lf=now;phys(now,dt);draw();requestAnimationFrame(frame)};
+const frame=now=>{const dt=Math.min(now-lf,32);lf=now;phys(now,dt);draw();updateFigureExport(now);requestAnimationFrame(frame)};
 const begin=(id,x,y,keepMomentum=false)=>{drag=1;pid=id;target=null;if(!keepMomentum)av=[0,0,0];last=tr(x,y);lt=performance.now()};
 const rot=(cur,now)=>{const dt=Math.max(now-lt,1),c=cross(last,cur),n=len(c),d=cl(dot(last,cur),-1,1);if(n){const a=Math.atan2(n,d),ax=sc(c,1/n);o=qn(qm(qa(ax,a),o));const v=sc(ax,a/dt);av=add(sc(av,.38),sc(v,.62))}last=cur;lt=now};
 const releaseMotion=()=>{drag=0;pid=null;last=null;rel=performance.now();if(RM){av=[0,0,0];target=nearest()}};
@@ -266,6 +284,35 @@ window.FIGURES=Object.freeze({
   stopMotion:()=>{halt(true);return true},
   clearFigureLayer:()=>XL.replaceChildren()
 });
+const figureNumber=q('#figure-number'),figureStateText=q('#figure-state-text'),figureStateStatus=q('#figure-state-status'),figureStateCopy=q('#figure-state-copy');
+for(let i=1;i<=24;i++){const option=document.createElement('option');option.value=String(i);option.textContent='Figure '+i;figureNumber.append(option)}
+const currentFigureExport=()=>JSON.stringify({
+  format:'42-figures-state-v1',
+  figure:'Figure '+figureNumber.value,
+  ...window.FIGURES.getState()
+},null,2);
+let exportLastTick=0;
+function updateFigureExport(now,force=false){
+  if(!force&&(now-exportLastTick<250||document.activeElement===figureStateText))return;
+  exportLastTick=now;
+  const next=currentFigureExport();
+  if(figureStateText.value!==next)figureStateText.value=next;
+}
+figureNumber.addEventListener('change',()=>{updateFigureExport(performance.now(),true);figureStateStatus.textContent='Live state for Figure '+figureNumber.value+'. The selector labels the export; it does not save or restore another pose.'});
+figureStateCopy.addEventListener('click',async()=>{
+  const snapshot=currentFigureExport();
+  figureStateText.value=snapshot;
+  try{
+    if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');
+    await navigator.clipboard.writeText(snapshot);
+    figureStateStatus.textContent='Copied Figure '+figureNumber.value+' state. Paste it into ChatGPT to lock in this figure.';
+  }catch{
+    figureStateText.focus();figureStateText.select();
+    const copied=typeof document.execCommand==='function'&&document.execCommand('copy');
+    figureStateStatus.textContent=copied?'Copied Figure '+figureNumber.value+' state.':'Select and copy the highlighted state, then paste it into ChatGPT.';
+  }
+});
+updateFigureExport(performance.now(),true);
 draw();requestAnimationFrame(frame)
 })();
 </script>
