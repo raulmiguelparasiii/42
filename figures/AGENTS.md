@@ -42,7 +42,7 @@ Relations:
 - Purpose, Accountability, and Meaning each have a master line visibility toggle.
 - Each relation independently switches between black and gray.
 - Global `All black` and `All gray` controls set all three relation colors together.
-- Relation labels use their full names only: Purpose, Accountability, Meaning. They can be off/on, dragged, pinned in screen space, and reset.
+- Relation labels cycle off → `purposive axis` → `purposive relation` → `x-axis` → off for Purpose; off → `accountability axis` → `accountability relation` → `y-axis` → off for Accountability; and off → `meaning axis` → `meaning relation` → `z-axis` → off for Meaning. Each label connects to a distinct noncentral point on its own signed relation rather than sharing the origin. They can be dragged, pinned in screen space, and reset. Relation rows wrap their long label controls onto a second row on mobile.
 
 Signed poles:
 - Practicality = `P` / `Practicality`
@@ -56,12 +56,12 @@ Signed poles:
 Each signed pole has its own half-relation visibility and point marker. Its label cycles off → short → full. A relation master visibility toggle still governs its two signed halves as a group.
 
 ## Label interaction
-- Labels start beside their anchor and are non-selectable on iPhone/iOS. Native text selection and touch callouts must not compete with label interaction on the figure stage. Label lettering and hit boxes remain visually the same size at every pinch scale: the text is enlarged to its former 1.6× zoomed-in size, and each label group counter-scales around its anchor as the figure zooms.
+- Labels start beside their anchor and are non-selectable on iPhone/iOS. Native text selection and touch callouts must not compete with label interaction on the figure stage. Label lettering and hit boxes remain visually the same size at every pinch scale: the text is enlarged to its former 1.6× zoomed-in size, and each label group counter-scales around its anchor as the figure zooms. The default placement uses each label's measured text box, current zoom, and projected pole/axis direction so even long names clear their target on all sides.
 - The label text itself does not receive pointer events. A deliberately generous transparent hit rectangle surrounds it.
 - Pressing a visible label enters an armed hold state. A visible outline/progress indicator fills over about 850 ms. Small finger movement is tolerated within a generous wiggle threshold so slight drift does not hand the gesture to octahedron rotation.
 - Once the hold completes, dragging pins the label to that screen-space position. The label keeps the initial grab offset so it does not jump under the finger.
 - Moving decisively beyond the wiggle threshold before the hold completes cancels label arming and hands the gesture to ordinary octahedron rotation. A second touch also cancels label arming/dragging and starts the combined two-finger gesture, whether that touch lands on a label or elsewhere on the stage.
-- A pinned label gets a thin gray leader line back to its moving anchor.
+- A pinned label gets a thin gray leader line back to its moving anchor; its endpoint is clipped to just outside the measured label rectangle, leaving a consistent text gap. Relation labels show the same short leader even before pinning so their noncentral axis targets are explicit. Lines disappear when the target falls inside the protected text area.
 - Every draggable label has an independent Reset action that returns it to its default beside-anchor position.
 - When Stance occludes a pole/anchor, the corresponding marker, label, and leader are hidden automatically. Pinned screen coordinates remain stored and reappear when the anchor becomes visible again.
 
