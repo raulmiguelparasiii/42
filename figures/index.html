@@ -16,7 +16,8 @@ button{font:inherit;-webkit-user-select:none;user-select:none}
 svg{width:100%;height:100%;display:block;overflow:visible;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:grab}
 svg:active{cursor:grabbing}
 svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.face{fill:#d7d7d7;stroke:none}
+.face{fill:#d7d7d7;stroke:none;pointer-events:none}
+.tinted-stroke{fill:none;stroke-linecap:round;pointer-events:none}
 .edge{stroke:#000;stroke-width:1.15;fill:none;stroke-linecap:round}
 .seg{stroke-width:.95;fill:none;stroke-linecap:round}
 .pole{fill:#000;stroke:#fff;stroke-width:.7}
@@ -80,7 +81,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
   <section id="stage" aria-label="Interactive figure stage">
     <div id="shell">
       <svg id="o" viewBox="-120 -120 240 240" aria-label="Interactive epistemic octahedron">
-        <g id="f"></g><g id="r"></g><g id="e"></g><g id="m"></g><g id="x"></g><g id="g"></g><g id="l"></g>
+        <g id="f"></g><g id="r"></g><g id="e"></g><g id="t"></g><g id="m"></g><g id="x"></g><g id="g"></g><g id="l"></g>
       </svg>
     </div>
   </section>
@@ -98,7 +99,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
         <button class="b black" type="button" id="figure-state-copy">Copy current state</button>
       </div>
       <textarea id="figure-state-text" readonly spellcheck="false" rows="8" aria-label="Live figure state for copying"></textarea>
-      <div class="note" id="figure-state-status" aria-live="polite">Default view opens first. Figure 1 loads its saved composition; other figure numbers start from Default view and can be arranged and copied.</div>
+      <div class="note" id="figure-state-status" aria-live="polite">Default view opens first. Figures 1 and 2 load their saved compositions; other figure numbers start from Default view and can be arranged and copied.</div>
     </div>
     <div class="note">One finger or mouse rotates. Two fingers steer by moving together, roll by twisting, and zoom by pinching. Free positioning holds the exact orientation when released, so you can scroll down and copy it; turning Free off restores magnetic snapping. Labels stay at their zoomed-in text size. Hold a visible label until its outline completes, then drag it to pin it; Reset returns it beside its anchor.</div>
     </div>
@@ -106,7 +107,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
 </main>
 <script>
 (()=>{'use strict';
-const S='http://www.w3.org/2000/svg',q=s=>document.querySelector(s),stage=q('#stage'),controls=q('#controls'),handle=q('#sheet-handle'),svg=q('#o'),shell=q('#shell'),FL=q('#f'),RL=q('#r'),EL=q('#e'),ML=q('#m'),XL=q('#x'),GL=q('#g'),LL=q('#l');
+const S='http://www.w3.org/2000/svg',q=s=>document.querySelector(s),stage=q('#stage'),controls=q('#controls'),handle=q('#sheet-handle'),svg=q('#o'),shell=q('#shell'),FL=q('#f'),RL=q('#r'),EL=q('#e'),TL=q('#t'),ML=q('#m'),XL=q('#x'),GL=q('#g'),LL=q('#l');
 document.addEventListener('selectstart',e=>e.preventDefault());
 document.addEventListener('contextmenu',e=>{if(stage.contains(e.target))e.preventDefault()});
 
@@ -123,7 +124,7 @@ const IS={
 };
 const rs={purpose:{on:1,c:'black',lab:'off',pin:0,x:0,y:0},accountability:{on:1,c:'black',lab:'off',pin:0,x:0,y:0},meaning:{on:1,c:'black',lab:'off',pin:0,x:0,y:0}},is={};
 for(const k in IS)is[k]={on:1,lab:k==='absence'?'off':'short',pin:0,x:0,y:0};
-let stance=1;
+let stance=1,surfaceStyle='solid';
 
 const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],len=v=>Math.hypot(...v),sc=(v,s)=>v.map(x=>x*s),norm=v=>{const n=len(v);return n?sc(v,1/n):[0,0,0]},cl=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rawFaces=[[V.A,V.W,V.E],[V.A,V.P,V.W],[V.A,V.K,V.P],[V.A,V.E,V.K],[V.I,V.E,V.W],[V.I,V.W,V.P],[V.I,V.P,V.K],[V.I,V.K,V.E]];
@@ -134,6 +135,8 @@ const mk=(t,c)=>{const n=document.createElementNS(S,t);if(c)n.setAttribute('clas
 const fn=faces.map(()=>{const p=mk('polygon','face');FL.append(p);return p}),en=edges.map(()=>{const z=mk('line','edge');EL.append(z);return z}),sn={},mn={};
 for(const k in RS){sn[k]={};for(const d of ['neg','pos']){const z=mk('line','seg');RL.append(z);sn[k][d]=z}}
 for(const k in IS){const z=mk('circle',k==='absence'?'null':'pole');z.setAttribute('r',k==='absence'?2.15:2.25);ML.append(z);mn[k]=z}
+const tintedStrokes=[];
+const tintStroke=i=>{while(tintedStrokes.length<=i){const n=mk('line','tinted-stroke');TL.append(n);tintedStrokes.push(n)}return tintedStrokes[i]};
 
 const qn=q=>{const n=Math.hypot(...q)||1;return q.map(x=>x/n)},qc=q=>[-q[0],-q[1],-q[2],q[3]],qm=(a,b)=>[a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]];
 const qa=(a,t)=>{const n=len(a);if(!n||!t)return[0,0,0,1];const h=t/2,s=Math.sin(h)/n;return[a[0]*s,a[1]*s,a[2]*s,Math.cos(h)]},qyp=(y,p)=>qn(qm(qa([1,0,0],p),qa([0,1,0],y))),qr=(q,v)=>{const[x,y,z,w]=q,tx=2*(y*v[2]-z*v[1]),ty=2*(z*v[0]-x*v[2]),tz=2*(x*v[1]-y*v[0]);return[v[0]+w*tx+y*tz-z*ty,v[1]+w*ty+z*tx-x*tz,v[2]+w*tz+x*ty-y*tx]},qd=(a,b)=>2*Math.acos(cl(Math.abs(dot(a,b)+a[3]*b[3]),-1,1)),qe=(t,c)=>{let e=qn(qm(t,qc(c)));if(e[3]<0)e=e.map(x=>-x);const n=Math.hypot(e[0],e[1],e[2]);if(!n)return[0,0,0];const a=2*Math.atan2(n,cl(e[3],-1,1));return[e[0]/n*a,e[1]/n*a,e[2]/n*a]};
@@ -164,8 +167,16 @@ const rc=q('#rc');for(const k in RS){const sp=RS[k],row=document.createElement('
 const pc=q('#pc');for(const k of ['practicality','empathy','insulation','answerability','knowledge','wisdom']){const sp=IS[k],st=is[k],row=document.createElement('div');row.className='row pole-row';const n=document.createElement('div');n.className='name';n.innerHTML=`${sp.n} <small>(${sp.sg})</small>`;const a=btn('Line on','b on'),b=btn(poleLabelButtonText(k),'b label-cycle'),z=document.createElement('span'),d=btn('Reset');a.classList.add('line-switch');d.classList.add('reset-switch');d.disabled=1;reset[k]=d;a.onclick=()=>{st.on=!st.on;a.classList.toggle('on',st.on);a.textContent=st.on?'Line on':'Line off';draw()};b.onclick=()=>{const modes=poleLabelModes(k),i=modes.indexOf(st.lab);st.lab=modes[(i+1)%modes.length];b.textContent=poleLabelButtonText(k);draw()};d.onclick=()=>resetLab(k);row.append(n,a,b,z,d);pc.append(row)}
 const oc=q('#oc');
 {const k='absence',st=is[k],row=document.createElement('div');row.className='row';const n=document.createElement('div');n.className='name';n.innerHTML='Absence <small>(null)</small>';const a=btn('Point on','b on'),b=btn('Label: off'),z=document.createElement('span'),d=btn('Reset');d.disabled=1;reset[k]=d;a.onclick=()=>{st.on=!st.on;a.classList.toggle('on',st.on);a.textContent=st.on?'Point on':'Point off';draw()};b.onclick=()=>{st.lab=st.lab==='off'?'short':st.lab==='short'?'full':'off';b.textContent=st.lab==='off'?'Label: off':st.lab==='short'?'Label: ∅':'Label: full';draw()};d.onclick=()=>resetLab(k);row.append(n,a,b,z,d);oc.append(row)}
-let stanceButton;
-{const row=document.createElement('div');row.className='row';const n=document.createElement('div');n.className='name';n.innerHTML='Stance <small>(surface)</small>';const a=btn('Surface on','b on'),z1=document.createElement('span'),z2=document.createElement('span'),z3=document.createElement('span');stanceButton=a;a.onclick=()=>{stance=!stance;a.classList.toggle('on',stance);a.textContent=stance?'Surface on':'Surface off';draw()};row.append(n,a,z1,z2,z3);oc.append(row)}
+let stanceButton,surfaceStyleButton;
+const syncSurfaceButtons=()=>{
+  stanceButton.textContent=stance?'Surface on':'Surface off';
+  stanceButton.classList.toggle('on',stance);
+  surfaceStyleButton.textContent=surfaceStyle==='tinted'?'Tint on':'Tint off';
+  surfaceStyleButton.classList.toggle('on',surfaceStyle==='tinted');
+  surfaceStyleButton.setAttribute('aria-pressed',String(surfaceStyle==='tinted'));
+};
+{const row=document.createElement('div');row.className='row';const n=document.createElement('div');n.className='name';n.innerHTML='Stance <small>(surface)</small>';const a=btn('Surface on','b on'),z1=document.createElement('span'),z2=document.createElement('span'),z3=document.createElement('span');stanceButton=a;a.onclick=()=>{stance=!stance;syncSurfaceButtons();draw()};row.append(n,a,z1,z2,z3);oc.append(row)}
+{const row=document.createElement('div');row.className='row';const n=document.createElement('div');n.className='name';n.innerHTML='Blue/red faces <small>(translucent)</small>';const a=btn('Tint off'),z1=document.createElement('span'),z2=document.createElement('span'),z3=document.createElement('span');surfaceStyleButton=a;a.setAttribute('aria-pressed','false');a.onclick=()=>{surfaceStyle=surfaceStyle==='solid'?'tinted':'solid';if(surfaceStyle==='tinted')stance=true;syncSurfaceButtons();draw()};row.append(n,a,z1,z2,z3);oc.append(row)}
 {const row=document.createElement('div');row.className='row';const n=document.createElement('div');n.className='name';n.innerHTML='Free positioning <small>(no snap)</small>';const a=btn('Free off'),z1=document.createElement('span'),z2=document.createElement('span'),z3=document.createElement('span');a.setAttribute('aria-pressed','false');a.onclick=()=>{freePosition=!freePosition;a.textContent=freePosition?'Free on':'Free off';a.classList.toggle('on',freePosition);a.setAttribute('aria-pressed',String(freePosition));av=[0,0,0];rel=performance.now();holdSavedOrientation=false;target=freePosition?null:nearest();draw()};row.append(n,a,z1,z2,z3);oc.append(row)}
 function syncColors(){[...rc.children].forEach((row,i)=>{const k=Object.keys(RS)[i],b=row.children[3];b.textContent=rs[k].c==='black'?'Black':'Gray';b.classList.toggle('black',rs[k].c==='black')})}
 q('#black').onclick=()=>{for(const k in rs)rs[k].c='black';syncColors();draw()};q('#gray').onclick=()=>{for(const k in rs)rs[k].c='gray';syncColors();draw()};
@@ -247,16 +258,76 @@ function drawLab(k,p,anchorVisible){
   if(st.pin||RS[k])drawLeader(k,labAnchor(k,p),z,b);
 }
 
+// Projected face crossings let each hidden stroke follow the color of the surface in front of it.
+const renderTintLines=(p,frontFaces)=>{
+  const D=PERSPECTIVE_DISTANCE,eps=1e-7;
+  const cross2=(x,y)=>x[0]*y[1]-x[1]*y[0];
+  let used=0;
+  const drawSegment=(A,B,color,width,edge)=>{
+    const cuts=[0,1],dx=B[0]-A[0],dy=B[1]-A[1];
+    const projectedLength=Math.hypot(dx,dy);
+    if(projectedLength<1e-7)return;
+    for(const face of frontFaces){
+      for(let i=0;i<3;i++){
+        const C=face.pts[i],E=face.pts[(i+1)%3],ex=E[0]-C[0],ey=E[1]-C[1];
+        const denom=dx*ey-dy*ex;
+        if(Math.abs(denom)<eps)continue;
+        const rx=C[0]-A[0],ry=C[1]-A[1];
+        const t=(rx*ey-ry*ex)/denom,u=(rx*dy-ry*dx)/denom;
+        if(t>eps&&t<1-eps&&u>=-eps&&u<=1+eps)cuts.push(t);
+      }
+    }
+    cuts.sort((a,b)=>a-b);
+    for(let i=0;i<cuts.length-1;i++){
+      const start=cuts[i],end=cuts[i+1];
+      if(end-start<1e-6)continue;
+      const t=(start+end)/2,x=A[0]+dx*t,y=A[1]+dy*t;
+      let cover=null,nearestDepth=(1-t)/(D-A[2])+t/(D-B[2])+1e-5;
+      for(const face of frontFaces){
+        const [a,b,c]=face.pts;
+        const ab=[b[0]-a[0],b[1]-a[1]],ac=[c[0]-a[0],c[1]-a[1]];
+        const area=cross2(ab,ac);
+        if(Math.abs(area)<eps)continue;
+        const ap=[x-a[0],y-a[1]];
+        const v=cross2(ap,ac)/area,w=cross2(ab,ap)/area,u=1-v-w;
+        if(u<-1e-5||v<-1e-5||w<-1e-5)continue;
+        const depth=u/(D-a[2])+v/(D-b[2])+w/(D-c[2]);
+        if(depth>nearestDepth){nearestDepth=depth;cover=face}
+      }
+      const line=tintStroke(used++);
+      line.style.display='';
+      line.setAttribute('x1',A[0]+dx*start);line.setAttribute('y1',A[1]+dy*start);
+      line.setAttribute('x2',A[0]+dx*end);line.setAttribute('y2',A[1]+dy*end);
+      line.style.stroke=cover?(cover.top?'#265985':'#96353e'):color;
+      line.style.strokeWidth=cover?(edge?'1.05':'.9'):(edge?'1.15':'.95');
+      line.style.strokeDasharray=cover?'2.5 2.2':'none';
+      line.style.strokeDashoffset=cover?String(-projectedLength*start):'0';
+    }
+  };
+  edges.forEach(([a,b])=>drawSegment(p[a],p[b],'#000',1.15,true));
+  for(const k in RS){
+    const sp=RS[k],state=rs[k];
+    if(!state.on)continue;
+    for(const [item,v] of [[sp.neg,sp.nv],[sp.pos,sp.pv]]){
+      if(is[item].on)drawSegment(p[V.N],p[v],state.c==='black'?'#000':'#999',.95,false);
+    }
+  }
+  for(let i=used;i<tintedStrokes.length;i++)tintedStrokes[i].style.display='none';
+};
+
 function draw(){
   const rv=vs.map(v=>qr(o,v)),p=rv.map(proj),camera=[0,0,PERSPECTIVE_DISTANCE];
-  const fs=faces.map((f,i)=>{const a=rv[f[0]],b=rv[f[1]],c=rv[f[2]],n=cross(sub(b,a),sub(c,a)),cen=sc(add(add(a,b),c),1/3),front=stance?dot(n,sub(camera,cen))>1e-8:n[2]>1e-8;return{i,front,z:(a[2]+b[2]+c[2])/3,pts:f.map(v=>p[v])}});
-  fs.forEach(s=>{const n=fn[s.i];n.style.display=stance&&s.front?'':'none';n.setAttribute('points',s.pts.map(v=>v[0]+','+v[1]).join(' '))});
+  const tinted=stance&&surfaceStyle==='tinted';
+  const fs=faces.map((f,i)=>{const a=rv[f[0]],b=rv[f[1]],c=rv[f[2]],n=cross(sub(b,a),sub(c,a)),cen=sc(add(add(a,b),c),1/3),front=stance?dot(n,sub(camera,cen))>1e-8:n[2]>1e-8;return{i,front,z:(a[2]+b[2]+c[2])/3,pts:f.map(v=>p[v]),top:f.includes(V.A)}});
+  fs.forEach(s=>{const n=fn[s.i];n.style.display=stance&&s.front?'':'none';n.setAttribute('points',s.pts.map(v=>v[0]+','+v[1]).join(' '));n.style.fill=tinted?(s.top?'#5693ed':'#ec6a76'):'';n.style.fillOpacity=tinted?'.42':'1'});
   const vertexVisible=Array.from({length:6},(_,v)=>!stance||vf[v].some(i=>fs[i].front));
   for(const k in RS){const sp=RS[k],st=rs[k],col=st.c==='black'?'#000':'#999';for(const[d,ik,v]of[['neg',sp.neg,sp.nv],['pos',sp.pos,sp.pv]]){const n=sn[k][d],x=p[v];n.style.display=st.on&&is[ik].on&&!stance?'':'none';n.setAttribute('stroke',col);n.setAttribute('x1',0);n.setAttribute('y1',0);n.setAttribute('x2',x[0]);n.setAttribute('y2',x[1])}}
-  edges.forEach(([a,b],i)=>{const n=en[i],A=p[a],B=p[b];n.setAttribute('x1',A[0]);n.setAttribute('y1',A[1]);n.setAttribute('x2',B[0]);n.setAttribute('y2',B[1]);if(stance){const k=a<b?a+'-'+b:b+'-'+a;n.style.display=(ef.get(k)||[]).some(j=>fs[j].front)?'':'none';n.style.opacity=1}else{n.style.display='';n.style.opacity=.48+.42*((A[2]+B[2]+2)/4)}});
-  for(const k in IS){const n=mn[k],st=is[k],x=p[IS[k].v],visible=k==='absence'?!stance:vertexVisible[IS[k].v];n.style.display=st.on&&visible?'':'none';n.setAttribute('cx',x[0]);n.setAttribute('cy',x[1])}
-  for(const k in RS)drawLab(k,p,!stance);
-  for(const k in IS)drawLab(k,p,k==='absence'?!stance:vertexVisible[IS[k].v]);
+  edges.forEach(([a,b],i)=>{const n=en[i],A=p[a],B=p[b];n.setAttribute('x1',A[0]);n.setAttribute('y1',A[1]);n.setAttribute('x2',B[0]);n.setAttribute('y2',B[1]);if(stance){const k=a<b?a+'-'+b:b+'-'+a;n.style.display=!tinted&&(ef.get(k)||[]).some(j=>fs[j].front)?'':'none';n.style.opacity=1}else{n.style.display='';n.style.opacity=.48+.42*((A[2]+B[2]+2)/4)}});
+  if(tinted)renderTintLines(p,fs.filter(s=>s.front));
+  else for(const line of tintedStrokes)line.style.display='none';
+  for(const k in IS){const n=mn[k],st=is[k],x=p[IS[k].v],visible=tinted||(k==='absence'?!stance:vertexVisible[IS[k].v]);n.style.display=st.on&&visible?'':'none';n.setAttribute('cx',x[0]);n.setAttribute('cy',x[1])}
+  for(const k in RS)drawLab(k,p,!stance||tinted);
+  for(const k in IS)drawLab(k,p,tinted||(k==='absence'?!stance:vertexVisible[IS[k].v]));
 }
 
 const tr=(x,y)=>{const r=svg.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R=Math.max(1,Math.min(r.width,r.height)*86/240);let X=(x-cx)/R,Y=-(y-cy)/R,d=X*X+Y*Y,Z;if(d<=1)Z=Math.sqrt(1-d);else{const z=1/Math.sqrt(d);X*=z;Y*=z;Z=0}return[X,Y,Z]};
@@ -311,11 +382,12 @@ handle.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.prevent
 window.FIGURES=Object.freeze({
   get projection(){return stance?'perspective':'orthographic'},
   mainPitch:MP,geometry:{vertices:vs,edges,faces},snaps,figureLayer:XL,
-  getState:()=>({orientation:[...o],snapTarget:target?.id||null,scale,relations:structuredClone(rs),items:structuredClone(is),stance}),
+  getState:()=>({orientation:[...o],snapTarget:target?.id||null,scale,relations:structuredClone(rs),items:structuredClone(is),stance,surfaceStyle}),
   snapTo:id=>{const t=snaps.find(s=>s.id===id);if(!t)return false;av=[0,0,0];target=t;return true},
   setRelationColor:(k,c)=>{if(!rs[k]||!['black','gray'].includes(c))return false;rs[k].c=c;syncColors();draw();return true},
   resetLabel:k=>{if(!is[k]&&!rs[k])return false;resetLab(k);return true},
-  setStance:value=>{stance=!!value;stanceButton.classList.toggle('on',stance);stanceButton.textContent=stance?'Surface on':'Surface off';draw();return stance},
+  setStance:value=>{stance=!!value;syncSurfaceButtons();draw();return stance},
+  setSurfaceStyle:value=>{if(!['solid','tinted'].includes(value))return false;surfaceStyle=value;if(value==='tinted')stance=true;syncSurfaceButtons();draw();return true},
   stopMotion:()=>{halt(!freePosition);return true},
   clearFigureLayer:()=>XL.replaceChildren()
 });
@@ -441,7 +513,7 @@ figureNumber.value='default';
 const loadFigureState=snapshot=>{
   clearLabelGesture();tp.clear();drag=0;pid=null;last=null;pinch=null;av=[0,0,0];rel=performance.now();
   o=[...snapshot.orientation];target=snaps.find(s=>s.id===snapshot.snapTarget)||null;holdSavedOrientation=!target;
-  scale=snapshot.scale;shell.style.setProperty('--s',scale);stance=!!snapshot.stance;
+  scale=snapshot.scale;shell.style.setProperty('--s',scale);stance=!!snapshot.stance;surfaceStyle=snapshot.surfaceStyle==='tinted'?'tinted':'solid';
   for(const k in RS)Object.assign(rs[k],snapshot.relations[k]);
   for(const k in IS)Object.assign(is[k],snapshot.items[k]);
   [...rc.children].forEach((row,i)=>{
@@ -463,7 +535,7 @@ const loadFigureState=snapshot=>{
   absenceRow.children[1].classList.toggle('on',!!absence.on);
   absenceRow.children[2].textContent=absence.lab==='off'?'Label: off':absence.lab==='short'?'Label: ∅':'Label: full';
   upReset('absence');
-  stanceButton.textContent=stance?'Surface on':'Surface off';stanceButton.classList.toggle('on',stance);
+  syncSurfaceButtons();
   draw();
 };
 const currentFigureExport=()=>JSON.stringify({
