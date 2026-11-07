@@ -343,6 +343,97 @@ const savedFigure1=Object.freeze({
   },
   stance:false
 });
+const savedFigure2=Object.freeze({
+  "format": "42-figures-state-v1",
+  "figure": "Figure 2",
+  "orientation": [
+    0.14453695145946302,
+    0.19292106646149548,
+    0.030474288383824027,
+    0.9700318806748898
+  ],
+  "snapTarget": null,
+  "scale": 1.6,
+  "relations": {
+    "purpose": {
+      "on": 1,
+      "c": "black",
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "accountability": {
+      "on": 1,
+      "c": "black",
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "meaning": {
+      "on": 1,
+      "c": "black",
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    }
+  },
+  "items": {
+    "practicality": {
+      "on": 1,
+      "lab": "short",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "empathy": {
+      "on": 1,
+      "lab": "short",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "insulation": {
+      "on": 1,
+      "lab": "negative integration",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "answerability": {
+      "on": 1,
+      "lab": "positive integration",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "knowledge": {
+      "on": 1,
+      "lab": "short",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "wisdom": {
+      "on": 1,
+      "lab": "short",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "absence": {
+      "on": 1,
+      "lab": "full",
+      "pin": 1,
+      "x": -80.77304446482093,
+      "y": -26.58365887295917
+    }
+  },
+  "stance": false
+});
+const savedFigures=Object.freeze({'1':savedFigure1,'2':savedFigure2});
 const defaultOption=document.createElement('option');
 defaultOption.value='default';defaultOption.textContent='Default view';figureNumber.append(defaultOption);
 for(let i=1;i<=24;i++){const option=document.createElement('option');option.value=String(i);option.textContent='Figure '+i;figureNumber.append(option)}
@@ -389,10 +480,10 @@ function updateFigureExport(now,force=false){
 }
 figureNumber.addEventListener('change',()=>{
   const selected=figureNumber.value;
-  loadFigureState(selected==='1'?savedFigure1:defaultFigureState);
+  loadFigureState(savedFigures[selected]||defaultFigureState);
   updateFigureExport(performance.now(),true);
-  figureStateStatus.textContent=selected==='1'
-    ?'Loaded saved Figure 1. You may adjust it and copy the current state.'
+  figureStateStatus.textContent=savedFigures[selected]
+    ?'Loaded saved Figure '+selected+'. You may adjust it and copy the current state.'
     :selected==='default'
       ?'Restored Default view.'
       :'Figure '+selected+' starts from Default view. Arrange it and copy its state to save it in a later update.';
