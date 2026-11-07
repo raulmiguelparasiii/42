@@ -138,7 +138,7 @@ for(const k in IS){const z=mk('circle',k==='absence'?'null':'pole');z.setAttribu
 const qn=q=>{const n=Math.hypot(...q)||1;return q.map(x=>x/n)},qc=q=>[-q[0],-q[1],-q[2],q[3]],qm=(a,b)=>[a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]];
 const qa=(a,t)=>{const n=len(a);if(!n||!t)return[0,0,0,1];const h=t/2,s=Math.sin(h)/n;return[a[0]*s,a[1]*s,a[2]*s,Math.cos(h)]},qyp=(y,p)=>qn(qm(qa([1,0,0],p),qa([0,1,0],y))),qr=(q,v)=>{const[x,y,z,w]=q,tx=2*(y*v[2]-z*v[1]),ty=2*(z*v[0]-x*v[2]),tz=2*(x*v[1]-y*v[0]);return[v[0]+w*tx+y*tz-z*ty,v[1]+w*ty+z*tx-x*tz,v[2]+w*tz+x*ty-y*tx]},qd=(a,b)=>2*Math.acos(cl(Math.abs(dot(a,b)+a[3]*b[3]),-1,1)),qe=(t,c)=>{let e=qn(qm(t,qc(c)));if(e[3]<0)e=e.map(x=>-x);const n=Math.hypot(e[0],e[1],e[2]);if(!n)return[0,0,0];const a=2*Math.atan2(n,cl(e[3],-1,1));return[e[0]/n*a,e[1]/n*a,e[2]/n*a]};
 const MP=Math.asin(1/Math.sqrt(3)),Q=Math.PI/2,H=Math.PI/4,ys4=Array.from({length:4},(_,i)=>H+i*Q),ys8=Array.from({length:8},(_,i)=>i*H),bands=[['top',Math.PI/2,ys8],['upper',MP,ys4],['side',0,ys4],['lower',-MP,ys4],['bottom',-Math.PI/2,ys8]],snaps=Object.freeze(bands.flatMap(([id,p,ys])=>ys.map((y,i)=>({id:id+'-'+i,band:id,turn:i,yaw:y,pitch:p,o:qyp(y,p)}))));
-let o=[...snaps.find(s=>s.id==='upper-0').o],av=[0,0,0],target=snaps.find(s=>s.id==='upper-0'),drag=0,pid=null,last=null,lt=performance.now(),lf=lt,rel=0,scale=1,pinch=null;
+let o=[...snaps.find(s=>s.id==='upper-0').o],av=[0,0,0],target=snaps.find(s=>s.id==='upper-0'),drag=0,pid=null,last=null,lt=performance.now(),lf=lt,rel=0,scale=1,pinch=null,holdSavedOrientation=false;
 const tp=new Map,D=.003,SS=.00058,SP=.00012,SD=.012,RM=matchMedia('(prefers-reduced-motion: reduce)').matches,PERSPECTIVE_DISTANCE=3.2;
 const nearest=()=>snaps.reduce((a,b)=>qd(o,b.o)<qd(o,a.o)?b:a,snaps[0]);
 const proj=v=>{if(!stance)return[v[0]*86,-v[1]*86,v[2]];const k=PERSPECTIVE_DISTANCE/(PERSPECTIVE_DISTANCE-v[2]);return[v[0]*86*k,-v[1]*86*k,v[2]]};
@@ -260,15 +260,15 @@ function draw(){
 
 const tr=(x,y)=>{const r=svg.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R=Math.max(1,Math.min(r.width,r.height)*86/240);let X=(x-cx)/R,Y=-(y-cy)/R,d=X*X+Y*Y,Z;if(d<=1)Z=Math.sqrt(1-d);else{const z=1/Math.sqrt(d);X*=z;Y*=z;Z=0}return[X,Y,Z]};
 const step=dt=>{const s=len(av);if(s)o=qn(qm(qa(av,s*dt),o))};
-const phys=(now,dt)=>{if(drag||pinch||labelGesture)return;if(RM&&target){o=[...target.o];av=[0,0,0];target=null;return}if(target){const e=qe(target.o,o);av=add(av,sc(e,SP*dt));av=sc(av,Math.exp(-SD*dt));step(dt);if(len(e)<.00035&&len(av)<.000025){o=[...target.o];av=[0,0,0];target=null}return}step(dt);av=sc(av,Math.exp(-D*dt));if(now-rel>110&&len(av)<SS)target=nearest()};
+const phys=(now,dt)=>{if(drag||pinch||labelGesture)return;if(RM&&target){o=[...target.o];av=[0,0,0];target=null;return}if(target){const e=qe(target.o,o);av=add(av,sc(e,SP*dt));av=sc(av,Math.exp(-SD*dt));step(dt);if(len(e)<.00035&&len(av)<.000025){o=[...target.o];av=[0,0,0];target=null}return}step(dt);av=sc(av,Math.exp(-D*dt));if(!holdSavedOrientation&&now-rel>110&&len(av)<SS)target=nearest()};
 const frame=now=>{const dt=Math.min(now-lf,32);lf=now;phys(now,dt);draw();updateFigureExport(now);requestAnimationFrame(frame)};
-const begin=(id,x,y,keepMomentum=false)=>{drag=1;pid=id;target=null;if(!keepMomentum)av=[0,0,0];last=tr(x,y);lt=performance.now()};
+const begin=(id,x,y,keepMomentum=false)=>{holdSavedOrientation=false;drag=1;pid=id;target=null;if(!keepMomentum)av=[0,0,0];last=tr(x,y);lt=performance.now()};
 const rot=(cur,now)=>{const dt=Math.max(now-lt,1),c=cross(last,cur),n=len(c),d=cl(dot(last,cur),-1,1);if(n){const a=Math.atan2(n,d),ax=sc(c,1/n);o=qn(qm(qa(ax,a),o));const v=sc(ax,a/dt);av=add(sc(av,.38),sc(v,.62))}last=cur;lt=now};
 const releaseMotion=()=>{drag=0;pid=null;last=null;rel=performance.now();if(RM){av=[0,0,0];target=nearest()}};
 const stop=id=>{if(!drag||id!==pid)return;releaseMotion()};
 const metrics=()=>{const a=[...tp.values()].slice(0,2);if(a.length<2)return null;const dx=a[1].x-a[0].x,dy=a[1].y-a[0].y;return{x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2,d:Math.max(1,Math.hypot(dx,dy)),a:Math.atan2(dy,dx)}};
 // White Atlas's two-touch similarity gesture, expressed using Figures' own quaternions.
-const startPinch=()=>{const m=metrics();if(!m)return;drag=0;pid=null;av=[0,0,0];target=null;pinch={...m,t:performance.now()}};
+const startPinch=()=>{const m=metrics();if(!m)return;holdSavedOrientation=false;drag=0;pid=null;av=[0,0,0];target=null;pinch={...m,t:performance.now()}};
 const movePinch=()=>{
   const m=metrics();if(!m||!pinch)return;
   const now=performance.now(),dt=Math.max(now-pinch.t,1);
@@ -348,7 +348,7 @@ for(let i=1;i<=24;i++){const option=document.createElement('option');option.valu
 figureNumber.value='default';
 const loadFigureState=snapshot=>{
   clearLabelGesture();tp.clear();drag=0;pid=null;last=null;pinch=null;av=[0,0,0];rel=performance.now();
-  o=[...snapshot.orientation];target=snaps.find(s=>s.id===snapshot.snapTarget)||null;
+  o=[...snapshot.orientation];target=snaps.find(s=>s.id===snapshot.snapTarget)||null;holdSavedOrientation=!target;
   scale=snapshot.scale;shell.style.setProperty('--s',scale);stance=!!snapshot.stance;
   for(const k in RS)Object.assign(rs[k],snapshot.relations[k]);
   for(const k in IS)Object.assign(is[k],snapshot.items[k]);
