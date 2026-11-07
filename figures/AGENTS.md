@@ -28,6 +28,7 @@ Do not rename, swap, mirror, or reinterpret these coordinates without an explici
 - Two-finger touch follows the white Atlas's combined gesture: moving the finger-pair center steers the figure in screen yaw/pitch, twisting the pair rolls the figure around the viewing axis, and pinching simultaneously scales it from 0.6× to 1.6×. These motions use Figures' own quaternion math and share its angular momentum and magnetic snapping. When one finger remains, it resumes the native trackball without resetting momentum.
 - Active drag is tracked at the window level so leaving the SVG does not abruptly kill the gesture.
 - Released motion preserves angular momentum, decays naturally, and then the nearest authored magnetic snap captures it once motion is slow enough.
+- Loading a figure state with no active snap target holds its exact authored quaternion indefinitely; the automatic snap is rearmed only when the user begins rotating or a two-finger gesture. Ordinary released-gesture magnetic snapping remains unchanged.
 - Leaving the visible octahedron during an active drag does not kill the gesture; release behavior remains the same wherever the pointer/finger ends.
 - There are 28 snaps. Top and bottom each have yaw 0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°. Upper/side/lower use yaw 45°, 135°, 225°, 315°. Upper/lower pitch is exactly ±asin(1/√3) ≈ ±35.26438968°, matching root `/42/`, never ±45°.
 
