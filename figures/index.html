@@ -300,7 +300,7 @@ const renderTintLines=(p,frontFaces)=>{
       line.setAttribute('x2',A[0]+dx*end);line.setAttribute('y2',A[1]+dy*end);
       line.style.stroke=cover?(cover.top?'#265985':'#96353e'):color;
       line.style.strokeWidth=edge?(cover?'1.05':'1.15'):(cover?'.9':'.95');
-      line.style.strokeDasharray=cover?'2.5 2.2':'none';
+      line.style.strokeDasharray=!edge&&cover?'2.5 2.2':'none';
       line.style.strokeDashoffset=cover?String(-projectedLength*start):'0';
     }
   };
