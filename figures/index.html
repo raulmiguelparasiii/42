@@ -263,7 +263,7 @@ const renderTintLines=(p,frontFaces)=>{
   const D=PERSPECTIVE_DISTANCE,eps=1e-7;
   const cross2=(x,y)=>x[0]*y[1]-x[1]*y[0];
   let used=0;
-  const drawSegment=(A,B,color)=>{
+  const drawSegment=(A,B,color,edge=false)=>{
     const cuts=[0,1],dx=B[0]-A[0],dy=B[1]-A[1];
     const projectedLength=Math.hypot(dx,dy);
     if(projectedLength<1e-7)return;
@@ -299,11 +299,12 @@ const renderTintLines=(p,frontFaces)=>{
       line.setAttribute('x1',A[0]+dx*start);line.setAttribute('y1',A[1]+dy*start);
       line.setAttribute('x2',A[0]+dx*end);line.setAttribute('y2',A[1]+dy*end);
       line.style.stroke=cover?(cover.top?'#265985':'#96353e'):color;
-      line.style.strokeWidth=cover?'.9':'.95';
+      line.style.strokeWidth=edge?(cover?'1.05':'1.15'):(cover?'.9':'.95');
       line.style.strokeDasharray=cover?'2.5 2.2':'none';
       line.style.strokeDashoffset=cover?String(-projectedLength*start):'0';
     }
   };
+  edges.forEach(([a,b])=>drawSegment(p[a],p[b],'#000',true));
   for(const k in RS){
     const sp=RS[k],state=rs[k];
     if(!state.on)continue;
@@ -335,7 +336,7 @@ function draw(){
   });
   const vertexVisible=Array.from({length:6},(_,v)=>!stance||vf[v].some(i=>fs[i].front));
   for(const k in RS){const sp=RS[k],st=rs[k],col=st.c==='black'?'#000':'#999';for(const[d,ik,v]of[['neg',sp.neg,sp.nv],['pos',sp.pos,sp.pv]]){const n=sn[k][d],x=p[v];n.style.display=st.on&&is[ik].on&&!stance?'':'none';n.setAttribute('stroke',col);n.setAttribute('x1',0);n.setAttribute('y1',0);n.setAttribute('x2',x[0]);n.setAttribute('y2',x[1])}}
-  edges.forEach(([a,b],i)=>{const n=en[i],A=p[a],B=p[b];n.setAttribute('x1',A[0]);n.setAttribute('y1',A[1]);n.setAttribute('x2',B[0]);n.setAttribute('y2',B[1]);if(stance){const k=a<b?a+'-'+b:b+'-'+a;n.style.display=tinted||(ef.get(k)||[]).some(j=>fs[j].front)?'':'none';n.style.opacity=1}else{n.style.display='';n.style.opacity=.48+.42*((A[2]+B[2]+2)/4)}});
+  edges.forEach(([a,b],i)=>{const n=en[i],A=p[a],B=p[b];n.setAttribute('x1',A[0]);n.setAttribute('y1',A[1]);n.setAttribute('x2',B[0]);n.setAttribute('y2',B[1]);if(stance){const k=a<b?a+'-'+b:b+'-'+a;n.style.display=!tinted&&(ef.get(k)||[]).some(j=>fs[j].front)?'':'none';n.style.opacity=1}else{n.style.display='';n.style.opacity=.48+.42*((A[2]+B[2]+2)/4)}});
   if(tinted)renderTintLines(p,fs.filter(s=>s.front));
   else for(const line of tintedStrokes)line.style.display='none';
   for(const k in IS){const n=mn[k],st=is[k],x=p[IS[k].v],visible=tinted||(k==='absence'?!stance:vertexVisible[IS[k].v]);n.style.display=st.on&&visible?'':'none';n.setAttribute('cx',x[0]);n.setAttribute('cy',x[1])}
