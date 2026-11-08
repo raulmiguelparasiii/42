@@ -429,7 +429,97 @@ window.FIGURES=Object.freeze({
   clearFigureLayer:()=>XL.replaceChildren()
 });
 const figureNumber=q('#figure-number'),figureStateText=q('#figure-state-text'),figureStateStatus=q('#figure-state-status'),figureStateCopy=q('#figure-state-copy');
-const defaultFigureState=structuredClone(window.FIGURES.getState());
+const defaultFigureState=Object.freeze({
+  "format": "42-figures-state-v1",
+  "figure": "Default view",
+  "orientation": [
+    0.11591689595929518,
+    0.8804762392171492,
+    0.2798481423331214,
+    0.3647051996310009
+  ],
+  "snapTarget": "upper-1",
+  "scale": 1.40215497014149,
+  "relations": {
+    "purpose": {
+      "on": 1,
+      "c": "black",
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "accountability": {
+      "on": 1,
+      "c": "black",
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "meaning": {
+      "on": 1,
+      "c": "black",
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    }
+  },
+  "items": {
+    "practicality": {
+      "on": 1,
+      "lab": "full",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "empathy": {
+      "on": 1,
+      "lab": "full",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "insulation": {
+      "on": 1,
+      "lab": "collapse",
+      "pin": 0,
+      "x": 9.77954950617621,
+      "y": 81.9389839578198
+    },
+    "answerability": {
+      "on": 1,
+      "lab": "maturity",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "knowledge": {
+      "on": 1,
+      "lab": "full",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "wisdom": {
+      "on": 1,
+      "lab": "full",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "absence": {
+      "on": false,
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    }
+  },
+  "stance": true,
+  "surfaceStyle": "tinted"
+});
 const savedFigure1=Object.freeze({
   format:'42-figures-state-v1',
   figure:'Figure 1',
@@ -611,8 +701,9 @@ figureStateCopy.addEventListener('click',async()=>{
     figureStateStatus.textContent=copied?'Copied Figure '+figureNumber.value+' state.':'Select and copy the highlighted state, then paste it into ChatGPT.';
   }
 });
+loadFigureState(defaultFigureState);
 updateFigureExport(performance.now(),true);
-draw();requestAnimationFrame(frame)
+requestAnimationFrame(frame)
 })();
 </script>
 </body>
