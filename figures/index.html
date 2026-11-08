@@ -22,6 +22,12 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
 #figure2-overlay .y-axis-shaft{fill:none;stroke-width:2.15;vector-effect:none}
 #figure2-overlay .y-axis-arrowhead{stroke:none}
 #figure2-overlay .y-axis-annotation{fill:#111;stroke:none;font:400 6.2px Georgia,"Times New Roman",serif;text-anchor:middle;dominant-baseline:middle;letter-spacing:.06px}
+#figure3-overlay{opacity:0;pointer-events:none}
+#figure3-overlay .graph-axis{stroke:#171717;stroke-width:1.1;fill:none;stroke-linecap:round}
+#figure3-overlay .graph-arrow{fill:#171717;stroke:none}
+#figure3-overlay .graph-maximum{stroke:#555;stroke-width:.88;fill:none;stroke-dasharray:3 2.5}
+#figure3-overlay .graph-text{fill:#151515;stroke:none;font:400 7px Georgia,"Times New Roman",serif;text-anchor:middle;dominant-baseline:middle;letter-spacing:.08px}
+#figure3-overlay .graph-tick{font:400 6.3px Georgia,"Times New Roman",serif}
 .edge{stroke:#000;stroke-width:1.15;fill:none;stroke-linecap:round}
 .seg{stroke-width:.95;fill:none;stroke-linecap:round}
 .pole{fill:#000;stroke:#fff;stroke-width:.7}
@@ -95,6 +101,18 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
           <text class="y-axis-annotation" transform="translate(85 43) rotate(90)">insulating</text>
           <text class="y-axis-annotation" transform="translate(106 0) rotate(90)">accountability</text>
         </g>
+        <g id="figure3-overlay" aria-label="Friction of reality graph: zero at Collapse, maximum at prejudiced stance, accountability toward Maturity">
+          <line class="graph-axis" id="f3-friction-axis"></line>
+          <path class="graph-arrow" id="f3-friction-tip"></path>
+          <line class="graph-axis" id="f3-accountability-axis"></line>
+          <path class="graph-arrow" id="f3-accountability-tip"></path>
+          <line class="graph-maximum" id="f3-max-guide"></line>
+          <text class="graph-text graph-tick" id="f3-zero">0</text>
+          <text class="graph-text graph-tick" id="f3-max">max</text>
+          <text class="graph-text" id="f3-friction-label">friction of reality</text>
+          <text class="graph-text" id="f3-accountability-label">accountable to reality</text>
+          <text class="graph-text" id="f3-apex-label">prejudiced stance</text>
+        </g>
         <g id="x"></g><g id="g"></g><g id="l"></g>
       </svg>
     </div>
@@ -121,7 +139,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
 </main>
 <script>
 (()=>{'use strict';
-const S='http://www.w3.org/2000/svg',q=s=>document.querySelector(s),stage=q('#stage'),controls=q('#controls'),handle=q('#sheet-handle'),svg=q('#o'),shell=q('#shell'),FL=q('#f'),RL=q('#r'),EL=q('#e'),TL=q('#t'),ML=q('#m'),F2O=q('#figure2-overlay'),XL=q('#x'),GL=q('#g'),LL=q('#l');
+const S='http://www.w3.org/2000/svg',q=s=>document.querySelector(s),stage=q('#stage'),controls=q('#controls'),handle=q('#sheet-handle'),svg=q('#o'),shell=q('#shell'),FL=q('#f'),RL=q('#r'),EL=q('#e'),TL=q('#t'),ML=q('#m'),F2O=q('#figure2-overlay'),F3O=q('#figure3-overlay'),XL=q('#x'),GL=q('#g'),LL=q('#l');
 document.addEventListener('selectstart',e=>e.preventDefault());
 document.addEventListener('contextmenu',e=>{if(stage.contains(e.target))e.preventDefault()});
 
@@ -342,10 +360,41 @@ const drawFigure2Overlay=()=>{
   F2O.style.opacity=String(position*motion);
 };
 
+const f3Nodes=Object.fromEntries(['friction-axis','friction-tip','accountability-axis','accountability-tip','max-guide','zero','max','friction-label','accountability-label','apex-label'].map(k=>[k,q('#f3-'+k)]));
+const drawFigure3Graph=p=>{
+  if(figureNumber.value!=='3'){F3O.style.opacity='0';return}
+  const position=cl(1-qd(o,savedFigure3.orientation)/.13,0,1);
+  const motion=drag||pinch?0:cl(1-len(av)/.00135,0,1);
+  F3O.style.opacity=String(position*motion);
+  if(position<=0)return;
+
+  // Anchor the graph to the actual -y, +y and +x vertices at this view.
+  const [leftX,floorY]=p[V.I],[rightX]=p[V.A],[peakX,peakY]=p[V.E];
+  const farTip=rightX+19;
+  const line=(node,x1,y1,x2,y2)=>{
+    node.setAttribute('x1',x1);node.setAttribute('y1',y1);
+    node.setAttribute('x2',x2);node.setAttribute('y2',y2);
+  };
+  const label=(node,x,y)=>{node.setAttribute('x',x);node.setAttribute('y',y)};
+  line(f3Nodes['friction-axis'],leftX,floorY-3,leftX,peakY+6);
+  f3Nodes['friction-tip'].setAttribute('d',`M${leftX} ${peakY} l-3.7 7.5 h7.4 Z`);
+  line(f3Nodes['accountability-axis'],leftX,floorY,farTip-7,floorY);
+  f3Nodes['accountability-tip'].setAttribute('d',`M${farTip} ${floorY} l-8 -3.7 v7.4 Z`);
+  line(f3Nodes['max-guide'],leftX+1,peakY,peakX,peakY);
+  label(f3Nodes.zero,leftX-9,floorY-5.5);
+  label(f3Nodes.max,leftX-10,peakY-3.5);
+  const titleX=leftX-22,titleY=(floorY+peakY)/2;
+  label(f3Nodes['friction-label'],titleX,titleY);
+  f3Nodes['friction-label'].setAttribute('transform',`rotate(-90 ${titleX} ${titleY})`);
+  label(f3Nodes['accountability-label'],(leftX+farTip)/2,floorY+20);
+  label(f3Nodes['apex-label'],peakX,peakY-12.5);
+};
+
 function draw(){
   drawFigure2Overlay();
   const cutBelowFloor=figureNumber.value==='3';
   const rv=vs.map(v=>qr(o,v)),p=rv.map(proj),camera=[0,0,PERSPECTIVE_DISTANCE];
+  drawFigure3Graph(p);
   const tinted=stance&&surfaceStyle==='tinted';
   const fs=faces.map((f,i)=>{const a=rv[f[0]],b=rv[f[1]],c=rv[f[2]],n=cross(sub(b,a),sub(c,a)),cen=sc(add(add(a,b),c),1/3),front=stance?dot(n,sub(camera,cen))>1e-8:n[2]>1e-8;return{i,front,visible:!cutBelowFloor||!f.includes(V.P),z:(a[2]+b[2]+c[2])/3,pts:f.map(v=>p[v]),top:f.includes(V.A)}});
   // Render the far hemisphere before the near hemisphere, so translucent overlaps
@@ -648,7 +697,7 @@ const savedFigure3=Object.freeze({
     0,
     0
   ],
-  "snapTarget": "y-horizontal",
+  "snapTarget": null,
   "scale": 1.40215497014149,
   "relations": {
     "purpose": {
@@ -694,16 +743,16 @@ const savedFigure3=Object.freeze({
     "insulation": {
       "on": 1,
       "lab": "collapse",
-      "pin": 0,
-      "x": 9.77954950617621,
-      "y": 81.9389839578198
+      "pin": 1,
+      "x": -86.791464986408,
+      "y": 6.038752555847147
     },
     "answerability": {
       "on": 1,
       "lab": "maturity",
-      "pin": 0,
-      "x": 0,
-      "y": 0
+      "pin": 1,
+      "x": 83.40299557271885,
+      "y": 6.038757324218775
     },
     "knowledge": {
       "on": false,
