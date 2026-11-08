@@ -113,7 +113,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
         <button class="b black" type="button" id="figure-state-copy">Copy current state</button>
       </div>
       <textarea id="figure-state-text" readonly spellcheck="false" rows="8" aria-label="Live figure state for copying"></textarea>
-      <div class="note" id="figure-state-status" aria-live="polite">Default view opens first. Figures 1 and 2 load their saved compositions; other figure numbers start from Default view and can be arranged and copied.</div>
+      <div class="note" id="figure-state-status" aria-live="polite">Default view opens first. Figures 1–3 load their saved compositions; other figure numbers start from Default view and can be arranged and copied.</div>
     </div>
     <div class="note">One finger or mouse rotates. Two fingers steer by moving together, roll by twisting, and zoom by pinching. Free positioning holds the exact orientation when released, so you can scroll down and copy it; turning Free off restores magnetic snapping. Labels stay at their zoomed-in text size. Hold a visible label until its outline completes, then drag it to pin it; Reset returns it beside its anchor.</div>
     </div>
@@ -278,7 +278,7 @@ function drawLab(k,p,anchorVisible){
 }
 
 // Projected face crossings let each hidden stroke follow the color of the surface in front of it.
-const renderTintLines=(p,frontFaces)=>{
+const renderTintLines=(p,frontFaces,cutBelowFloor=false)=>{
   const D=PERSPECTIVE_DISTANCE,eps=1e-7;
   const cross2=(x,y)=>x[0]*y[1]-x[1]*y[0];
   let used=0;
@@ -323,12 +323,12 @@ const renderTintLines=(p,frontFaces)=>{
       line.style.strokeDashoffset=cover?String(-projectedLength*start):'0';
     }
   };
-  edges.forEach(([a,b])=>drawSegment(p[a],p[b],'#000',true));
+  edges.forEach(([a,b])=>{if(!cutBelowFloor&&(a===V.P||b===V.P)||a!==V.P&&b!==V.P)drawSegment(p[a],p[b],'#000',true)});
   for(const k in RS){
     const sp=RS[k],state=rs[k];
     if(!state.on)continue;
     for(const [item,v] of [[sp.neg,sp.nv],[sp.pos,sp.pv]]){
-      if(is[item].on)drawSegment(p[V.N],p[v],state.c==='black'?'#000':'#999');
+      if(is[item].on&&(!cutBelowFloor||v!==V.P))drawSegment(p[V.N],p[v],state.c==='black'?'#000':'#999');
     }
   }
   for(let i=used;i<tintedStrokes.length;i++)tintedStrokes[i].style.display='none';
@@ -344,32 +344,33 @@ const drawFigure2Overlay=()=>{
 
 function draw(){
   drawFigure2Overlay();
+  const cutBelowFloor=figureNumber.value==='3';
   const rv=vs.map(v=>qr(o,v)),p=rv.map(proj),camera=[0,0,PERSPECTIVE_DISTANCE];
   const tinted=stance&&surfaceStyle==='tinted';
-  const fs=faces.map((f,i)=>{const a=rv[f[0]],b=rv[f[1]],c=rv[f[2]],n=cross(sub(b,a),sub(c,a)),cen=sc(add(add(a,b),c),1/3),front=stance?dot(n,sub(camera,cen))>1e-8:n[2]>1e-8;return{i,front,z:(a[2]+b[2]+c[2])/3,pts:f.map(v=>p[v]),top:f.includes(V.A)}});
+  const fs=faces.map((f,i)=>{const a=rv[f[0]],b=rv[f[1]],c=rv[f[2]],n=cross(sub(b,a),sub(c,a)),cen=sc(add(add(a,b),c),1/3),front=stance?dot(n,sub(camera,cen))>1e-8:n[2]>1e-8;return{i,front,visible:!cutBelowFloor||!f.includes(V.P),z:(a[2]+b[2]+c[2])/3,pts:f.map(v=>p[v]),top:f.includes(V.A)}});
   // Render the far hemisphere before the near hemisphere, so translucent overlaps
   // deepen and mix naturally (including red seen through a blue foreground face).
   if(tinted){
-    for(const s of fs.filter(s=>!s.front))FL.append(fn[s.i]);
-    for(const s of fs.filter(s=>s.front))FL.append(fn[s.i]);
+    for(const s of fs.filter(s=>s.visible&&!s.front))FL.append(fn[s.i]);
+    for(const s of fs.filter(s=>s.visible&&s.front))FL.append(fn[s.i]);
   }
   fs.forEach(s=>{
     const n=fn[s.i];
-    n.style.display=stance&&(tinted||s.front)?'':'none';
+    n.style.display=stance&&s.visible&&(tinted||s.front)?'':'none';
     n.setAttribute('points',s.pts.map(v=>v[0]+','+v[1]).join(' '));
     n.style.fill=tinted
       ?(s.top?(s.front?'#5693ed':'#3674c6'):(s.front?'#ec6a76':'#d94b60'))
       :'';
     n.style.fillOpacity=tinted?(s.front?'.43':'.53'):'1';
   });
-  const vertexVisible=Array.from({length:6},(_,v)=>!stance||vf[v].some(i=>fs[i].front));
-  for(const k in RS){const sp=RS[k],st=rs[k],col=st.c==='black'?'#000':'#999';for(const[d,ik,v]of[['neg',sp.neg,sp.nv],['pos',sp.pos,sp.pv]]){const n=sn[k][d],x=p[v];n.style.display=st.on&&is[ik].on&&!stance?'':'none';n.setAttribute('stroke',col);n.setAttribute('x1',0);n.setAttribute('y1',0);n.setAttribute('x2',x[0]);n.setAttribute('y2',x[1])}}
-  edges.forEach(([a,b],i)=>{const n=en[i],A=p[a],B=p[b];n.setAttribute('x1',A[0]);n.setAttribute('y1',A[1]);n.setAttribute('x2',B[0]);n.setAttribute('y2',B[1]);if(stance){const k=a<b?a+'-'+b:b+'-'+a;n.style.display=!tinted&&(ef.get(k)||[]).some(j=>fs[j].front)?'':'none';n.style.opacity=1}else{n.style.display='';n.style.opacity=.48+.42*((A[2]+B[2]+2)/4)}});
-  if(tinted)renderTintLines(p,fs.filter(s=>s.front));
+  const vertexVisible=Array.from({length:6},(_,v)=>(!cutBelowFloor||v!==V.P)&&(!stance||vf[v].some(i=>fs[i].visible&&fs[i].front)));
+  for(const k in RS){const sp=RS[k],st=rs[k],col=st.c==='black'?'#000':'#999';for(const[d,ik,v]of[['neg',sp.neg,sp.nv],['pos',sp.pos,sp.pv]]){const n=sn[k][d],x=p[v];n.style.display=st.on&&is[ik].on&&!stance&&(!cutBelowFloor||v!==V.P)?'':'none';n.setAttribute('stroke',col);n.setAttribute('x1',0);n.setAttribute('y1',0);n.setAttribute('x2',x[0]);n.setAttribute('y2',x[1])}}
+  edges.forEach(([a,b],i)=>{const n=en[i],A=p[a],B=p[b];n.setAttribute('x1',A[0]);n.setAttribute('y1',A[1]);n.setAttribute('x2',B[0]);n.setAttribute('y2',B[1]);if(cutBelowFloor&&(a===V.P||b===V.P)){n.style.display='none'}else if(stance){const k=a<b?a+'-'+b:b+'-'+a;n.style.display=!tinted&&(ef.get(k)||[]).some(j=>fs[j].visible&&fs[j].front)?'':'none';n.style.opacity=1}else{n.style.display='';n.style.opacity=.48+.42*((A[2]+B[2]+2)/4)}});
+  if(tinted)renderTintLines(p,fs.filter(s=>s.visible&&s.front),cutBelowFloor);
   else for(const line of tintedStrokes)line.style.display='none';
-  for(const k in IS){const n=mn[k],st=is[k],x=p[IS[k].v],visible=tinted||(k==='absence'?!stance:vertexVisible[IS[k].v]);n.style.display=st.on&&visible?'':'none';n.setAttribute('cx',x[0]);n.setAttribute('cy',x[1])}
+  for(const k in IS){const n=mn[k],st=is[k],x=p[IS[k].v],visible=(!cutBelowFloor||IS[k].v!==V.P)&&(tinted||(k==='absence'?!stance:vertexVisible[IS[k].v]));n.style.display=st.on&&visible?'':'none';n.setAttribute('cx',x[0]);n.setAttribute('cy',x[1])}
   for(const k in RS)drawLab(k,p,!stance||tinted);
-  for(const k in IS)drawLab(k,p,tinted||(k==='absence'?!stance:vertexVisible[IS[k].v]));
+  for(const k in IS)drawLab(k,p,(!cutBelowFloor||IS[k].v!==V.P)&&(tinted||(k==='absence'?!stance:vertexVisible[IS[k].v])));
 }
 
 const tr=(x,y)=>{const r=svg.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R=Math.max(1,Math.min(r.width,r.height)*86/240);let X=(x-cx)/R,Y=-(y-cy)/R,d=X*X+Y*Y,Z;if(d<=1)Z=Math.sqrt(1-d);else{const z=1/Math.sqrt(d);X*=z;Y*=z;Z=0}return[X,Y,Z]};
@@ -638,7 +639,98 @@ const savedFigure2=Object.freeze({
   "stance": true,
   "surfaceStyle": "tinted"
 });
-const savedFigures=Object.freeze({'1':savedFigure1,'2':savedFigure2});
+const savedFigure3=Object.freeze({
+  "format": "42-figures-state-v1",
+  "figure": "Figure 3",
+  "orientation": [
+    0.7071067811865476,
+    0.7071067811865476,
+    0,
+    0
+  ],
+  "snapTarget": "y-horizontal",
+  "scale": 1.40215497014149,
+  "relations": {
+    "purpose": {
+      "on": 1,
+      "c": "black",
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "accountability": {
+      "on": false,
+      "c": "black",
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "meaning": {
+      "on": 1,
+      "c": "black",
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    }
+  },
+  "items": {
+    "practicality": {
+      "on": false,
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "empathy": {
+      "on": false,
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "insulation": {
+      "on": 1,
+      "lab": "collapse",
+      "pin": 0,
+      "x": 9.77954950617621,
+      "y": 81.9389839578198
+    },
+    "answerability": {
+      "on": 1,
+      "lab": "maturity",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "knowledge": {
+      "on": false,
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "wisdom": {
+      "on": false,
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    },
+    "absence": {
+      "on": false,
+      "lab": "off",
+      "pin": 0,
+      "x": 0,
+      "y": 0
+    }
+  },
+  "stance": true,
+  "surfaceStyle": "tinted"
+});
+const savedFigures=Object.freeze({'1':savedFigure1,'2':savedFigure2,'3':savedFigure3});
 const defaultOption=document.createElement('option');
 defaultOption.value='default';defaultOption.textContent='Default view';figureNumber.append(defaultOption);
 for(let i=1;i<=24;i++){const option=document.createElement('option');option.value=String(i);option.textContent='Figure '+i;figureNumber.append(option)}
