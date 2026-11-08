@@ -26,6 +26,7 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
 #figure3-overlay .graph-axis{stroke:#171717;stroke-width:1.1;fill:none;stroke-linecap:round}
 #figure3-overlay .graph-arrow{fill:#171717;stroke:none}
 #figure3-overlay .graph-maximum{stroke:#555;stroke-width:.88;fill:none;stroke-dasharray:3 2.5}
+#figure3-overlay .graph-leader{stroke:#555;stroke-width:.88;fill:none}
 #figure3-overlay .graph-text{fill:#151515;stroke:none;font:400 7px Georgia,"Times New Roman",serif;text-anchor:middle;dominant-baseline:middle;letter-spacing:.08px}
 #figure3-overlay .graph-tick{font:400 6.3px Georgia,"Times New Roman",serif}
 #figure3-overlay #f3-apex-label{font-size:5.3px;text-anchor:start}
@@ -108,10 +109,11 @@ svg *{vector-effect:non-scaling-stroke;-webkit-user-select:none;user-select:none
           <line class="graph-axis" id="f3-accountability-axis"></line>
           <path class="graph-arrow" id="f3-accountability-tip"></path>
           <line class="graph-maximum" id="f3-max-guide"></line>
+          <line class="graph-leader" id="f3-apex-leader"></line>
           <text class="graph-text graph-tick" id="f3-zero">0</text>
           <text class="graph-text graph-tick" id="f3-max">max</text>
           <text class="graph-text" id="f3-friction-label">friction of reality</text>
-          <text class="graph-text" id="f3-accountability-label">accountable to reality</text>
+          <text class="graph-text" id="f3-accountability-label">accountability</text>
           <text class="graph-text" id="f3-apex-label">prejudiced stance</text>
         </g>
         <g id="x"></g><g id="g"></g><g id="l"></g>
@@ -361,7 +363,7 @@ const drawFigure2Overlay=()=>{
   F2O.style.opacity=String(position*motion);
 };
 
-const f3Nodes=Object.fromEntries(['friction-axis','friction-tip','accountability-axis','accountability-tip','max-guide','zero','max','friction-label','accountability-label','apex-label'].map(k=>[k,q('#f3-'+k)]));
+const f3Nodes=Object.fromEntries(['friction-axis','friction-tip','accountability-axis','accountability-tip','max-guide','apex-leader','zero','max','friction-label','accountability-label','apex-label'].map(k=>[k,q('#f3-'+k)]));
 const drawFigure3Graph=p=>{
   if(figureNumber.value!=='3'){F3O.style.opacity='0';return}
   const position=cl(1-qd(o,savedFigure3.orientation)/.13,0,1);
@@ -381,13 +383,14 @@ const drawFigure3Graph=p=>{
   f3Nodes['friction-tip'].setAttribute('d',`M${leftX} ${peakY} l-3.7 7.5 h7.4 Z`);
   line(f3Nodes['accountability-axis'],leftX,floorY,farTip-7,floorY);
   f3Nodes['accountability-tip'].setAttribute('d',`M${farTip} ${floorY} l-8 -3.7 v7.4 Z`);
-  line(f3Nodes['max-guide'],leftX+1,peakY,peakX+10,peakY);
+  line(f3Nodes['max-guide'],leftX+1,peakY,peakX,peakY);
+  line(f3Nodes['apex-leader'],peakX,peakY,peakX+10,peakY);
   label(f3Nodes.zero,leftX-9,floorY-5.5);
   label(f3Nodes.max,leftX-10,peakY-3.5);
   const titleX=leftX-22,titleY=(floorY+peakY)/2;
   label(f3Nodes['friction-label'],titleX,titleY);
   f3Nodes['friction-label'].setAttribute('transform',`rotate(-90 ${titleX} ${titleY})`);
-  label(f3Nodes['accountability-label'],(leftX+farTip)/2,floorY+20);
+  label(f3Nodes['accountability-label'],(leftX+rightX)/2,floorY+20);
   label(f3Nodes['apex-label'],peakX+14,peakY);
 };
 
