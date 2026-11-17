@@ -109,6 +109,12 @@
       }
 
       async function prepare() {
+        // Installed launches must also work with all network connections disabled.
+        // The installer has already cached the app before Add to Home Screen.
+        if (standalone) {
+          location.replace('./index.html');
+          return;
+        }
         if (!('serviceWorker' in navigator)) throw new Error('Service workers are unavailable in this browser.');
 
         setStatus('Preparing offline copy…');
@@ -127,7 +133,6 @@
         updateBtn.disabled = false;
         setStatus('Offline copy ready. You can now add this page to the Home Screen.');
 
-        if (standalone) location.replace('./index.html');
       }
 
       openBtn.addEventListener('click', () => {
