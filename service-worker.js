@@ -1,4 +1,4 @@
-const CACHE_NAME = 'epistemic-octahedron-complete-offline-v2';
+const CACHE_NAME = 'epistemic-octahedron-complete-offline-v3';
 const CACHE_PREFIX = 'epistemic-octahedron-complete-offline-';
 
 const PRECACHE = [
